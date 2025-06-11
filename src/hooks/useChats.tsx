@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,7 +38,9 @@ export const useChats = () => {
             content: msg.content,
             role: msg.role as 'user' | 'assistant',
             timestamp: new Date(msg.timestamp),
-            images: msg.images && Array.isArray(msg.images) && msg.images.length > 0 ? msg.images : undefined
+            images: msg.images && Array.isArray(msg.images) && msg.images.length > 0 
+              ? msg.images.filter((img): img is string => typeof img === 'string')
+              : undefined
           }));
 
           return {
