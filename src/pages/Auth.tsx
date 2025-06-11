@@ -76,9 +76,10 @@ const Auth = () => {
       });
     } else {
       toast({
-        title: "¡Registro exitoso!",
-        description: "Revisa tu email para confirmar tu cuenta"
+        title: "¡Cuenta creada exitosamente!",
+        description: "Ya puedes usar la plataforma"
       });
+      navigate('/dashboard');
     }
     setLoading(false);
   };
