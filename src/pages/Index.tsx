@@ -20,7 +20,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center">
       {/* Animated background grid */}
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
@@ -31,7 +31,7 @@ const Index = () => {
         <div className="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-primary rounded-full animate-pulse delay-1000"></div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-6 py-16">
+      <div className="relative z-10 container mx-auto px-6">
         {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
