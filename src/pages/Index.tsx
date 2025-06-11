@@ -23,13 +23,6 @@ const Index = () => {
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center">
       {/* Animated background grid */}
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
-      
-      {/* Floating particles effect */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-accent rounded-full animate-pulse delay-700"></div>
-        <div className="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-primary rounded-full animate-pulse delay-1000"></div>
-      </div>
 
       <div className="relative z-10 container mx-auto px-6">
         {/* Header Section */}
