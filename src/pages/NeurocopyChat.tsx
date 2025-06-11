@@ -181,24 +181,52 @@ const NeurocopyChat = () => {
     }));
 
     try {
-      const webhookPayload = {
-        message: content,
-        chatId: currentChatId,
-        timestamp: new Date().toISOString(),
-        userId: user?.id || 'anonymous',
-        messageId: newMessage.id,
-        imagen: images.length > 0,
-        images: images
-      };
+      // Crear FormData para enviar datos binarios
+      const formData = new FormData();
+      
+      // Añadir campos de texto
+      formData.append('message', content);
+      formData.append('chatId', currentChatId);
+      formData.append('timestamp', new Date().toISOString());
+      formData.append('userId', user?.id || 'anonymous');
+      formData.append('messageId', newMessage.id);
+      formData.append('imagen', images.length > 0 ? 'true' : 'no');
 
-      console.log('Payload enviado al webhook:', JSON.stringify({...webhookPayload, images: `[${images.length} imágenes]`}, null, 2));
+      // Procesar y añadir imágenes como archivos binarios
+      if (images.length > 0) {
+        for (let i = 0; i < images.length; i++) {
+          const imageData = images[i];
+          
+          try {
+            // Convertir base64 a blob
+            const base64Data = imageData.split(',')[1]; // Remover el prefijo data:image/...;base64,
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            
+            for (let j = 0; j < byteCharacters.length; j++) {
+              byteNumbers[j] = byteCharacters.charCodeAt(j);
+            }
+            
+            const byteArray = new Uint8Array(byteNumbers);
+            const mimeType = imageData.split(';')[0].split(':')[1]; // Extraer tipo MIME
+            const blob = new Blob([byteArray], { type: mimeType });
+            
+            // Añadir el blob al FormData con un nombre único
+            formData.append(`image_${i}`, blob, `image_${i}.${mimeType.split('/')[1]}`);
+            
+            console.log(`Imagen ${i} convertida a blob:`, blob.size, 'bytes');
+          } catch (error) {
+            console.error(`Error procesando imagen ${i}:`, error);
+          }
+        }
+      }
+
+      console.log('Enviando payload con FormData al webhook');
+      console.log('Número de imágenes procesadas:', images.length);
       
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/NeuroCopy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload),
+        body: formData // No establecer Content-Type, fetch lo hará automáticamente para multipart/form-data
       });
 
       if (!response.ok) {
