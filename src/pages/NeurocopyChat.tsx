@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
@@ -43,8 +44,26 @@ const NeurocopyChat = () => {
   useEffect(() => {
     if (chats.length > 0 && !activeChat) {
       setActiveChat(chats[0].id);
+      console.log('Chat activo establecido:', chats[0].id);
     }
   }, [chats, activeChat]);
+
+  // Validar que el chat activo existe
+  const validateActiveChat = () => {
+    if (!activeChat) {
+      console.error('No hay chat activo');
+      return false;
+    }
+    
+    const chatExists = chats.find(chat => chat.id === activeChat);
+    if (!chatExists) {
+      console.error('El chat activo no existe en la lista de chats:', activeChat);
+      return false;
+    }
+    
+    console.log('Chat activo validado correctamente:', activeChat);
+    return true;
+  };
 
   const createNewChat = async () => {
     const newChat: Chat = {
@@ -55,6 +74,7 @@ const NeurocopyChat = () => {
       updatedAt: new Date()
     };
 
+    console.log('Creando nuevo chat:', newChat.id);
     setChats(prev => [newChat, ...prev]);
     setActiveChat(newChat.id);
     
@@ -63,6 +83,8 @@ const NeurocopyChat = () => {
   };
 
   const handleDeleteChat = async (chatId: string) => {
+    console.log('Eliminando chat:', chatId);
+    
     // Eliminar de Supabase primero
     await deleteChat(chatId);
     
@@ -78,6 +100,7 @@ const NeurocopyChat = () => {
           createdAt: new Date(),
           updatedAt: new Date()
         };
+        console.log('Creando nuevo chat después de eliminar el último:', newChat.id);
         setActiveChat(newChat.id);
         // Guardar el nuevo chat en Supabase
         saveChat(newChat);
@@ -86,6 +109,7 @@ const NeurocopyChat = () => {
       
       // Si se elimina el chat activo, seleccionar el primero disponible
       if (chatId === activeChat) {
+        console.log('Chat activo eliminado, seleccionando nuevo chat activo:', filteredChats[0].id);
         setActiveChat(filteredChats[0].id);
       }
       
@@ -101,6 +125,7 @@ const NeurocopyChat = () => {
   const handleRenameChat = async (chatId: string, newTitle: string) => {
     if (newTitle.trim() === '') return;
     
+    console.log('Renombrando chat:', chatId, 'nuevo título:', newTitle);
     const updatedAt = new Date();
     
     setChats(prev => prev.map(chat => {
@@ -124,7 +149,21 @@ const NeurocopyChat = () => {
   };
 
   const sendMessage = async (content: string) => {
+    // Validar que hay un chat activo antes de proceder
+    if (!validateActiveChat()) {
+      toast({
+        title: "Error",
+        description: "No hay un chat activo. Por favor, crea un nuevo chat.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
+    console.log('=== INICIANDO ENVÍO DE MENSAJE ===');
+    console.log('Chat activo:', activeChat);
+    console.log('Usuario ID:', user?.id);
+    console.log('Contenido del mensaje:', content);
     
     const newMessage: Message = {
       id: crypto.randomUUID(),
@@ -144,6 +183,8 @@ const NeurocopyChat = () => {
           updatedAt: new Date()
         };
         
+        console.log('Chat actualizado con mensaje de usuario:', updatedChat.id);
+        
         // Guardar mensaje y actualizar chat en Supabase
         saveMessage(activeChat, newMessage);
         if (updatedMessages.length === 1) {
@@ -156,19 +197,22 @@ const NeurocopyChat = () => {
     }));
 
     try {
-      console.log('Enviando mensaje al webhook:', content);
+      const webhookPayload = {
+        message: content,
+        chatId: activeChat,
+        timestamp: new Date().toISOString(),
+        userId: user?.id || 'anonymous',
+        messageId: newMessage.id
+      };
+
+      console.log('Payload enviado al webhook:', JSON.stringify(webhookPayload, null, 2));
       
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/NeuroCopy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: content,
-          chatId: activeChat,
-          timestamp: new Date().toISOString(),
-          userId: user?.id || 'user-1'
-        }),
+        body: JSON.stringify(webhookPayload),
       });
 
       if (!response.ok) {
@@ -176,7 +220,25 @@ const NeurocopyChat = () => {
       }
 
       const data = await response.json();
-      console.log('Respuesta completa del webhook:', data);
+      console.log('Respuesta completa del webhook:', JSON.stringify(data, null, 2));
+
+      // Validar que la respuesta contenga el chatId correcto
+      let receivedChatId = null;
+      if (Array.isArray(data) && data.length > 0 && data[0].chatId) {
+        receivedChatId = data[0].chatId;
+      } else if (data.chatId) {
+        receivedChatId = data.chatId;
+      }
+
+      if (receivedChatId && receivedChatId !== activeChat) {
+        console.warn('⚠️  ChatId recibido no coincide con el enviado!');
+        console.warn('Enviado:', activeChat);
+        console.warn('Recibido:', receivedChatId);
+      } else if (receivedChatId) {
+        console.log('✅ ChatId validado correctamente:', receivedChatId);
+      } else {
+        console.warn('⚠️  No se recibió chatId en la respuesta del webhook');
+      }
 
       let aiResponseContent = '';
       
@@ -211,6 +273,12 @@ const NeurocopyChat = () => {
 
       console.log('Mensaje de IA creado:', aiResponse);
 
+      // Verificar nuevamente que el chat activo sigue siendo válido
+      if (!validateActiveChat()) {
+        console.error('Chat activo no válido al recibir respuesta de IA');
+        return;
+      }
+
       setChats(prev => prev.map(chat => {
         if (chat.id === activeChat) {
           const updatedChat = {
@@ -218,7 +286,7 @@ const NeurocopyChat = () => {
             messages: [...chat.messages, aiResponse],
             updatedAt: new Date()
           };
-          console.log('Chat actualizado con respuesta de IA:', updatedChat);
+          console.log('Chat actualizado con respuesta de IA:', updatedChat.id);
           
           // Guardar mensaje de IA en Supabase
           saveMessage(activeChat, aiResponse);
@@ -228,8 +296,10 @@ const NeurocopyChat = () => {
         return chat;
       }));
 
+      console.log('✅ Mensaje procesado exitosamente');
+
     } catch (error) {
-      console.error('Error al enviar mensaje al webhook:', error);
+      console.error('❌ Error al enviar mensaje al webhook:', error);
       
       const errorMessage: Message = {
         id: crypto.randomUUID(),
@@ -238,21 +308,24 @@ const NeurocopyChat = () => {
         timestamp: new Date()
       };
 
-      setChats(prev => prev.map(chat => {
-        if (chat.id === activeChat) {
-          const updatedChat = {
-            ...chat,
-            messages: [...chat.messages, errorMessage],
-            updatedAt: new Date()
-          };
-          
-          // Guardar mensaje de error en Supabase
-          saveMessage(activeChat, errorMessage);
-          
-          return updatedChat;
-        }
-        return chat;
-      }));
+      // Verificar que el chat activo sigue siendo válido antes de agregar mensaje de error
+      if (validateActiveChat()) {
+        setChats(prev => prev.map(chat => {
+          if (chat.id === activeChat) {
+            const updatedChat = {
+              ...chat,
+              messages: [...chat.messages, errorMessage],
+              updatedAt: new Date()
+            };
+            
+            // Guardar mensaje de error en Supabase
+            saveMessage(activeChat, errorMessage);
+            
+            return updatedChat;
+          }
+          return chat;
+        }));
+      }
 
       toast({
         title: "Error de conexión",
@@ -260,7 +333,7 @@ const NeurocopyChat = () => {
         variant: "destructive"
       });
     } finally {
-      console.log('Finalizando sendMessage, estableciendo isLoading a false');
+      console.log('=== FINALIZANDO ENVÍO DE MENSAJE ===');
       setIsLoading(false);
     }
   };
