@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Zap, Target, Lightbulb, Menu } from 'lucide-react';
+import { Send, Zap, Target, Lightbulb, Menu, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -9,9 +9,10 @@ import { Chat, Message } from "@/pages/NeurocopyChat";
 interface ChatAreaProps {
   chat?: Chat;
   onSendMessage: (message: string) => void;
+  isLoading?: boolean;
 }
 
-export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage }) => {
+export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoading = false }) => {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -21,10 +22,10 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chat?.messages]);
+  }, [chat?.messages, isLoading]);
 
   const handleSend = () => {
-    if (inputMessage.trim()) {
+    if (inputMessage.trim() && !isLoading) {
       onSendMessage(inputMessage);
       setInputMessage('');
     }
@@ -87,6 +88,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage }) => {
                   variant="outline"
                   className="h-auto p-4 cyber-border hover:cyber-glow-intense transition-all duration-300 group"
                   onClick={() => onSendMessage(action.prompt)}
+                  disabled={isLoading}
                 >
                   <div className="flex flex-col items-center text-center space-y-2">
                     <action.icon className="w-6 h-6 text-primary group-hover:animate-cyber-pulse" />
@@ -117,6 +119,18 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage }) => {
                 </div>
               </div>
             ))}
+            
+            {/* Loading indicator */}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-card cyber-border p-4 rounded-2xl max-w-[70%]">
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">NeuroCopy está pensando...</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -129,15 +143,20 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage }) => {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Escribe tu mensaje aquí..."
+            placeholder={isLoading ? "Esperando respuesta..." : "Escribe tu mensaje aquí..."}
             className="flex-1 cyber-border focus:cyber-glow-intense transition-all duration-300"
+            disabled={isLoading}
           />
           <Button
             onClick={handleSend}
-            disabled={!inputMessage.trim()}
+            disabled={!inputMessage.trim() || isLoading}
             className="cyber-glow hover:cyber-glow-intense transition-all duration-300"
           >
-            <Send className="w-4 h-4" />
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         </div>
       </div>
