@@ -1,9 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatArea } from "@/components/chat/ChatArea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useChats } from "@/hooks/useChats";
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { LogOut, Loader2 } from 'lucide-react';
 
 export interface Message {
   id: string;
@@ -21,22 +25,28 @@ export interface Chat {
 }
 
 const NeurocopyChat = () => {
-  const [chats, setChats] = useState<Chat[]>([
-    {
-      id: crypto.randomUUID(),
-      title: 'Nueva conversación',
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ]);
-  
-  const [activeChat, setActiveChat] = useState<string>(chats[0]?.id || '');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { chats, loading: chatsLoading, setChats, saveChat, updateChat, deleteChat, saveMessage } = useChats();
+  const [activeChat, setActiveChat] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const createNewChat = () => {
+  // Redirigir a auth si no hay usuario
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  // Seleccionar el primer chat cuando se cargan
+  useEffect(() => {
+    if (chats.length > 0 && !activeChat) {
+      setActiveChat(chats[0].id);
+    }
+  }, [chats, activeChat]);
+
+  const createNewChat = async () => {
     const newChat: Chat = {
       id: crypto.randomUUID(),
       title: 'Nueva conversación',
@@ -44,11 +54,18 @@ const NeurocopyChat = () => {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+
     setChats(prev => [newChat, ...prev]);
     setActiveChat(newChat.id);
+    
+    // Guardar en Supabase
+    await saveChat(newChat);
   };
 
-  const deleteChat = (chatId: string) => {
+  const handleDeleteChat = async (chatId: string) => {
+    // Eliminar de Supabase primero
+    await deleteChat(chatId);
+    
     setChats(prev => {
       const filteredChats = prev.filter(chat => chat.id !== chatId);
       
@@ -62,6 +79,8 @@ const NeurocopyChat = () => {
           updatedAt: new Date()
         };
         setActiveChat(newChat.id);
+        // Guardar el nuevo chat en Supabase
+        saveChat(newChat);
         return [newChat];
       }
       
@@ -79,19 +98,24 @@ const NeurocopyChat = () => {
     });
   };
 
-  const renameChat = (chatId: string, newTitle: string) => {
+  const handleRenameChat = async (chatId: string, newTitle: string) => {
     if (newTitle.trim() === '') return;
+    
+    const updatedAt = new Date();
     
     setChats(prev => prev.map(chat => {
       if (chat.id === chatId) {
         return {
           ...chat,
           title: newTitle.trim(),
-          updatedAt: new Date()
+          updatedAt
         };
       }
       return chat;
     }));
+
+    // Actualizar en Supabase
+    await updateChat(chatId, { title: newTitle.trim(), updatedAt });
 
     toast({
       title: "Chat renombrado",
@@ -113,12 +137,20 @@ const NeurocopyChat = () => {
     setChats(prev => prev.map(chat => {
       if (chat.id === activeChat) {
         const updatedMessages = [...chat.messages, newMessage];
-        return {
+        const updatedChat = {
           ...chat,
           messages: updatedMessages,
           title: updatedMessages.length === 1 ? content.slice(0, 30) + (content.length > 30 ? '...' : '') : chat.title,
           updatedAt: new Date()
         };
+        
+        // Guardar mensaje y actualizar chat en Supabase
+        saveMessage(activeChat, newMessage);
+        if (updatedMessages.length === 1) {
+          updateChat(activeChat, { title: updatedChat.title, updatedAt: updatedChat.updatedAt });
+        }
+        
+        return updatedChat;
       }
       return chat;
     }));
@@ -126,7 +158,6 @@ const NeurocopyChat = () => {
     try {
       console.log('Enviando mensaje al webhook:', content);
       
-      // Enviar mensaje al webhook de n8n
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/NeuroCopy', {
         method: 'POST',
         headers: {
@@ -136,7 +167,7 @@ const NeurocopyChat = () => {
           message: content,
           chatId: activeChat,
           timestamp: new Date().toISOString(),
-          userId: 'user-1' // ID temporal del usuario
+          userId: user?.id || 'user-1'
         }),
       });
 
@@ -147,23 +178,18 @@ const NeurocopyChat = () => {
       const data = await response.json();
       console.log('Respuesta completa del webhook:', data);
 
-      // Extraer el contenido de la respuesta - probando diferentes formatos
       let aiResponseContent = '';
       
       if (Array.isArray(data) && data.length > 0 && data[0].output) {
-        // Formato: [{"output": "contenido..."}]
         aiResponseContent = data[0].output;
         console.log('Contenido extraído de data[0].output:', aiResponseContent);
       } else if (data.response) {
-        // Formato: {"response": "contenido..."}
         aiResponseContent = data.response;
         console.log('Contenido extraído de data.response:', aiResponseContent);
       } else if (data.message) {
-        // Formato: {"message": "contenido..."}
         aiResponseContent = data.message;
         console.log('Contenido extraído de data.message:', aiResponseContent);
       } else if (typeof data === 'string') {
-        // Formato: string directo
         aiResponseContent = data;
         console.log('Contenido extraído como string directo:', aiResponseContent);
       } else {
@@ -171,13 +197,11 @@ const NeurocopyChat = () => {
         aiResponseContent = "Lo siento, recibí una respuesta pero no pude procesarla correctamente.";
       }
 
-      // Validar que tenemos contenido válido
       if (!aiResponseContent || aiResponseContent.trim() === '') {
         console.log('Contenido de respuesta vacío o inválido');
         aiResponseContent = "Lo siento, la IA no generó una respuesta válida.";
       }
       
-      // Crear mensaje de respuesta de la IA
       const aiResponse: Message = {
         id: crypto.randomUUID(),
         content: aiResponseContent,
@@ -187,7 +211,6 @@ const NeurocopyChat = () => {
 
       console.log('Mensaje de IA creado:', aiResponse);
 
-      // Agregar respuesta de la IA
       setChats(prev => prev.map(chat => {
         if (chat.id === activeChat) {
           const updatedChat = {
@@ -196,6 +219,10 @@ const NeurocopyChat = () => {
             updatedAt: new Date()
           };
           console.log('Chat actualizado con respuesta de IA:', updatedChat);
+          
+          // Guardar mensaje de IA en Supabase
+          saveMessage(activeChat, aiResponse);
+          
           return updatedChat;
         }
         return chat;
@@ -204,7 +231,6 @@ const NeurocopyChat = () => {
     } catch (error) {
       console.error('Error al enviar mensaje al webhook:', error);
       
-      // Mostrar mensaje de error
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         content: "Lo siento, hubo un problema al conectar con la IA. Por favor, intenta de nuevo.",
@@ -214,11 +240,16 @@ const NeurocopyChat = () => {
 
       setChats(prev => prev.map(chat => {
         if (chat.id === activeChat) {
-          return {
+          const updatedChat = {
             ...chat,
             messages: [...chat.messages, errorMessage],
             updatedAt: new Date()
           };
+          
+          // Guardar mensaje de error en Supabase
+          saveMessage(activeChat, errorMessage);
+          
+          return updatedChat;
         }
         return chat;
       }));
@@ -234,19 +265,53 @@ const NeurocopyChat = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  // Mostrar loading mientras se cargan los datos
+  if (authLoading || chatsLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay usuario, no renderizar nada (se redirige en useEffect)
+  if (!user) {
+    return null;
+  }
+
   const currentChat = chats.find(chat => chat.id === activeChat);
 
   return (
     <div className="min-h-screen bg-background flex w-full">
-      <SidebarProvider defaultOpen={sidebarOpen}>
-        <ChatSidebar 
-          chats={chats}
-          activeChat={activeChat}
-          onChatSelect={setActiveChat}
-          onNewChat={createNewChat}
-          onDeleteChat={deleteChat}
-          onRenameChat={renameChat}
-        />
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex flex-col">
+          <ChatSidebar 
+            chats={chats}
+            activeChat={activeChat}
+            onChatSelect={setActiveChat}
+            onNewChat={createNewChat}
+            onDeleteChat={handleDeleteChat}
+            onRenameChat={handleRenameChat}
+          />
+          <div className="p-4 border-t border-border/50">
+            <Button 
+              onClick={handleSignOut}
+              variant="outline"
+              className="w-full cyber-border hover:cyber-glow-intense"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </Button>
+          </div>
+        </div>
         <main className="flex-1 flex flex-col">
           <ChatArea 
             chat={currentChat}
