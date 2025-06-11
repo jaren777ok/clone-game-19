@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import NeurocopyChat from "./pages/NeurocopyChat";
+import VideoGenerator from "./pages/VideoGenerator";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +57,11 @@ const App = () => (
             <Route path="/neurocopy-gpt" element={
               <ProtectedRoute>
                 <NeurocopyChat />
+              </ProtectedRoute>
+            } />
+            <Route path="/crear-video" element={
+              <ProtectedRoute>
+                <VideoGenerator />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

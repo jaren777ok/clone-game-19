@@ -1,4 +1,3 @@
-
 import { Smartphone, Brain, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,10 +19,7 @@ const Dashboard = () => {
       description: "Genera videos profesionales con IA de última generación",
       icon: Smartphone,
       gradient: "from-primary/20 to-accent/10",
-      onClick: () => {
-        // TODO: Implementar navegación a página de creación de videos
-        console.log("Navegando a crear video...");
-      }
+      onClick: () => navigate("/crear-video")
     },
     {
       id: "neurocopy-gpt",
