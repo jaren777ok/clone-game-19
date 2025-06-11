@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, Mail, Lock, User } from 'lucide-react';
+import { Zap, Mail, Lock } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -41,7 +41,7 @@ const Auth = () => {
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente"
       });
-      navigate('/neurocopy-gpt');
+      navigate('/dashboard');
     }
     setLoading(false);
   };
@@ -84,96 +84,115 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md cyber-border">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
-            <Zap className="w-8 h-8 text-background" />
-          </div>
-          <CardTitle className="text-2xl font-bold">NeuroCopy GPT</CardTitle>
-          <CardDescription>
-            Accede a tu asistente de copywriting con IA
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Registrarse</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin" className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 cyber-border"
-                    disabled={loading}
-                  />
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      {/* Animated background grid */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+      
+      {/* Background geometric shapes */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
+            NEWS VERO IA
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Accede a tu plataforma de inteligencia artificial
+          </p>
+        </div>
+
+        <Card className="cyber-border">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
+              <Zap className="w-8 h-8 text-background" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
+            <CardDescription>
+              Ingresa tus credenciales para acceder al sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="signin" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
+                <TabsTrigger value="signup">Registrarse</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signin" className="space-y-4">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 cyber-border"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder="Contraseña"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 cyber-border"
+                      disabled={loading}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSignIn()}
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 cyber-border"
-                    disabled={loading}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSignIn()}
-                  />
+                <Button 
+                  onClick={handleSignIn}
+                  className="w-full cyber-glow hover:cyber-glow-intense"
+                  disabled={loading}
+                >
+                  {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
+                </Button>
+              </TabsContent>
+              
+              <TabsContent value="signup" className="space-y-4">
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 cyber-border"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder="Contraseña (mínimo 6 caracteres)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 cyber-border"
+                      disabled={loading}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSignUp()}
+                    />
+                  </div>
                 </div>
-              </div>
-              <Button 
-                onClick={handleSignIn}
-                className="w-full cyber-glow hover:cyber-glow-intense"
-                disabled={loading}
-              >
-                {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
-              </Button>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 cyber-border"
-                    disabled={loading}
-                  />
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    placeholder="Contraseña (mínimo 6 caracteres)"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 cyber-border"
-                    disabled={loading}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSignUp()}
-                  />
-                </div>
-              </div>
-              <Button 
-                onClick={handleSignUp}
-                className="w-full cyber-glow hover:cyber-glow-intense"
-                disabled={loading}
-              >
-                {loading ? "Registrando..." : "Registrarse"}
-              </Button>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                <Button 
+                  onClick={handleSignUp}
+                  className="w-full cyber-glow hover:cyber-glow-intense"
+                  disabled={loading}
+                >
+                  {loading ? "Registrando..." : "Registrarse"}
+                </Button>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
