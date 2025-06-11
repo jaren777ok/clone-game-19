@@ -1,8 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Zap, Target, Lightbulb } from 'lucide-react';
+import { Send, Zap, Target, Lightbulb, Menu } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Chat, Message } from "@/pages/NeurocopyChat";
 
 interface ChatAreaProps {
@@ -46,15 +47,22 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage }) => {
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border/50 p-4">
-        <h1 className="text-xl font-bold text-foreground flex items-center">
+        <div className="flex items-center">
+          <SidebarTrigger className="mr-3 cyber-border hover:cyber-glow-intense transition-all duration-300">
+            <Menu className="w-4 h-4" />
+          </SidebarTrigger>
           <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center cyber-glow mr-3">
             <Zap className="w-4 h-4 text-background" />
           </div>
-          NeuroCopy GPT
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Inteligencia artificial híbrida para copywriting avanzado
-        </p>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">
+              NeuroCopy GPT
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Inteligencia artificial híbrida para copywriting avanzado
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Messages Area */}
