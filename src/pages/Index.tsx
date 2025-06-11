@@ -1,21 +1,29 @@
 
 import { Smartphone, Brain } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   const options = [
     {
       id: "crear-video",
       title: "Crear Video",
       description: "Genera videos profesionales con IA de última generación",
       icon: Smartphone,
-      gradient: "from-primary/20 to-accent/10"
+      gradient: "from-primary/20 to-accent/10",
+      onClick: () => {
+        // TODO: Implementar navegación a página de creación de videos
+        console.log("Navegando a crear video...");
+      }
     },
     {
       id: "neurocopy-gpt",
       title: "Neurocopy GPT",
       description: "Inteligencia artificial híbrida para copywriting avanzado",
       icon: Brain,
-      gradient: "from-accent/20 to-primary/10"
+      gradient: "from-accent/20 to-primary/10",
+      onClick: () => navigate("/neurocopy-gpt")
     }
   ];
 
@@ -39,6 +47,7 @@ const Index = () => {
             return (
               <div
                 key={option.id}
+                onClick={option.onClick}
                 className="group relative bg-card cyber-border rounded-2xl p-8 hover:cyber-glow-intense transition-all duration-500 cursor-pointer transform hover:scale-105"
               >
                 {/* Card gradient overlay */}
