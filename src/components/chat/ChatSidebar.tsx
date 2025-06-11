@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
-import { Plus, MessageSquare, User, Trash2, Edit3, Check, X } from 'lucide-react';
+import { Plus, MessageSquare, User, Trash2, Edit3, Check, X, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -33,6 +33,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 }) => {
   const [editingChat, setEditingChat] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const navigate = useNavigate();
 
   const handleStartEdit = (chat: Chat) => {
     setEditingChat(chat.id);
@@ -61,6 +62,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     } else {
       onDeleteChat(chatId);
     }
+  };
+
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -169,7 +174,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 space-y-4">
         <div className="flex items-center space-x-3 p-2 rounded-lg bg-card/50 cyber-border">
           <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-background" />
@@ -179,6 +184,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             <div className="text-xs text-muted-foreground">Copywriter Pro</div>
           </div>
         </div>
+        
+        <Button 
+          onClick={handleBackToDashboard}
+          variant="outline"
+          className="w-full cyber-border hover:cyber-glow-intense"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Regresar al Dashboard
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );

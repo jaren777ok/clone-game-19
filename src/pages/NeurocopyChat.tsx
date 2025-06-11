@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
@@ -7,8 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useChats } from "@/hooks/useChats";
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { LogOut, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export interface Message {
   id: string;
@@ -26,7 +24,7 @@ export interface Chat {
 }
 
 const NeurocopyChat = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { chats, loading: chatsLoading, setChats, saveChat, updateChat, deleteChat, saveMessage } = useChats();
   const [activeChat, setActiveChat] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -338,11 +336,6 @@ const NeurocopyChat = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
-
   // Mostrar loading mientras se cargan los datos
   if (authLoading || chatsLoading) {
     return (
@@ -365,26 +358,14 @@ const NeurocopyChat = () => {
   return (
     <div className="min-h-screen bg-background flex w-full">
       <SidebarProvider defaultOpen={true}>
-        <div className="flex flex-col">
-          <ChatSidebar 
-            chats={chats}
-            activeChat={activeChat}
-            onChatSelect={setActiveChat}
-            onNewChat={createNewChat}
-            onDeleteChat={handleDeleteChat}
-            onRenameChat={handleRenameChat}
-          />
-          <div className="p-4 border-t border-border/50">
-            <Button 
-              onClick={handleSignOut}
-              variant="outline"
-              className="w-full cyber-border hover:cyber-glow-intense"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Cerrar Sesión
-            </Button>
-          </div>
-        </div>
+        <ChatSidebar 
+          chats={chats}
+          activeChat={activeChat}
+          onChatSelect={setActiveChat}
+          onNewChat={createNewChat}
+          onDeleteChat={handleDeleteChat}
+          onRenameChat={handleRenameChat}
+        />
         <main className="flex-1 flex flex-col">
           <ChatArea 
             chat={currentChat}
