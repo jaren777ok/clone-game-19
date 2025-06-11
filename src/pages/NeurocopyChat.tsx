@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
@@ -38,30 +39,8 @@ const NeurocopyChat = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Seleccionar el primer chat cuando se cargan
-  useEffect(() => {
-    if (chats.length > 0 && !activeChat) {
-      setActiveChat(chats[0].id);
-      console.log('Chat activo establecido:', chats[0].id);
-    }
-  }, [chats, activeChat]);
-
-  // Validar que el chat activo existe
-  const validateActiveChat = () => {
-    if (!activeChat) {
-      console.error('No hay chat activo');
-      return false;
-    }
-    
-    const chatExists = chats.find(chat => chat.id === activeChat);
-    if (!chatExists) {
-      console.error('El chat activo no existe en la lista de chats:', activeChat);
-      return false;
-    }
-    
-    console.log('Chat activo validado correctamente:', activeChat);
-    return true;
-  };
+  // REMOVED: Auto-select first chat - now user must choose
+  // The welcome screen will be shown when no chat is active
 
   const createNewChat = async () => {
     const newChat: Chat = {
@@ -89,26 +68,17 @@ const NeurocopyChat = () => {
     setChats(prev => {
       const filteredChats = prev.filter(chat => chat.id !== chatId);
       
-      // Si no quedan chats, crear uno nuevo
+      // Si no quedan chats, deseleccionar chat activo para mostrar pantalla de bienvenida
       if (filteredChats.length === 0) {
-        const newChat: Chat = {
-          id: crypto.randomUUID(),
-          title: 'Nueva conversación',
-          messages: [],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        console.log('Creando nuevo chat después de eliminar el último:', newChat.id);
-        setActiveChat(newChat.id);
-        // Guardar el nuevo chat en Supabase
-        saveChat(newChat);
-        return [newChat];
+        console.log('No quedan chats, mostrando pantalla de bienvenida');
+        setActiveChat('');
+        return filteredChats;
       }
       
-      // Si se elimina el chat activo, seleccionar el primero disponible
+      // Si se elimina el chat activo, deseleccionar para que el usuario elija
       if (chatId === activeChat) {
-        console.log('Chat activo eliminado, seleccionando nuevo chat activo:', filteredChats[0].id);
-        setActiveChat(filteredChats[0].id);
+        console.log('Chat activo eliminado, mostrando pantalla de bienvenida');
+        setActiveChat('');
       }
       
       return filteredChats;
@@ -147,19 +117,32 @@ const NeurocopyChat = () => {
   };
 
   const sendMessage = async (content: string) => {
-    // Validar que hay un chat activo antes de proceder
-    if (!validateActiveChat()) {
-      toast({
-        title: "Error",
-        description: "No hay un chat activo. Por favor, crea un nuevo chat.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsLoading(true);
     console.log('=== INICIANDO ENVÍO DE MENSAJE ===');
-    console.log('Chat activo:', activeChat);
+    
+    let currentChatId = activeChat;
+    
+    // Si no hay chat activo, crear uno nuevo automáticamente
+    if (!currentChatId) {
+      console.log('No hay chat activo, creando uno nuevo automáticamente');
+      const newChat: Chat = {
+        id: crypto.randomUUID(),
+        title: 'Nueva conversación',
+        messages: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      currentChatId = newChat.id;
+      setChats(prev => [newChat, ...prev]);
+      setActiveChat(currentChatId);
+      
+      // Guardar en Supabase
+      await saveChat(newChat);
+      console.log('Nuevo chat creado automáticamente:', currentChatId);
+    }
+    
+    console.log('Chat activo:', currentChatId);
     console.log('Usuario ID:', user?.id);
     console.log('Contenido del mensaje:', content);
     
@@ -172,7 +155,7 @@ const NeurocopyChat = () => {
 
     // Agregar mensaje del usuario inmediatamente
     setChats(prev => prev.map(chat => {
-      if (chat.id === activeChat) {
+      if (chat.id === currentChatId) {
         const updatedMessages = [...chat.messages, newMessage];
         const updatedChat = {
           ...chat,
@@ -184,9 +167,9 @@ const NeurocopyChat = () => {
         console.log('Chat actualizado con mensaje de usuario:', updatedChat.id);
         
         // Guardar mensaje y actualizar chat en Supabase
-        saveMessage(activeChat, newMessage);
+        saveMessage(currentChatId, newMessage);
         if (updatedMessages.length === 1) {
-          updateChat(activeChat, { title: updatedChat.title, updatedAt: updatedChat.updatedAt });
+          updateChat(currentChatId, { title: updatedChat.title, updatedAt: updatedChat.updatedAt });
         }
         
         return updatedChat;
@@ -197,7 +180,7 @@ const NeurocopyChat = () => {
     try {
       const webhookPayload = {
         message: content,
-        chatId: activeChat,
+        chatId: currentChatId,
         timestamp: new Date().toISOString(),
         userId: user?.id || 'anonymous',
         messageId: newMessage.id
@@ -228,9 +211,9 @@ const NeurocopyChat = () => {
         receivedChatId = data.chatId;
       }
 
-      if (receivedChatId && receivedChatId !== activeChat) {
+      if (receivedChatId && receivedChatId !== currentChatId) {
         console.warn('⚠️  ChatId recibido no coincide con el enviado!');
-        console.warn('Enviado:', activeChat);
+        console.warn('Enviado:', currentChatId);
         console.warn('Recibido:', receivedChatId);
       } else if (receivedChatId) {
         console.log('✅ ChatId validado correctamente:', receivedChatId);
@@ -271,14 +254,8 @@ const NeurocopyChat = () => {
 
       console.log('Mensaje de IA creado:', aiResponse);
 
-      // Verificar nuevamente que el chat activo sigue siendo válido
-      if (!validateActiveChat()) {
-        console.error('Chat activo no válido al recibir respuesta de IA');
-        return;
-      }
-
       setChats(prev => prev.map(chat => {
-        if (chat.id === activeChat) {
+        if (chat.id === currentChatId) {
           const updatedChat = {
             ...chat,
             messages: [...chat.messages, aiResponse],
@@ -287,7 +264,7 @@ const NeurocopyChat = () => {
           console.log('Chat actualizado con respuesta de IA:', updatedChat.id);
           
           // Guardar mensaje de IA en Supabase
-          saveMessage(activeChat, aiResponse);
+          saveMessage(currentChatId, aiResponse);
           
           return updatedChat;
         }
@@ -306,24 +283,21 @@ const NeurocopyChat = () => {
         timestamp: new Date()
       };
 
-      // Verificar que el chat activo sigue siendo válido antes de agregar mensaje de error
-      if (validateActiveChat()) {
-        setChats(prev => prev.map(chat => {
-          if (chat.id === activeChat) {
-            const updatedChat = {
-              ...chat,
-              messages: [...chat.messages, errorMessage],
-              updatedAt: new Date()
-            };
-            
-            // Guardar mensaje de error en Supabase
-            saveMessage(activeChat, errorMessage);
-            
-            return updatedChat;
-          }
-          return chat;
-        }));
-      }
+      setChats(prev => prev.map(chat => {
+        if (chat.id === currentChatId) {
+          const updatedChat = {
+            ...chat,
+            messages: [...chat.messages, errorMessage],
+            updatedAt: new Date()
+          };
+          
+          // Guardar mensaje de error en Supabase
+          saveMessage(currentChatId, errorMessage);
+          
+          return updatedChat;
+        }
+        return chat;
+      }));
 
       toast({
         title: "Error de conexión",

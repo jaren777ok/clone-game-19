@@ -31,6 +31,12 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoadi
     }
   };
 
+  const handleQuickAction = (prompt: string) => {
+    if (!isLoading) {
+      onSendMessage(prompt);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -87,7 +93,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoadi
                   key={index}
                   variant="outline"
                   className="h-auto p-4 cyber-border hover:cyber-glow-intense transition-all duration-300 group"
-                  onClick={() => onSendMessage(action.prompt)}
+                  onClick={() => handleQuickAction(action.prompt)}
                   disabled={isLoading}
                 >
                   <div className="flex flex-col items-center text-center space-y-2">
