@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
@@ -14,6 +13,7 @@ export interface Message {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  images?: string[]; // Array de URLs/base64 de imágenes
 }
 
 export interface Chat {
@@ -116,7 +116,7 @@ const NeurocopyChat = () => {
     });
   };
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, images: string[] = []) => {
     setIsLoading(true);
     console.log('=== INICIANDO ENVÍO DE MENSAJE ===');
     
@@ -145,12 +145,14 @@ const NeurocopyChat = () => {
     console.log('Chat activo:', currentChatId);
     console.log('Usuario ID:', user?.id);
     console.log('Contenido del mensaje:', content);
+    console.log('Imágenes:', images.length);
     
     const newMessage: Message = {
       id: crypto.randomUUID(),
       content,
       role: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      images: images.length > 0 ? images : undefined
     };
 
     // Agregar mensaje del usuario inmediatamente
@@ -183,10 +185,12 @@ const NeurocopyChat = () => {
         chatId: currentChatId,
         timestamp: new Date().toISOString(),
         userId: user?.id || 'anonymous',
-        messageId: newMessage.id
+        messageId: newMessage.id,
+        imagen: images.length > 0,
+        images: images
       };
 
-      console.log('Payload enviado al webhook:', JSON.stringify(webhookPayload, null, 2));
+      console.log('Payload enviado al webhook:', JSON.stringify({...webhookPayload, images: `[${images.length} imágenes]`}, null, 2));
       
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/NeuroCopy', {
         method: 'POST',
@@ -353,3 +357,5 @@ const NeurocopyChat = () => {
 };
 
 export default NeurocopyChat;
+
+</edits_to_apply>

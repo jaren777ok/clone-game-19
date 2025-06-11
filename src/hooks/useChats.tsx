@@ -38,7 +38,8 @@ export const useChats = () => {
             id: msg.id,
             content: msg.content,
             role: msg.role as 'user' | 'assistant',
-            timestamp: new Date(msg.timestamp)
+            timestamp: new Date(msg.timestamp),
+            images: msg.images && Array.isArray(msg.images) && msg.images.length > 0 ? msg.images : undefined
           }));
 
           return {
@@ -90,7 +91,6 @@ export const useChats = () => {
     }
   };
 
-  // Actualizar chat en Supabase
   const updateChat = async (chatId: string, updates: Partial<Chat>) => {
     if (!user) return;
 
@@ -115,7 +115,6 @@ export const useChats = () => {
     }
   };
 
-  // Eliminar chat de Supabase
   const deleteChat = async (chatId: string) => {
     if (!user) return;
 
@@ -136,7 +135,7 @@ export const useChats = () => {
     }
   };
 
-  // Guardar mensaje en Supabase
+  // Guardar mensaje en Supabase (actualizado para incluir imágenes)
   const saveMessage = async (chatId: string, message: Message) => {
     if (!user) return;
 
@@ -148,7 +147,8 @@ export const useChats = () => {
           chat_id: chatId,
           content: message.content,
           role: message.role,
-          timestamp: message.timestamp.toISOString()
+          timestamp: message.timestamp.toISOString(),
+          images: message.images || []
         });
 
       if (error) throw error;

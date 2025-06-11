@@ -2,19 +2,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Zap, Target, Lightbulb, Menu, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Chat, Message } from "@/pages/NeurocopyChat";
+import { ImageUploader } from "./ImageUploader";
+import { MessageImages } from "./MessageImages";
 
 interface ChatAreaProps {
   chat?: Chat;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, images?: string[]) => void;
   isLoading?: boolean;
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoading = false }) => {
   const [inputMessage, setInputMessage] = useState('');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,9 +29,10 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoadi
   }, [chat?.messages, isLoading]);
 
   const handleSend = () => {
-    if (inputMessage.trim() && !isLoading) {
-      onSendMessage(inputMessage);
+    if ((inputMessage.trim() || selectedImages.length > 0) && !isLoading) {
+      onSendMessage(inputMessage, selectedImages);
       setInputMessage('');
+      setSelectedImages([]);
     }
   };
 
@@ -43,6 +48,18 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoadi
       handleSend();
     }
   };
+
+  const handleImagesChange = (images: string[]) => {
+    setSelectedImages(images);
+  };
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+    }
+  }, [inputMessage]);
 
   const quickActions = [
     { icon: Zap, text: "Escribir email de ventas", prompt: "Ayúdame a escribir un email de ventas persuasivo para mi producto" },
@@ -118,7 +135,15 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoadi
                       : 'bg-card cyber-border'
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  {message.content && (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  )}
+                  
+                  {/* Mostrar imágenes si las hay */}
+                  {message.images && message.images.length > 0 && (
+                    <MessageImages images={message.images} />
+                  )}
+                  
                   <div className="text-xs opacity-70 mt-2">
                     {message.timestamp.toLocaleTimeString()}
                   </div>
@@ -144,26 +169,39 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ chat, onSendMessage, isLoadi
 
       {/* Input Area */}
       <div className="border-t border-border/50 p-4">
-        <div className="flex items-center space-x-2 max-w-4xl mx-auto">
-          <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={isLoading ? "Esperando respuesta..." : "Escribe tu mensaje aquí..."}
-            className="flex-1 cyber-border focus:cyber-glow-intense transition-all duration-300"
+        <div className="max-w-4xl mx-auto space-y-3">
+          {/* Image Uploader */}
+          <ImageUploader 
+            onImagesChange={handleImagesChange}
             disabled={isLoading}
           />
-          <Button
-            onClick={handleSend}
-            disabled={!inputMessage.trim() || isLoading}
-            className="cyber-glow hover:cyber-glow-intense transition-all duration-300"
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
+          
+          {/* Text Input */}
+          <div className="flex items-end space-x-2">
+            <div className="flex-1">
+              <Textarea
+                ref={textareaRef}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={isLoading ? "Esperando respuesta..." : "Escribe tu mensaje aquí..."}
+                className="min-h-[44px] max-h-[120px] resize-none cyber-border focus:cyber-glow-intense transition-all duration-300"
+                disabled={isLoading}
+                rows={1}
+              />
+            </div>
+            <Button
+              onClick={handleSend}
+              disabled={(!inputMessage.trim() && selectedImages.length === 0) || isLoading}
+              className="cyber-glow hover:cyber-glow-intense transition-all duration-300 h-[44px]"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -38,6 +38,7 @@ export type Database = {
           chat_id: string
           content: string
           id: string
+          images: Json | null
           role: string
           timestamp: string
         }
@@ -45,6 +46,7 @@ export type Database = {
           chat_id: string
           content: string
           id?: string
+          images?: Json | null
           role: string
           timestamp?: string
         }
@@ -52,6 +54,7 @@ export type Database = {
           chat_id?: string
           content?: string
           id?: string
+          images?: Json | null
           role?: string
           timestamp?: string
         }
