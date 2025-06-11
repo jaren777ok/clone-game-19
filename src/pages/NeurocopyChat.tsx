@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
@@ -357,5 +358,3 @@ const NeurocopyChat = () => {
 };
 
 export default NeurocopyChat;
-
-</edits_to_apply>
