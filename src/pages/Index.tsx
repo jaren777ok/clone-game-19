@@ -35,11 +35,8 @@ const Index = () => {
         {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-            ¿Cómo le gustaría comenzar, RAM?
+            NEWS VERO IA
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-            Acceda a herramientas de inteligencia artificial de próxima generación para crear contenido y automatizar flujos de trabajo con precisión cuántica.
-          </p>
         </div>
 
         {/* Options Grid */}
