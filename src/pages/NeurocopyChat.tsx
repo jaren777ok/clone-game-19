@@ -73,6 +73,8 @@ const NeurocopyChat = () => {
     }));
 
     try {
+      console.log('Enviando mensaje al webhook:', content);
+      
       // Enviar mensaje al webhook de n8n
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/NeuroCopy', {
         method: 'POST',
@@ -92,23 +94,58 @@ const NeurocopyChat = () => {
       }
 
       const data = await response.json();
+      console.log('Respuesta completa del webhook:', data);
+
+      // Extraer el contenido de la respuesta - probando diferentes formatos
+      let aiResponseContent = '';
+      
+      if (Array.isArray(data) && data.length > 0 && data[0].output) {
+        // Formato: [{"output": "contenido..."}]
+        aiResponseContent = data[0].output;
+        console.log('Contenido extraído de data[0].output:', aiResponseContent);
+      } else if (data.response) {
+        // Formato: {"response": "contenido..."}
+        aiResponseContent = data.response;
+        console.log('Contenido extraído de data.response:', aiResponseContent);
+      } else if (data.message) {
+        // Formato: {"message": "contenido..."}
+        aiResponseContent = data.message;
+        console.log('Contenido extraído de data.message:', aiResponseContent);
+      } else if (typeof data === 'string') {
+        // Formato: string directo
+        aiResponseContent = data;
+        console.log('Contenido extraído como string directo:', aiResponseContent);
+      } else {
+        console.log('Formato de respuesta no reconocido:', data);
+        aiResponseContent = "Lo siento, recibí una respuesta pero no pude procesarla correctamente.";
+      }
+
+      // Validar que tenemos contenido válido
+      if (!aiResponseContent || aiResponseContent.trim() === '') {
+        console.log('Contenido de respuesta vacío o inválido');
+        aiResponseContent = "Lo siento, la IA no generó una respuesta válida.";
+      }
       
       // Crear mensaje de respuesta de la IA
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: data.response || data.message || "Lo siento, no pude procesar tu mensaje en este momento.",
+        content: aiResponseContent,
         role: 'assistant',
         timestamp: new Date()
       };
 
+      console.log('Mensaje de IA creado:', aiResponse);
+
       // Agregar respuesta de la IA
       setChats(prev => prev.map(chat => {
         if (chat.id === activeChat) {
-          return {
+          const updatedChat = {
             ...chat,
             messages: [...chat.messages, aiResponse],
             updatedAt: new Date()
           };
+          console.log('Chat actualizado con respuesta de IA:', updatedChat);
+          return updatedChat;
         }
         return chat;
       }));
@@ -141,6 +178,7 @@ const NeurocopyChat = () => {
         variant: "destructive"
       });
     } finally {
+      console.log('Finalizando sendMessage, estableciendo isLoading a false');
       setIsLoading(false);
     }
   };
