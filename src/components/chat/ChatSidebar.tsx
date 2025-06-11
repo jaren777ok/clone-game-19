@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Plus, MessageSquare, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, MessageSquare, User, Trash2, Edit3, Check, X } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Chat } from "@/pages/NeurocopyChat";
 
 interface ChatSidebarProps {
@@ -18,14 +19,50 @@ interface ChatSidebarProps {
   activeChat: string;
   onChatSelect: (chatId: string) => void;
   onNewChat: () => void;
+  onDeleteChat: (chatId: string) => void;
+  onRenameChat: (chatId: string, newTitle: string) => void;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
   chats,
   activeChat,
   onChatSelect,
-  onNewChat
+  onNewChat,
+  onDeleteChat,
+  onRenameChat
 }) => {
+  const [editingChat, setEditingChat] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+
+  const handleStartEdit = (chat: Chat) => {
+    setEditingChat(chat.id);
+    setEditTitle(chat.title);
+  };
+
+  const handleSaveEdit = (chatId: string) => {
+    if (editTitle.trim()) {
+      onRenameChat(chatId, editTitle.trim());
+    }
+    setEditingChat(null);
+    setEditTitle('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingChat(null);
+    setEditTitle('');
+  };
+
+  const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (chats.length === 1) {
+      // No permitir eliminar el último chat, mejor crear uno nuevo
+      onNewChat();
+      setTimeout(() => onDeleteChat(chatId), 100);
+    } else {
+      onDeleteChat(chatId);
+    }
+  };
+
   return (
     <Sidebar className="border-r border-border/50">
       <SidebarHeader className="p-4">
@@ -50,21 +87,83 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         <SidebarMenu>
           {chats.map((chat) => (
             <SidebarMenuItem key={chat.id}>
-              <SidebarMenuButton
-                onClick={() => onChatSelect(chat.id)}
-                isActive={activeChat === chat.id}
-                className="w-full justify-start text-left p-3 rounded-lg hover:bg-accent/10 transition-colors duration-200"
-              >
-                <MessageSquare className="w-4 h-4 mr-3 text-primary" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground truncate">
-                    {chat.title}
+              <div className="group relative">
+                <SidebarMenuButton
+                  onClick={() => onChatSelect(chat.id)}
+                  isActive={activeChat === chat.id}
+                  className="w-full justify-start text-left p-3 rounded-lg hover:bg-accent/10 transition-colors duration-200 pr-20"
+                >
+                  <MessageSquare className="w-4 h-4 mr-3 text-primary flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    {editingChat === chat.id ? (
+                      <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveEdit(chat.id);
+                            } else if (e.key === 'Escape') {
+                              handleCancelEdit();
+                            }
+                          }}
+                          className="h-6 text-xs"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleSaveEdit(chat.id)}
+                        >
+                          <Check className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={handleCancelEdit}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-sm font-medium text-foreground truncate">
+                          {chat.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {chat.messages.length} mensajes
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {chat.messages.length} mensajes
+                </SidebarMenuButton>
+                
+                {editingChat !== chat.id && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 hover:bg-accent"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartEdit(chat);
+                      }}
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={(e) => handleDeleteChat(chat.id, e)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
-                </div>
-              </SidebarMenuButton>
+                )}
+              </div>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

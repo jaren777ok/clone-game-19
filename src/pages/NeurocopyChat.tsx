@@ -23,7 +23,7 @@ export interface Chat {
 const NeurocopyChat = () => {
   const [chats, setChats] = useState<Chat[]>([
     {
-      id: '1',
+      id: crypto.randomUUID(),
       title: 'Nueva conversación',
       messages: [],
       createdAt: new Date(),
@@ -31,14 +31,14 @@ const NeurocopyChat = () => {
     }
   ]);
   
-  const [activeChat, setActiveChat] = useState<string>('1');
+  const [activeChat, setActiveChat] = useState<string>(chats[0]?.id || '');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const createNewChat = () => {
     const newChat: Chat = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       title: 'Nueva conversación',
       messages: [],
       createdAt: new Date(),
@@ -48,11 +48,62 @@ const NeurocopyChat = () => {
     setActiveChat(newChat.id);
   };
 
+  const deleteChat = (chatId: string) => {
+    setChats(prev => {
+      const filteredChats = prev.filter(chat => chat.id !== chatId);
+      
+      // Si no quedan chats, crear uno nuevo
+      if (filteredChats.length === 0) {
+        const newChat: Chat = {
+          id: crypto.randomUUID(),
+          title: 'Nueva conversación',
+          messages: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        setActiveChat(newChat.id);
+        return [newChat];
+      }
+      
+      // Si se elimina el chat activo, seleccionar el primero disponible
+      if (chatId === activeChat) {
+        setActiveChat(filteredChats[0].id);
+      }
+      
+      return filteredChats;
+    });
+
+    toast({
+      title: "Chat eliminado",
+      description: "El chat ha sido eliminado correctamente.",
+    });
+  };
+
+  const renameChat = (chatId: string, newTitle: string) => {
+    if (newTitle.trim() === '') return;
+    
+    setChats(prev => prev.map(chat => {
+      if (chat.id === chatId) {
+        return {
+          ...chat,
+          title: newTitle.trim(),
+          updatedAt: new Date()
+        };
+      }
+      return chat;
+    }));
+
+    toast({
+      title: "Chat renombrado",
+      description: "El nombre del chat ha sido actualizado.",
+    });
+  };
+
   const sendMessage = async (content: string) => {
     setIsLoading(true);
     
     const newMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       content,
       role: 'user',
       timestamp: new Date()
@@ -128,7 +179,7 @@ const NeurocopyChat = () => {
       
       // Crear mensaje de respuesta de la IA
       const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         content: aiResponseContent,
         role: 'assistant',
         timestamp: new Date()
@@ -155,7 +206,7 @@ const NeurocopyChat = () => {
       
       // Mostrar mensaje de error
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         content: "Lo siento, hubo un problema al conectar con la IA. Por favor, intenta de nuevo.",
         role: 'assistant',
         timestamp: new Date()
@@ -193,6 +244,8 @@ const NeurocopyChat = () => {
           activeChat={activeChat}
           onChatSelect={setActiveChat}
           onNewChat={createNewChat}
+          onDeleteChat={deleteChat}
+          onRenameChat={renameChat}
         />
         <main className="flex-1 flex flex-col">
           <ChatArea 
