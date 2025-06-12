@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import NeurocopyChat from "./pages/NeurocopyChat";
 import VideoGenerator from "./pages/VideoGenerator";
+import SavedVideos from "./pages/SavedVideos";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -62,6 +63,11 @@ const App = () => (
             <Route path="/crear-video" element={
               <ProtectedRoute>
                 <VideoGenerator />
+              </ProtectedRoute>
+            } />
+            <Route path="/videos-guardados" element={
+              <ProtectedRoute>
+                <SavedVideos />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

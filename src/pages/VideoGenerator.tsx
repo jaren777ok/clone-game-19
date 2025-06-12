@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import VideoLoadingState from '@/components/video/VideoLoadingState';
 import VideoResult from '@/components/video/VideoResult';
 
@@ -60,6 +61,30 @@ const VideoGenerator = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Función para guardar el video en Supabase
+  const saveVideoToDatabase = async (script: string, videoUrl: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('generated_videos')
+        .insert({
+          user_id: user.id,
+          script: script.trim(),
+          video_url: videoUrl
+        });
+
+      if (error) {
+        console.error('Error guardando video en BD:', error);
+        // No mostramos error al usuario para no interrumpir el flujo principal
+      } else {
+        console.log('Video guardado exitosamente en BD');
+      }
+    } catch (error) {
+      console.error('Error inesperado guardando video:', error);
+    }
+  };
+
   const handleGenerateVideo = async () => {
     if (!script.trim()) {
       toast({
@@ -101,6 +126,10 @@ const VideoGenerator = () => {
 
       if (videoUrl) {
         setVideoResult(videoUrl);
+        
+        // Guardar el video en la base de datos
+        await saveVideoToDatabase(script, videoUrl);
+        
         toast({
           title: "¡Video generado!",
           description: "Tu video ha sido creado exitosamente.",
@@ -153,14 +182,24 @@ const VideoGenerator = () => {
       
       {/* Header */}
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="flex items-center mb-8">
+        <div className="flex items-center justify-between mb-8">
           <Button
             variant="ghost"
             onClick={() => navigate('/dashboard')}
-            className="mr-4 cyber-border hover:cyber-glow"
+            className="cyber-border hover:cyber-glow"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al Dashboard
+          </Button>
+
+          {/* Botón Videos Guardados */}
+          <Button
+            variant="outline"
+            onClick={() => navigate('/videos-guardados')}
+            className="cyber-border hover:cyber-glow"
+          >
+            <Bookmark className="w-4 h-4 mr-2" />
+            Videos Guardados
           </Button>
         </div>
 
