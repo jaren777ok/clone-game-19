@@ -15,6 +15,42 @@ interface VideoGenerationResponse {
   error?: string;
 }
 
+// Función para extraer la URL del video de diferentes formatos de respuesta
+const extractVideoUrl = (data: any): string | null => {
+  console.log('Respuesta completa de la webhook:', data);
+  
+  // Si la respuesta es un array, tomar el primer elemento
+  if (Array.isArray(data) && data.length > 0) {
+    console.log('Respuesta es un array, procesando primer elemento:', data[0]);
+    return extractVideoUrl(data[0]);
+  }
+  
+  // Si es un objeto, buscar la URL en diferentes campos posibles
+  if (data && typeof data === 'object') {
+    const possibleFields = ['videoUrl', 'url', 'link', 'video'];
+    
+    for (const field of possibleFields) {
+      if (data[field] && typeof data[field] === 'string') {
+        console.log(`URL encontrada en campo '${field}':`, data[field]);
+        return data[field];
+      }
+    }
+    
+    // Si no encontramos en campos directos, buscar en el mensaje
+    if (data.message && typeof data.message === 'string') {
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const matches = data.message.match(urlRegex);
+      if (matches && matches.length > 0) {
+        console.log('URL encontrada en mensaje:', matches[0]);
+        return matches[0];
+      }
+    }
+  }
+  
+  console.log('No se pudo extraer URL de la respuesta');
+  return null;
+};
+
 const VideoGenerator = () => {
   const [script, setScript] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -57,19 +93,22 @@ const VideoGenerator = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: VideoGenerationResponse = await response.json();
-      console.log('Respuesta del webhook:', data);
+      const data = await response.json();
+      console.log('Respuesta del webhook recibida:', data);
 
-      if (data.videoUrl) {
-        setVideoResult(data.videoUrl);
+      // Usar la nueva función para extraer la URL
+      const videoUrl = extractVideoUrl(data);
+
+      if (videoUrl) {
+        setVideoResult(videoUrl);
         toast({
           title: "¡Video generado!",
           description: "Tu video ha sido creado exitosamente.",
         });
-      } else if (data.error) {
-        throw new Error(data.error);
       } else {
-        throw new Error('No se recibió un enlace de video válido');
+        // Mostrar información detallada del error para debugging
+        console.error('No se encontró URL de video en la respuesta:', data);
+        throw new Error(`No se encontró una URL de video válida en la respuesta. Respuesta recibida: ${JSON.stringify(data)}`);
       }
 
     } catch (error) {
