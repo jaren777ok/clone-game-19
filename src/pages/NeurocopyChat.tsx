@@ -224,7 +224,7 @@ const NeurocopyChat = () => {
       console.log('Enviando payload con FormData al webhook');
       console.log('Número de imágenes procesadas:', images.length);
       
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/NeuroCopy', {
+      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/NeuroCopy', {
         method: 'POST',
         body: formData // No establecer Content-Type, fetch lo hará automáticamente para multipart/form-data
       });
