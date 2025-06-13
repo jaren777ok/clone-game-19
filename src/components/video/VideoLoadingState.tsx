@@ -1,8 +1,13 @@
 
 import React from 'react';
-import { Loader2, Video, Sparkles } from 'lucide-react';
+import { Loader2, Video, Sparkles, Clock, Wifi } from 'lucide-react';
 
-const VideoLoadingState = () => {
+interface VideoLoadingStateProps {
+  elapsedTime?: string;
+  isRecovering?: boolean;
+}
+
+const VideoLoadingState = ({ elapsedTime, isRecovering }: VideoLoadingStateProps) => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
       {/* Animated background */}
@@ -12,7 +17,11 @@ const VideoLoadingState = () => {
         {/* Main loading animation */}
         <div className="mb-8 relative">
           <div className="w-32 h-32 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-6 animate-cyber-pulse">
-            <Video className="w-16 h-16 text-background" />
+            {isRecovering ? (
+              <Wifi className="w-16 h-16 text-background" />
+            ) : (
+              <Video className="w-16 h-16 text-background" />
+            )}
           </div>
           
           {/* Floating sparkles */}
@@ -29,18 +38,36 @@ const VideoLoadingState = () => {
 
         {/* Loading text */}
         <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-          Generando tu Video
+          {isRecovering ? 'Recuperando tu Video' : 'Generando tu Video'}
         </h1>
         
         <p className="text-muted-foreground text-lg mb-8">
-          Nuestra IA está procesando tu guion y creando un video único para ti
+          {isRecovering 
+            ? 'Verificando si tu video ya está listo...'
+            : 'Nuestra IA está procesando tu guion y creando un video único para ti'
+          }
         </p>
+
+        {/* Elapsed time display */}
+        {elapsedTime && (
+          <div className="mb-8">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Clock className="w-5 h-5 text-primary" />
+              <span className="text-lg font-mono text-foreground">{elapsedTime}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Tiempo transcurrido (máximo: 30 minutos)
+            </p>
+          </div>
+        )}
 
         {/* Progress indicator */}
         <div className="space-y-4 mb-8">
           <div className="flex items-center justify-center space-x-2">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            <span className="text-foreground font-medium">Procesando...</span>
+            <span className="text-foreground font-medium">
+              {isRecovering ? 'Verificando...' : 'Procesando...'}
+            </span>
           </div>
           
           {/* Animated progress bar */}
@@ -52,8 +79,8 @@ const VideoLoadingState = () => {
         {/* Steps animation */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
           {[
-            { step: 1, title: "Analizando Guion", icon: "📝", active: true },
-            { step: 2, title: "Generando Escenas", icon: "🎬", active: true },
+            { step: 1, title: "Analizando Guion", icon: "📝", active: !isRecovering },
+            { step: 2, title: "Generando Escenas", icon: "🎬", active: !isRecovering },
             { step: 3, title: "Finalizando Video", icon: "✨", active: false }
           ].map((item) => (
             <div 
@@ -68,14 +95,30 @@ const VideoLoadingState = () => {
           ))}
         </div>
 
-        {/* Motivational messages */}
+        {/* Enhanced motivational messages */}
         <div className="mt-12 space-y-3">
           <p className="text-muted-foreground text-sm">
-            ⚡ Esto puede tomar unos minutos dependiendo de la complejidad
+            ⚡ La generación puede tomar hasta 30 minutos
+          </p>
+          <p className="text-muted-foreground text-sm">
+            🔄 El sistema verificará automáticamente el progreso
           </p>
           <p className="text-muted-foreground text-sm">
             🎯 Cuanto más detallado sea tu guion, mejor será el resultado
           </p>
+          {isRecovering && (
+            <p className="text-blue-400 text-sm font-medium">
+              💡 Verificando si tu video ya fue completado en segundo plano
+            </p>
+          )}
+        </div>
+
+        {/* Connection status indicator */}
+        <div className="mt-8 flex items-center justify-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-sm text-muted-foreground">
+            {isRecovering ? 'Verificando estado...' : 'Conexión estable - Procesamiento en curso'}
+          </span>
         </div>
 
         {/* Pulsing indicator */}
