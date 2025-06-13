@@ -86,8 +86,22 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
-      {/* Animated background grid */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+      {/* Video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-30"
+      >
+        <source
+          src="https://hxqdmjiqfjnaqganavog.supabase.co/storage/v1/object/sign/fondo/fondo%20de%20interfaz%20principal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mZDNjMjgwYS00YjczLTRlNTItOWY5MS05ZmVjM2MyZmZhN2EiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb25kby9mb25kbyBkZSBpbnRlcmZheiBwcmluY2lwYWwubXA0IiwiaWF0IjoxNzQ5NzcyODAyLCJleHAiOjIwNjUxMzI4MDJ9.1B9S0ti_v-UO3wiNdR0PL8uFHM1W7E_Q3ycJYyU0hZA"
+          type="video/mp4"
+        />
+      </video>
+
+      {/* Dark overlay for better readability */}
+      <div className="absolute inset-0 bg-black/40"></div>
       
       {/* Background geometric shapes */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
@@ -104,7 +118,7 @@ const Auth = () => {
           </p>
         </div>
 
-        <Card className="cyber-border">
+        <Card className="cyber-border bg-background/90 backdrop-blur-sm">
           <CardHeader className="text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
               <Zap className="w-8 h-8 text-background" />
