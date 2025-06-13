@@ -1,3 +1,4 @@
+
 import { Smartphone, Brain, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,8 +34,22 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center">
-      {/* Animated background grid */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+      {/* Video background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-20"
+      >
+        <source
+          src="https://hxqdmjiqfjnaqganavog.supabase.co/storage/v1/object/sign/fondo/fondo%20de%20login%20.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mZDNjMjgwYS00YjczLTRlNTItOWY5MS05ZmVjM2MyZmZhN2EiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb25kby9mb25kbyBkZSBsb2dpbiAubXA0IiwiaWF0IjoxNzQ5NzczMjA5LCJleHAiOjIwNjUxMzMyMDl9.N_d0ajv13x02HMQvxIsvPXmb3ln46obgnOk0WurH4oM"
+          type="video/mp4"
+        />
+      </video>
+
+      {/* Dark overlay for better readability */}
+      <div className="absolute inset-0 bg-black/30"></div>
 
       {/* Header with user info and logout */}
       <div className="absolute top-6 right-6 z-20 flex items-center space-x-4">
@@ -46,7 +61,7 @@ const Dashboard = () => {
           variant="outline"
           size="sm"
           onClick={handleSignOut}
-          className="cyber-border hover:cyber-glow"
+          className="cyber-border hover:cyber-glow bg-background/80 backdrop-blur-sm"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Cerrar Sesión
@@ -72,7 +87,7 @@ const Dashboard = () => {
               <div
                 key={option.id}
                 onClick={option.onClick}
-                className="group relative bg-card cyber-border rounded-2xl p-8 hover:cyber-glow-intense transition-all duration-500 cursor-pointer transform hover:scale-105"
+                className="group relative bg-card/90 backdrop-blur-sm cyber-border rounded-2xl p-8 hover:cyber-glow-intense transition-all duration-500 cursor-pointer transform hover:scale-105"
               >
                 {/* Card gradient overlay */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${option.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
