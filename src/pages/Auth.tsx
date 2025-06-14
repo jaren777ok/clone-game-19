@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -153,12 +152,12 @@ const Auth = () => {
               </TabsList>
               
               <TabsContent value="signin" className="space-y-4">
-                {/* Google Sign In Button */}
+                {/* Google Sign In Button - Simple version without visual effects */}
                 <Button 
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading || loading}
                   variant="outline"
-                  className="w-full cyber-border hover:cyber-glow bg-white text-gray-900 hover:bg-gray-50"
+                  className="w-full border border-gray-300 bg-white text-gray-900"
                 >
                   {googleLoading ? (
                     <div className="flex items-center">
@@ -222,12 +221,12 @@ const Auth = () => {
               </TabsContent>
               
               <TabsContent value="signup" className="space-y-4">
-                {/* Google Sign Up Button */}
+                {/* Google Sign Up Button - Simple version without visual effects */}
                 <Button 
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading || loading}
                   variant="outline"
-                  className="w-full cyber-border hover:cyber-glow bg-white text-gray-900 hover:bg-gray-50"
+                  className="w-full border border-gray-300 bg-white text-gray-900"
                 >
                   {googleLoading ? (
                     <div className="flex items-center">
