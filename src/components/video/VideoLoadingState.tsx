@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Loader2, Video, Sparkles, Clock, Wifi } from 'lucide-react';
+import { Loader2, Video, Sparkles, Clock, Wifi, AlertTriangle } from 'lucide-react';
 
 interface VideoLoadingStateProps {
   elapsedTime?: string;
@@ -111,6 +110,25 @@ const VideoLoadingState = ({ elapsedTime, isRecovering }: VideoLoadingStateProps
               💡 Verificando si tu video ya fue completado en segundo plano
             </p>
           )}
+        </div>
+
+        {/* Important user notice */}
+        <div className="mt-8 bg-card/50 cyber-border border-amber-500/30 rounded-xl p-6">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
+            <h3 className="text-lg font-semibold text-amber-300">¡Atención!</h3>
+          </div>
+          <div className="space-y-3 text-center">
+            <p className="text-muted-foreground text-sm">
+              ⚠️ No cierres esta ventana durante el procesamiento.
+            </p>
+            <p className="text-muted-foreground text-sm">
+              ✅ Puedes navegar a otras páginas pero mantén esta pestaña abierta.
+            </p>
+            <p className="text-muted-foreground text-sm">
+              🔒 No cierres la sesión para evitar errores.
+            </p>
+          </div>
         </div>
 
         {/* Connection status indicator */}

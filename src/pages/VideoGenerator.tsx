@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, Loader2, Bookmark, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -220,13 +221,13 @@ const VideoGenerator = () => {
     };
     saveGenerationState(generationState);
 
-    // Crear AbortController para timeout de 1 hora
+    // Crear AbortController para timeout de 2 horas
     abortControllerRef.current = new AbortController();
     const timeoutId = setTimeout(() => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-    }, 60 * 60 * 1000); // 1 hora
+    }, 120 * 60 * 1000); // 2 horas
 
     try {
       console.log('Enviando guion a webhook:', script);
