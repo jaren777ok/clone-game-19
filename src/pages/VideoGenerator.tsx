@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, Loader2, Bookmark, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -100,7 +99,7 @@ const VideoGenerator = () => {
     const savedState = getGenerationState();
     if (savedState && savedState.status === 'pending') {
       const timeElapsed = Date.now() - savedState.timestamp;
-      const maxWaitTime = 30 * 60 * 1000; // 30 minutos
+      const maxWaitTime = 60 * 60 * 1000; // 1 hora
       
       if (timeElapsed < maxWaitTime) {
         setScript(savedState.script);
@@ -221,18 +220,18 @@ const VideoGenerator = () => {
     };
     saveGenerationState(generationState);
 
-    // Crear AbortController para timeout de 30 minutos
+    // Crear AbortController para timeout de 1 hora
     abortControllerRef.current = new AbortController();
     const timeoutId = setTimeout(() => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-    }, 30 * 60 * 1000); // 30 minutos
+    }, 60 * 60 * 1000); // 1 hora
 
     try {
       console.log('Enviando guion a webhook:', script);
       
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/veroia', {
+      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/veroia', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -498,14 +497,14 @@ const VideoGenerator = () => {
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Escribe aquí el guion para tu video. Sé específico y detallado para obtener mejores resultados..."
                   className="min-h-[200px] text-base cyber-border focus:cyber-glow resize-none"
-                  maxLength={1600}
+                  maxLength={1400}
                 />
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-sm text-muted-foreground">
                     Describe la escena, el tono, los personajes y cualquier detalle importante
                   </p>
                   <span className="text-sm text-muted-foreground">
-                    {script.length}/1600
+                    {script.length}/1400
                   </span>
                 </div>
               </div>
@@ -519,7 +518,7 @@ const VideoGenerator = () => {
                       Tiempo de procesamiento extendido
                     </p>
                     <p className="text-muted-foreground text-sm">
-                      La generación puede tomar hasta 30 minutos. El sistema verificará automáticamente 
+                      La generación puede tomar hasta 50 minutos. El sistema verificará automáticamente 
                       el progreso y te notificará cuando esté listo.
                     </p>
                   </div>
@@ -560,19 +559,11 @@ const VideoGenerator = () => {
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                Que tu guion no pase de 1500 caracteres para un mejor resultado
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
-                Especifica el tono y estilo que deseas (dramático, comercial, etc.)
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
                 Mantén el guion claro y bien estructurado
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <strong>Ten paciencia:</strong> La generación puede tomar hasta 30 minutos
+                <strong>Ten paciencia:</strong> La generación puede tomar hasta 50 minutos
               </li>
             </ul>
           </div>
