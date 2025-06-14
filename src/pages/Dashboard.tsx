@@ -13,7 +13,7 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const options = [
+  const allOptions = [
     {
       id: "crear-video",
       title: "Crear Video",
@@ -31,6 +31,9 @@ const Dashboard = () => {
       onClick: () => navigate("/neurocopy-gpt")
     }
   ];
+
+  // Solo mostrar la opción de crear video
+  const options = allOptions.filter(option => option.id === "crear-video");
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center">
@@ -79,15 +82,15 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Options Grid - Centrado para una sola opción */}
+        <div className="flex justify-center max-w-4xl mx-auto">
           {options.map((option) => {
             const IconComponent = option.icon;
             return (
               <div
                 key={option.id}
                 onClick={option.onClick}
-                className="group relative bg-card/90 backdrop-blur-sm cyber-border rounded-2xl p-8 hover:cyber-glow-intense transition-all duration-500 cursor-pointer transform hover:scale-105"
+                className="group relative bg-card/90 backdrop-blur-sm cyber-border rounded-2xl p-8 hover:cyber-glow-intense transition-all duration-500 cursor-pointer transform hover:scale-105 w-full max-w-md"
               >
                 {/* Card gradient overlay */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${option.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
