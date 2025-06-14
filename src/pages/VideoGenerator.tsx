@@ -498,14 +498,14 @@ const VideoGenerator = () => {
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Escribe aquí el guion para tu video. Sé específico y detallado para obtener mejores resultados..."
                   className="min-h-[200px] text-base cyber-border focus:cyber-glow resize-none"
-                  maxLength={2000}
+                  maxLength={1600}
                 />
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-sm text-muted-foreground">
                     Describe la escena, el tono, los personajes y cualquier detalle importante
                   </p>
                   <span className="text-sm text-muted-foreground">
-                    {script.length}/2000
+                    {script.length}/1600
                   </span>
                 </div>
               </div>
@@ -552,11 +552,15 @@ const VideoGenerator = () => {
             <ul className="space-y-2 text-muted-foreground">
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                Sé específico con las descripciones visuales y el ambiente
+                Escribe correctamente con ortografía
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                Incluye detalles sobre personajes, colores y movimientos
+                No uses emojis en tu guion
+              </li>
+              <li className="flex items-start">
+                <span className="text-primary mr-2">•</span>
+                Que tu guion no pase de 1500 caracteres para un mejor resultado
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
