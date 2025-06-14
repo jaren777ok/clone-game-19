@@ -489,20 +489,17 @@ const VideoGenerator = () => {
             <div className="space-y-6">
               <div>
                 <label htmlFor="script" className="block text-lg font-semibold text-foreground mb-3">
-                  Ingresa tu Guion
+                  Ingresa tu enlace de Noticia y Opcional alguna indicación
                 </label>
                 <Textarea
                   id="script"
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
-                  placeholder="Escribe aquí el guion para tu video. Sé específico y detallado para obtener mejores resultados..."
+                  placeholder="Pega aquí el enlace de la noticia y opcionalmente agrega indicaciones sobre cómo quieres el guion..."
                   className="min-h-[200px] text-base cyber-border focus:cyber-glow resize-none"
                   maxLength={1400}
                 />
-                <div className="flex justify-between items-center mt-2">
-                  <p className="text-sm text-muted-foreground">
-                    Describe la escena, el tono, los personajes y cualquier detalle importante
-                  </p>
+                <div className="flex justify-end items-center mt-2">
                   <span className="text-sm text-muted-foreground">
                     {script.length}/1400
                   </span>
@@ -548,24 +545,17 @@ const VideoGenerator = () => {
             <h3 className="text-lg font-semibold text-foreground mb-4">
               Consejos para mejores resultados:
             </h3>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
-                Escribe correctamente con ortografía
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
-                No uses emojis en tu guion
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
-                Mantén el guion claro y bien estructurado
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
-                <strong>Ten paciencia:</strong> La generación puede tomar hasta 50 minutos
-              </li>
-            </ul>
+            <div className="text-muted-foreground space-y-3 text-sm">
+              <p>
+                Solo pega tu enlace de noticia y si deseas puedes dar algunas indicaciones de cómo quieres el guion.
+              </p>
+              <blockquote className="border-l-2 border-primary/50 pl-4 italic bg-background/20 p-2 rounded-r-lg">
+                <p className="font-semibold text-foreground/80 not-italic">Ejemplo:</p>
+                <p>
+                  https://www.bluradio.com/economia/gobierno-se-opone-a-jornada-laboral-de-4x3-esto-se-ha-aprobado-hasta-ahora-so35?utm_source=BluRadio&utm_medium=WhatsApp hazme un guion de esta noticia y que al Final la gente comente la Palabra "DÓLAR" para recibir más información.
+                </p>
+              </blockquote>
+            </div>
           </div>
         </div>
       </div>
