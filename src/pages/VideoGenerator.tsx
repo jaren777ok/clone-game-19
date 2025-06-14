@@ -231,7 +231,7 @@ const VideoGenerator = () => {
     try {
       console.log('Enviando guion a webhook:', script);
       
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/veroia', {
+      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/veroia', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
