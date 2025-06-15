@@ -10,7 +10,7 @@ import {
 } from '@/lib/videoGeneration';
 import { COUNTDOWN_TIME, calculateTimeRemaining, isTimeExpired } from '@/lib/countdownUtils';
 import { sendToWebhook } from '@/lib/webhookUtils';
-import { checkVideoInDatabase, checkFinalVideoResult } from '@/lib/databaseUtils';
+import { checkVideoInDatabase, checkFinalVideoResult, checkPendingGenerationOnStart, syncGenerationState } from '@/lib/databaseUtils';
 import { clearAllIntervals, startCountdownInterval, startPollingInterval } from '@/lib/intervalUtils';
 
 export const useVideoGenerator = () => {
@@ -30,21 +30,52 @@ export const useVideoGenerator = () => {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const savedState = getGenerationState();
-    if (savedState && savedState.status === 'pending') {
-      if (!isTimeExpired(savedState.timestamp)) {
-        setScript(savedState.script);
-        setCurrentRequestId(savedState.requestId);
-        setShowRecoveryOption(true);
-        toast({
-          title: "Procesamiento pendiente",
-          description: "Detectamos un video en procesamiento. ¿Quieres continuar verificando?",
-        });
-      } else {
-        clearGenerationState();
+    const performIntelligentSync = async () => {
+      const savedState = getGenerationState();
+      if (savedState && savedState.status === 'pending' && user) {
+        console.log('Estado pendiente detectado, iniciando sincronización inteligente...');
+        
+        if (isTimeExpired(savedState.timestamp)) {
+          console.log('Estado expirado, limpiando localStorage');
+          clearGenerationState();
+          return;
+        }
+
+        // Verificación inteligente: buscar video ya generado
+        const existingVideo = await syncGenerationState(user, savedState.requestId, savedState.script);
+        
+        if (existingVideo?.video_url) {
+          console.log('¡Sincronización exitosa! Video encontrado:', existingVideo.video_url);
+          
+          // Mostrar video inmediatamente sin pasar por pantalla de recuperación
+          setVideoResult(existingVideo.video_url);
+          setScript(savedState.script);
+          clearGenerationState();
+          
+          toast({
+            title: "¡Video recuperado!",
+            description: "Tu video ya estaba generado y ha sido sincronizado automáticamente.",
+          });
+        } else {
+          console.log('Video aún no generado, mostrando opción de recuperación');
+          
+          // Video aún no está generado, mostrar opción de recuperación
+          setScript(savedState.script);
+          setCurrentRequestId(savedState.requestId);
+          setShowRecoveryOption(true);
+          
+          toast({
+            title: "Procesamiento pendiente",
+            description: "Detectamos un video en procesamiento. ¿Quieres continuar verificando?",
+          });
+        }
       }
+    };
+
+    if (user) {
+      performIntelligentSync();
     }
-  }, [toast]);
+  }, [user, toast]);
 
   useEffect(() => {
     return () => {
@@ -153,7 +184,7 @@ export const useVideoGenerator = () => {
     };
     saveGenerationState(generationState);
 
-    console.log('Iniciando nuevo proceso de generación de video');
+    console.log('Iniciando nuevo proceso de generación de video con requestId:', requestId);
     
     try {
       await sendToWebhook(script.trim(), requestId, user?.id);
@@ -180,9 +211,9 @@ export const useVideoGenerator = () => {
     }
   };
 
-  const handleRecoverGeneration = () => {
+  const handleRecoverGeneration = async () => {
     const savedState = getGenerationState();
-    if (savedState) {
+    if (savedState && user) {
       setIsRecovering(true);
       setIsGenerating(true);
       setShowRecoveryOption(false);
@@ -192,7 +223,7 @@ export const useVideoGenerator = () => {
       const timeElapsedSeconds = Math.floor(timeElapsed / 1000);
       const remainingTime = Math.max(0, COUNTDOWN_TIME - timeElapsedSeconds);
       
-      console.log('Recuperando generación:', {
+      console.log('Recuperando generación con verificación inteligente:', {
         timestampOriginal: new Date(savedState.timestamp),
         tiempoTranscurrido: timeElapsedSeconds,
         tiempoRestante: remainingTime
@@ -203,28 +234,28 @@ export const useVideoGenerator = () => {
         description: "Verificando el estado de tu video..." 
       });
       
-      if (user) {
-        checkVideoInDatabase(user, savedState.requestId, savedState.script)
-          .then((videoData) => {
-            if (videoData?.video_url) {
-              setVideoResult(videoData.video_url);
-              setIsGenerating(false);
-              setIsRecovering(false);
-              clearGenerationState();
-              toast({ 
-                title: "¡Video recuperado!", 
-                description: "Tu video estaba listo y ha sido recuperado." 
-              });
-            } else {
-              setIsRecovering(false);
-              if (remainingTime > 0) {
-                startCountdown(savedState.requestId, savedState.script, savedState.timestamp);
-                startPeriodicChecking(savedState.requestId, savedState.script);
-              } else {
-                checkFinalResult(savedState.script);
-              }
-            }
-          });
+      // Usar sincronización inteligente para verificar estado
+      const existingVideo = await syncGenerationState(user, savedState.requestId, savedState.script);
+      
+      if (existingVideo?.video_url) {
+        console.log('Video encontrado durante recuperación:', existingVideo.video_url);
+        setVideoResult(existingVideo.video_url);
+        setIsGenerating(false);
+        setIsRecovering(false);
+        clearGenerationState();
+        toast({ 
+          title: "¡Video recuperado!", 
+          description: "Tu video estaba listo y ha sido recuperado." 
+        });
+      } else {
+        console.log('Video aún no generado, continuando verificación...');
+        setIsRecovering(false);
+        if (remainingTime > 0) {
+          startCountdown(savedState.requestId, savedState.script, savedState.timestamp);
+          startPeriodicChecking(savedState.requestId, savedState.script);
+        } else {
+          checkFinalResult(savedState.script);
+        }
       }
     }
   };
