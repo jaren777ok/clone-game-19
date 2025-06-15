@@ -1,14 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Key, Plus, Trash2, ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { HeyGenApiKey } from '@/hooks/useVideoCreationFlow';
+import ApiKeyList from './ApiKeyList';
+import ApiKeyForm from './ApiKeyForm';
 
 interface Props {
   apiKeys: HeyGenApiKey[];
@@ -17,15 +15,14 @@ interface Props {
   onBack: () => void;
 }
 
-const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefreshKeys, onBack }) => {
-  const { user } = useAuth();
+const HeyGenApiKeyManager: React.FC<Props> = ({ 
+  apiKeys, 
+  onSelectApiKey, 
+  onRefreshKeys, 
+  onBack 
+}) => {
   const { toast } = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    apiKey: ''
-  });
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Solo mostrar formulario automáticamente si NO hay claves API
@@ -36,64 +33,6 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
       setShowAddForm(false);
     }
   }, [apiKeys.length]);
-
-  const handleSaveApiKey = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !formData.name.trim() || !formData.apiKey.trim()) return;
-
-    setLoading(true);
-    try {
-      // Simple encriptación básica (en producción usar una librería más robusta)
-      const encryptedKey = btoa(formData.apiKey);
-
-      // Primero validar la clave API llamando a HeyGen
-      const response = await supabase.functions.invoke('heygen-avatars', {
-        body: { 
-          apiKey: formData.apiKey,
-          offset: 0,
-          limit: 1
-        }
-      });
-
-      if (response.error) {
-        toast({
-          title: "Clave API inválida",
-          description: "La clave API proporcionada no es válida o no tiene acceso a HeyGen.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Si la validación es exitosa, guardar en la base de datos
-      const { error } = await supabase
-        .from('heygen_api_keys')
-        .insert({
-          user_id: user.id,
-          api_key_name: formData.name.trim(),
-          api_key_encrypted: encryptedKey
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Clave API guardada",
-        description: "Tu clave API de HeyGen ha sido guardada exitosamente."
-      });
-
-      setFormData({ name: '', apiKey: '' });
-      setShowAddForm(false);
-      onRefreshKeys();
-    } catch (error) {
-      console.error('Error saving API key:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar la clave API. Inténtalo de nuevo.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteApiKey = async (keyId: string) => {
     try {
@@ -118,6 +57,11 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
         variant: "destructive"
       });
     }
+  };
+
+  const handleFormSuccess = () => {
+    setShowAddForm(false);
+    onRefreshKeys();
   };
 
   return (
@@ -149,119 +93,20 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
             </p>
           </div>
 
-          {/* Lista de claves existentes */}
-          {apiKeys.length > 0 && !showAddForm && (
-            <div className="space-y-4 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Claves API Disponibles:</h2>
-              {apiKeys.map((apiKey) => (
-                <Card key={apiKey.id} className="cyber-border hover:cyber-glow transition-all">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
-                          <Key className="w-5 h-5 text-background" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{apiKey.api_key_name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Creada el {new Date(apiKey.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={() => onSelectApiKey(apiKey)}
-                          className="cyber-glow"
-                        >
-                          Continuar con esta clave
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteApiKey(apiKey.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Botón para agregar nueva clave */}
-          {apiKeys.length > 0 && !showAddForm && (
-            <Card className="cyber-border">
-              <CardContent className="p-6">
-                <Button
-                  onClick={() => setShowAddForm(true)}
-                  variant="outline"
-                  className="w-full cyber-border hover:cyber-glow"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Agregar nueva clave API
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Formulario para agregar clave */}
-          {showAddForm && (
-            <Card className="cyber-border">
-              <CardHeader>
-                <CardTitle>
-                  {apiKeys.length === 0 ? "Configurar tu primera clave API" : "Agregar nueva clave API"}
-                </CardTitle>
-                <CardDescription>
-                  Ingresa los datos de tu clave API de HeyGen. Puedes obtener tu clave en tu dashboard de HeyGen.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSaveApiKey} className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Nombre de la clave</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Ej: Cuenta Principal, Cuenta Trabajo"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="apiKey">Clave API de HeyGen</Label>
-                    <Input
-                      id="apiKey"
-                      type="password"
-                      value={formData.apiKey}
-                      onChange={(e) => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
-                      placeholder="Ingresa tu clave API de HeyGen"
-                      required
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 cyber-glow"
-                    >
-                      {loading ? 'Validando...' : 'Guardar y Continuar'}
-                    </Button>
-                    {apiKeys.length > 0 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowAddForm(false)}
-                      >
-                        Cancelar
-                      </Button>
-                    )}
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+          {/* Lista de claves existentes o formulario */}
+          {apiKeys.length > 0 && !showAddForm ? (
+            <ApiKeyList
+              apiKeys={apiKeys}
+              onSelectApiKey={onSelectApiKey}
+              onDeleteApiKey={handleDeleteApiKey}
+              onShowAddForm={() => setShowAddForm(true)}
+            />
+          ) : (
+            <ApiKeyForm
+              hasExistingKeys={apiKeys.length > 0}
+              onSuccess={handleFormSuccess}
+              onCancel={apiKeys.length > 0 ? () => setShowAddForm(false) : undefined}
+            />
           )}
         </div>
       </div>
