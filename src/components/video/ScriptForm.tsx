@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Send, Clock } from 'lucide-react';
+import { Send, Clock, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -45,6 +45,21 @@ const ScriptForm = ({ script, setScript, onSubmit, isGenerating, error }: Script
               <p className="text-muted-foreground text-sm">
                 La generación puede tomar hasta 50 minutos. El sistema verificará automáticamente 
                 el progreso y te notificará cuando esté listo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Wifi className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-green-300 text-sm font-medium mb-1">
+                Conexión mejorada y reintentos automáticos
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Sistema con múltiples intentos de conexión y modo de respaldo automático 
+                para garantizar que tu video se procese correctamente.
               </p>
             </div>
           </div>
