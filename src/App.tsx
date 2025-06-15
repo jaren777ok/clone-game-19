@@ -41,6 +41,34 @@ const AuthRedirect = () => {
   return <Auth />;
 };
 
+// Componente interno que contiene las rutas y necesita acceso al AuthProvider
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<AuthRedirect />} />
+    <Route path="/dashboard" element={
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    } />
+    <Route path="/neurocopy-gpt" element={
+      <ProtectedRoute>
+        <NeurocopyChat />
+      </ProtectedRoute>
+    } />
+    <Route path="/crear-video" element={
+      <ProtectedRoute>
+        <VideoGenerator />
+      </ProtectedRoute>
+    } />
+    <Route path="/videos-guardados" element={
+      <ProtectedRoute>
+        <SavedVideos />
+      </ProtectedRoute>
+    } />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -48,30 +76,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<AuthRedirect />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/neurocopy-gpt" element={
-              <ProtectedRoute>
-                <NeurocopyChat />
-              </ProtectedRoute>
-            } />
-            <Route path="/crear-video" element={
-              <ProtectedRoute>
-                <VideoGenerator />
-              </ProtectedRoute>
-            } />
-            <Route path="/videos-guardados" element={
-              <ProtectedRoute>
-                <SavedVideos />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
