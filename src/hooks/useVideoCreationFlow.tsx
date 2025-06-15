@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,7 +31,7 @@ export interface FlowState {
 export const useVideoCreationFlow = () => {
   const { user } = useAuth();
   const [flowState, setFlowState] = useState<FlowState>({
-    step: 'loading', // Iniciar en loading mientras determinamos el estado
+    step: 'loading',
     selectedApiKey: null,
     selectedAvatar: null,
     selectedStyle: null
@@ -40,7 +39,7 @@ export const useVideoCreationFlow = () => {
   const [apiKeys, setApiKeys] = useState<HeyGenApiKey[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Función para determinar el paso inicial correcto
+  // Función mejorada para determinar el paso inicial correcto
   const determineInitialStep = (savedState: FlowState | null, availableKeys: HeyGenApiKey[]) => {
     // Si no hay claves API disponibles, ir a configuración de API
     if (availableKeys.length === 0) {
@@ -53,34 +52,45 @@ export const useVideoCreationFlow = () => {
       };
     }
 
-    // Si hay un estado guardado válido, usarlo
+    // Si hay un estado guardado válido, verificar configuraciones
     if (savedState) {
       // Verificar si la clave API guardada todavía existe
       const savedKeyExists = savedState.selectedApiKey && 
         availableKeys.some(key => key.id === savedState.selectedApiKey?.id);
       
       if (savedKeyExists) {
-        // Si tiene todos los datos del flujo, ir al generador
-        if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedStyle) {
+        // Solo ir directamente al generador si está específicamente en ese paso
+        // y tiene todas las selecciones completas
+        if (savedState.step === 'generator' && 
+            savedState.selectedApiKey && 
+            savedState.selectedAvatar && 
+            savedState.selectedStyle) {
           return {
             ...savedState,
             step: 'generator' as const
           };
         }
         
-        // Si tiene clave y avatar, ir a selección de estilo
-        if (savedState.selectedApiKey && savedState.selectedAvatar) {
+        // En todos los demás casos, ir al paso correspondiente pero conservar selecciones previas
+        if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedStyle) {
+          // Si tiene todo pero no está en generator, ir a style para permitir revisión
           return {
             ...savedState,
             step: 'style' as const
           };
-        }
-        
-        // Si solo tiene clave, ir a selección de avatar
-        if (savedState.selectedApiKey) {
+        } else if (savedState.selectedApiKey && savedState.selectedAvatar) {
+          // Si tiene clave y avatar, ir a style
           return {
             ...savedState,
-            step: 'avatar' as const
+            step: 'style' as const
+          };
+        } else if (savedState.selectedApiKey) {
+          // Si solo tiene clave, ir a avatar pero conservar la clave seleccionada
+          return {
+            ...savedState,
+            step: 'avatar' as const,
+            selectedAvatar: null, // Resetear avatar para forzar nueva selección
+            selectedStyle: null   // Resetear estilo también
           };
         }
       }
@@ -173,12 +183,15 @@ export const useVideoCreationFlow = () => {
     }
   };
 
-  // Funciones para navegar en el flujo
+  // Funciones mejoradas para navegar en el flujo
   const selectApiKey = (apiKey: HeyGenApiKey) => {
     setFlowState(prev => ({
       ...prev,
       selectedApiKey: apiKey,
-      step: 'avatar'
+      step: 'avatar',
+      // Resetear selecciones posteriores para forzar nueva selección
+      selectedAvatar: null,
+      selectedStyle: null
     }));
   };
 
