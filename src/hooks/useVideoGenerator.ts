@@ -25,33 +25,34 @@ export const useVideoGenerator = () => {
   const [error, setError] = useState<string | null>(null);
   
   const { user } = useAuth();
-  const hasInitialized = useRef(false);
+  const initializationDone = useRef(false);
+  const currentStateRef = useRef<VideoGenerationState | null>(null);
 
-  // Single initialization effect - runs only once when user is available
+  // Single initialization effect - only runs once when user becomes available
   useEffect(() => {
-    if (!user || hasInitialized.current) return;
+    if (!user || initializationDone.current) return;
     
-    console.log('🔄 Initializing video generator for user:', user.id);
-    hasInitialized.current = true;
+    initializationDone.current = true;
+    console.log('🚀 Initializing video generator once for user:', user.id);
 
-    const loadSavedState = async () => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      
-      if (!saved) {
-        console.log('No saved state found');
-        return;
-      }
-
+    // Load saved state synchronously to avoid additional effects
+    const loadInitialState = async () => {
       try {
-        const savedState: VideoGenerationState = JSON.parse(saved);
-        console.log('🔄 Found saved state:', savedState);
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) {
+          console.log('No saved state found');
+          return;
+        }
 
-        // Try intelligent sync first
+        const savedState: VideoGenerationState = JSON.parse(saved);
+        console.log('📂 Found saved state:', savedState);
+
+        // Try to sync with database first
         if (savedState.requestId) {
           const syncResult = await syncGenerationState(user, savedState.requestId, savedState.script);
           
           if (syncResult?.video_url) {
-            console.log('✅ Video found during sync - updating state');
+            console.log('✅ Video found during initialization sync');
             setVideoUrl(syncResult.video_url);
             setScript(savedState.script);
             setRequestId(savedState.requestId);
@@ -64,7 +65,7 @@ export const useVideoGenerator = () => {
         }
 
         // If no sync result, restore saved state
-        console.log('Restoring saved state without sync result');
+        console.log('🔄 Restoring saved generation state');
         setIsGenerating(savedState.isGenerating);
         setRequestId(savedState.requestId);
         setScript(savedState.script);
@@ -77,34 +78,40 @@ export const useVideoGenerator = () => {
           setCountdown(Math.ceil(remaining / 1000));
         }
       } catch (error) {
-        console.error('Error loading saved state:', error);
+        console.error('❌ Error loading saved state:', error);
         localStorage.removeItem(STORAGE_KEY);
       }
     };
 
-    loadSavedState();
-  }, [user]); // Only depend on user
+    loadInitialState();
+  }, [user?.id]); // Only depend on user ID
 
-  // Save state effect - separate and simple
+  // Separate effect for saving state - much simpler logic
   useEffect(() => {
-    if (!hasInitialized.current) return;
+    if (!initializationDone.current) return;
 
+    // Create current state snapshot
+    const currentState: VideoGenerationState = {
+      isGenerating,
+      requestId,
+      script,
+      videoUrl: videoUrl || undefined,
+      startTime: Date.now()
+    };
+
+    // Only save if we're actually generating
     if (isGenerating && requestId && script) {
-      const state: VideoGenerationState = {
-        isGenerating,
-        requestId,
-        script,
-        videoUrl: videoUrl || undefined,
-        startTime: Date.now()
-      };
-      console.log('💾 Saving generation state:', state);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } else if (!isGenerating && hasInitialized.current) {
+      console.log('💾 Saving generation state');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
+      currentStateRef.current = currentState;
+    } else if (!isGenerating && currentStateRef.current) {
       console.log('🗑️ Clearing saved state');
       localStorage.removeItem(STORAGE_KEY);
+      currentStateRef.current = null;
     }
-  }, [isGenerating, requestId, script, videoUrl]); // Simple dependencies
+  }, [isGenerating, requestId, script, videoUrl]);
 
+  // Memoized handlers to prevent unnecessary re-renders
   const generateVideo = useCallback(async (inputScript: string) => {
     if (!user) {
       toast.error('Debes iniciar sesión para generar videos');
@@ -113,8 +120,9 @@ export const useVideoGenerator = () => {
 
     const newRequestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    console.log('🎬 Starting video generation:', { script: inputScript.substring(0, 50), requestId: newRequestId });
+    console.log('🎬 Starting video generation');
     
+    // Update all generation state at once
     setIsGenerating(true);
     setRequestId(newRequestId);
     setScript(inputScript.trim());
@@ -127,9 +135,10 @@ export const useVideoGenerator = () => {
       await sendToWebhook(inputScript.trim(), newRequestId, user.id);
       toast.success('Video enviado para generar. Te notificaremos cuando esté listo.');
     } catch (error) {
-      console.error('Error generating video:', error);
+      console.error('❌ Error generating video:', error);
       setError('Error al enviar el video para generar');
       toast.error('Error al enviar el video para generar');
+      // Reset state on error
       setIsGenerating(false);
       setRequestId('');
       setScript('');
@@ -146,6 +155,7 @@ export const useVideoGenerator = () => {
     setCountdown(0);
     setError(null);
     localStorage.removeItem(STORAGE_KEY);
+    currentStateRef.current = null;
     toast.info('Generación cancelada');
   }, []);
 
