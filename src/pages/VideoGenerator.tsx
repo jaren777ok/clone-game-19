@@ -1,6 +1,6 @@
 
 import React from 'react';
-import VideoLoadingState from '@/components/video/VideoLoadingState';
+import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
 import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
@@ -13,8 +13,9 @@ const VideoGenerator = () => {
 
   if (state.isGenerating) {
     return (
-      <VideoLoadingState 
-        elapsedTime={state.elapsedTime}
+      <VideoProcessingState 
+        timeRemaining={state.timeRemaining}
+        totalTime={state.totalTime}
         isRecovering={state.isRecovering}
       />
     );

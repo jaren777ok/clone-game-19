@@ -8,9 +8,10 @@ import {
   getGenerationState,
   saveGenerationState,
   clearGenerationState,
-  extractVideoUrl,
   saveVideoToDatabase,
 } from '@/lib/videoGeneration';
+
+const COUNTDOWN_TIME = 57 * 60; // 57 minutes in seconds
 
 export const useVideoGenerator = () => {
   const [script, setScript] = useState('');
@@ -20,24 +21,27 @@ export const useVideoGenerator = () => {
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(null);
   const [showRecoveryOption, setShowRecoveryOption] = useState(false);
   const [isRecovering, setIsRecovering] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(COUNTDOWN_TIME);
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
-  const abortControllerRef = useRef<AbortController | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const savedState = getGenerationState();
     if (savedState && savedState.status === 'pending') {
       const timeElapsed = Date.now() - savedState.timestamp;
-      const maxWaitTime = 2 * 60 * 60 * 1000; // 2 horas
+      const maxWaitTime = COUNTDOWN_TIME * 1000;
 
       if (timeElapsed < maxWaitTime) {
         setScript(savedState.script);
+        setCurrentRequestId(savedState.requestId);
         setShowRecoveryOption(true);
         toast({
-          title: "Generación pendiente",
-          description: "Detectamos una generación de video en progreso. ¿Quieres recuperarla?",
+          title: "Procesamiento pendiente",
+          description: "Detectamos un video en procesamiento. ¿Quieres continuar verificando?",
         });
       } else {
         clearGenerationState();
@@ -50,31 +54,52 @@ export const useVideoGenerator = () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
       }
     };
   }, []);
 
-  const startPolling = (requestId: string, scriptToPoll: string) => {
-    console.log('Activando sistema de monitoreo para requestId:', requestId);
+  const startCountdown = (requestId: string, scriptToCheck: string) => {
+    console.log('Iniciando contador de 57 minutos para requestId:', requestId);
+    
+    const startTime = Date.now();
+    setGenerationStartTime(startTime);
+    setTimeRemaining(COUNTDOWN_TIME);
+
+    countdownIntervalRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
+      setTimeRemaining(remaining);
+
+      if (remaining <= 0) {
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        checkFinalResult(scriptToCheck);
+      }
+    }, 1000);
+  };
+
+  const startPeriodicChecking = (requestId: string, scriptToCheck: string) => {
+    console.log('Iniciando verificación periódica cada 30 segundos');
     
     pollingIntervalRef.current = setInterval(async () => {
       try {
         if (user) {
           const { data, error: dbError } = await supabase
             .from('generated_videos')
-            .select('video_url')
+            .select('video_url, request_id')
             .eq('user_id', user.id)
-            .eq('script', scriptToPoll.trim())
+            .or(`request_id.eq.${requestId},script.eq.${scriptToCheck.trim()}`)
             .order('created_at', { ascending: false })
             .limit(1);
 
           if (data && data.length > 0 && !dbError) {
             const videoUrl = data[0].video_url;
-            console.log('Video completado y encontrado:', videoUrl);
+            console.log('¡Video encontrado durante verificación!:', videoUrl);
             
+            // Detener todos los intervalos
             if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
             
             setVideoResult(videoUrl);
             setIsGenerating(false);
@@ -87,89 +112,77 @@ export const useVideoGenerator = () => {
           }
         }
       } catch (e) {
-        console.error('Error durante monitoreo:', e);
+        console.error('Error durante verificación periódica:', e);
       }
-    }, 20000); // Verificar cada 20 segundos para ser eficiente
+    }, 30000); // Verificar cada 30 segundos
   };
 
-  const connectToWebhook = async (script: string, requestId: string) => {
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    // Timeout de 2 horas para permitir conexión estable
-    const webhookTimeout = 2 * 60 * 60 * 1000; // 2 horas = 7,200,000 ms
-    const timeoutId = setTimeout(() => {
-      console.log('Timeout de webhook alcanzado, activando sistema de monitoreo');
-      controller.abort();
-    }, webhookTimeout);
-
+  const checkFinalResult = async (scriptToCheck: string) => {
+    console.log('Verificación final después del countdown');
+    
     try {
-      console.log('Conectando con el servicio de generación de video...');
+      if (user) {
+        const { data, error: dbError } = await supabase
+          .from('generated_videos')
+          .select('video_url')
+          .eq('user_id', user.id)
+          .eq('script', scriptToCheck.trim())
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (data && data.length > 0 && !dbError) {
+          setVideoResult(data[0].video_url);
+          toast({
+            title: "¡Video completado!",
+            description: "Tu video ha sido generado exitosamente.",
+          });
+        } else {
+          setError('El procesamiento tomó más tiempo del esperado. Contacta con soporte.');
+          toast({
+            title: "Tiempo agotado",
+            description: "El video está tomando más tiempo del esperado. Por favor contacta con soporte.",
+            variant: "destructive"
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error en verificación final:', e);
+      setError('Error al verificar el resultado final');
+    }
+    
+    setIsGenerating(false);
+    clearGenerationState();
+  };
+
+  const sendToWebhook = async (script: string, requestId: string) => {
+    try {
+      console.log('Enviando datos a webhook con respuesta inmediata...');
       
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/veroia', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Connection': 'keep-alive'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           script: script.trim(), 
           userId: user?.id || 'anonymous', 
           requestId, 
-          timestamp: new Date().toISOString() 
+          timestamp: new Date().toISOString(),
+          appMode: 'immediate_response'
         }),
-        signal: controller.signal,
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Respuesta del servicio recibida:', data);
+      console.log('Respuesta inmediata recibida:', data);
       
-      const videoUrl = extractVideoUrl(data);
-      
-      if (videoUrl) {
-        setVideoResult(videoUrl);
-        await saveVideoToDatabase(script, videoUrl, user);
-        clearGenerationState();
-        toast({ 
-          title: "¡Video generado!", 
-          description: "Tu video ha sido creado exitosamente." 
-        });
-        return true;
-      } else {
-        console.log('Video en procesamiento, activando monitoreo automático...');
-        startPolling(requestId, script);
-        toast({ 
-          title: "Video en procesamiento", 
-          description: "Tu video se está generando. Te notificaremos cuando esté listo." 
-        });
-        return true;
-      }
-
+      return true;
     } catch (err) {
-      clearTimeout(timeoutId);
-      console.log('Conexión finalizada, activando sistema de monitoreo:', err);
-
-      // Si es por timeout o abort (normal), activar polling sin mostrar error
-      if (err instanceof Error && (err.name === 'AbortError' || err.message.includes('timeout'))) {
-        console.log('Activando monitoreo automático del progreso...');
-        startPolling(requestId, script);
-        
-        toast({
-          title: "Procesamiento en curso",
-          description: "Tu video se está generando en segundo plano. Te notificaremos cuando esté listo.",
-        });
-        
-        return true;
-      } else {
-        // Solo mostrar error si es un error real (no timeout)
-        throw err;
-      }
+      console.error('Error enviando a webhook:', err);
+      throw err;
     }
   };
 
@@ -186,10 +199,11 @@ export const useVideoGenerator = () => {
     setIsGenerating(true);
     setError(null);
     setVideoResult(null);
-    setGenerationStartTime(Date.now());
     setShowRecoveryOption(false);
 
     const requestId = `${user?.id || 'anonymous'}-${Date.now()}`;
+    setCurrentRequestId(requestId);
+    
     const generationState: GenerationState = { 
       script: script.trim(), 
       requestId, 
@@ -198,10 +212,23 @@ export const useVideoGenerator = () => {
     };
     saveGenerationState(generationState);
 
-    console.log('Iniciando generación de video con conexión estable');
+    console.log('Iniciando nuevo proceso de generación de video');
     
     try {
-      await connectToWebhook(script.trim(), requestId);
+      // Enviar a webhook y recibir respuesta inmediata
+      await sendToWebhook(script.trim(), requestId);
+      
+      // Iniciar contador de 57 minutos
+      startCountdown(requestId, script.trim());
+      
+      // Iniciar verificación periódica
+      startPeriodicChecking(requestId, script.trim());
+      
+      toast({
+        title: "Solicitud enviada",
+        description: "Tu video se está procesando. Te notificaremos cuando esté listo.",
+      });
+      
     } catch (err) {
       console.error('Error en generación:', err);
       setError(err instanceof Error ? err.message : 'Error de conexión');
@@ -210,7 +237,7 @@ export const useVideoGenerator = () => {
       
       toast({ 
         title: "Error de conexión", 
-        description: "No se pudo conectar con el servicio. Por favor, verifica tu conexión e intenta de nuevo.", 
+        description: "No se pudo enviar la solicitud. Por favor, intenta de nuevo.", 
         variant: "destructive" 
       });
     }
@@ -222,11 +249,15 @@ export const useVideoGenerator = () => {
       setIsRecovering(true);
       setIsGenerating(true);
       setShowRecoveryOption(false);
-      setGenerationStartTime(savedState.timestamp);
+      setCurrentRequestId(savedState.requestId);
+      
+      const timeElapsed = Date.now() - savedState.timestamp;
+      const remainingTime = Math.max(0, COUNTDOWN_TIME - Math.floor(timeElapsed / 1000));
+      setTimeRemaining(remainingTime);
       
       toast({ 
-        title: "Recuperando generación", 
-        description: "Verificando si tu video ya está listo..." 
+        title: "Recuperando procesamiento", 
+        description: "Verificando el estado de tu video..." 
       });
       
       // Verificar primero en la base de datos
@@ -234,7 +265,7 @@ export const useVideoGenerator = () => {
         supabase.from('generated_videos')
           .select('video_url')
           .eq('user_id', user.id)
-          .eq('script', savedState.script)
+          .or(`request_id.eq.${savedState.requestId},script.eq.${savedState.script}`)
           .order('created_at', { ascending: false })
           .limit(1)
           .then(({ data, error: dbError }) => {
@@ -248,9 +279,14 @@ export const useVideoGenerator = () => {
                 description: "Tu video estaba listo y ha sido recuperado." 
               });
             } else {
-              // Si no está en BD, activar monitoreo
+              // Si no está en BD, continuar con verificación
               setIsRecovering(false);
-              startPolling(savedState.requestId, savedState.script);
+              if (remainingTime > 0) {
+                startCountdown(savedState.requestId, savedState.script);
+                startPeriodicChecking(savedState.requestId, savedState.script);
+              } else {
+                checkFinalResult(savedState.script);
+              }
             }
           });
       }
@@ -261,8 +297,8 @@ export const useVideoGenerator = () => {
     clearGenerationState();
     setShowRecoveryOption(false);
     toast({ 
-      title: "Generación cancelada", 
-      description: "El estado de generación anterior ha sido eliminado." 
+      title: "Procesamiento cancelado", 
+      description: "El estado anterior ha sido eliminado." 
     });
   };
 
@@ -273,22 +309,16 @@ export const useVideoGenerator = () => {
     setGenerationStartTime(null);
     setShowRecoveryOption(false);
     setIsRecovering(false);
+    setTimeRemaining(COUNTDOWN_TIME);
+    setCurrentRequestId(null);
     clearGenerationState();
     
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
     }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
     }
-  };
-
-  const getElapsedTime = () => {
-    if (!generationStartTime) return '';
-    const elapsed = Math.floor((Date.now() - generationStartTime) / 1000);
-    const minutes = Math.floor(elapsed / 60);
-    const seconds = elapsed % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return {
@@ -299,7 +329,8 @@ export const useVideoGenerator = () => {
       error,
       showRecoveryOption,
       isRecovering,
-      elapsedTime: getElapsedTime(),
+      timeRemaining,
+      totalTime: COUNTDOWN_TIME,
     },
     handlers: {
       setScript,

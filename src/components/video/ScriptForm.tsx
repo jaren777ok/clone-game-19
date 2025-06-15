@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Send, Clock, Wifi } from 'lucide-react';
+import { Send, Clock, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -35,31 +35,31 @@ const ScriptForm = ({ script, setScript, onSubmit, isGenerating, error }: Script
           </div>
         </div>
 
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <Clock className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <Zap className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-blue-300 text-sm font-medium mb-1">
-                Tiempo de procesamiento extendido
+              <p className="text-green-300 text-sm font-medium mb-1">
+                Respuesta inmediata mejorada
               </p>
               <p className="text-muted-foreground text-sm">
-                La generación puede tomar hasta 2 horas. El sistema monitorea automáticamente 
-                el progreso y te notificará cuando esté listo.
+                Tu solicitud se procesa al instante y el sistema verifica automáticamente 
+                cuando tu video esté listo (máximo 57 minutos).
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <Wifi className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+            <Clock className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-green-300 text-sm font-medium mb-1">
-                Sistema de monitoreo inteligente
+              <p className="text-blue-300 text-sm font-medium mb-1">
+                Monitoreo inteligente continuo
               </p>
               <p className="text-muted-foreground text-sm">
-                Conexión estable de larga duración con sistema de monitoreo automático 
-                para garantizar que tu video se procese correctamente.
+                Verificación automática cada 30 segundos. Tu video puede estar listo 
+                mucho antes del tiempo máximo estimado.
               </p>
             </div>
           </div>
