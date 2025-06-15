@@ -60,23 +60,29 @@ export const useVideoGenerator = () => {
     };
   }, []);
 
-  const startCountdown = (requestId: string, scriptToCheck: string) => {
-    console.log('Iniciando contador de 57 minutos para requestId:', requestId);
+  const startCountdown = (requestId: string, scriptToCheck: string, customStartTime?: number) => {
+    const startTime = customStartTime || Date.now();
+    console.log('Iniciando contador para requestId:', requestId, 'desde:', new Date(startTime));
     
-    const startTime = Date.now();
     setGenerationStartTime(startTime);
-    setTimeRemaining(COUNTDOWN_TIME);
-
-    countdownIntervalRef.current = setInterval(() => {
+    
+    // Calcular el tiempo restante basado en el tiempo real transcurrido
+    const updateTimeRemaining = () => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
       setTimeRemaining(remaining);
-
+      
       if (remaining <= 0) {
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
         checkFinalResult(scriptToCheck);
       }
-    }, 1000);
+    };
+
+    // Actualizar inmediatamente
+    updateTimeRemaining();
+
+    // Continuar actualizando cada segundo
+    countdownIntervalRef.current = setInterval(updateTimeRemaining, 1000);
   };
 
   const startPeriodicChecking = (requestId: string, scriptToCheck: string) => {
@@ -218,7 +224,7 @@ export const useVideoGenerator = () => {
       // Enviar a webhook y recibir respuesta inmediata
       await sendToWebhook(script.trim(), requestId);
       
-      // Iniciar contador de 57 minutos
+      // Iniciar contador de 57 minutos desde ahora
       startCountdown(requestId, script.trim());
       
       // Iniciar verificación periódica
@@ -251,9 +257,16 @@ export const useVideoGenerator = () => {
       setShowRecoveryOption(false);
       setCurrentRequestId(savedState.requestId);
       
+      // Calcular el tiempo real transcurrido
       const timeElapsed = Date.now() - savedState.timestamp;
-      const remainingTime = Math.max(0, COUNTDOWN_TIME - Math.floor(timeElapsed / 1000));
-      setTimeRemaining(remainingTime);
+      const timeElapsedSeconds = Math.floor(timeElapsed / 1000);
+      const remainingTime = Math.max(0, COUNTDOWN_TIME - timeElapsedSeconds);
+      
+      console.log('Recuperando generación:', {
+        timestampOriginal: new Date(savedState.timestamp),
+        tiempoTranscurrido: timeElapsedSeconds,
+        tiempoRestante: remainingTime
+      });
       
       toast({ 
         title: "Recuperando procesamiento", 
@@ -279,12 +292,14 @@ export const useVideoGenerator = () => {
                 description: "Tu video estaba listo y ha sido recuperado." 
               });
             } else {
-              // Si no está en BD, continuar con verificación
+              // Si no está en BD, continuar con verificación usando el tiempo real
               setIsRecovering(false);
               if (remainingTime > 0) {
-                startCountdown(savedState.requestId, savedState.script);
+                // Continuar desde el punto correcto usando el timestamp original
+                startCountdown(savedState.requestId, savedState.script, savedState.timestamp);
                 startPeriodicChecking(savedState.requestId, savedState.script);
               } else {
+                // Si ya se agotó el tiempo, ir directo a verificación final
                 checkFinalResult(savedState.script);
               }
             }
