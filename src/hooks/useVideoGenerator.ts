@@ -24,14 +24,20 @@ export const useVideoGenerator = () => {
   const [countdown, setCountdown] = useState(0);
   const [hasRecovered, setHasRecovered] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoadedInitialState, setHasLoadedInitialState] = useState(false);
   
   const { user } = useAuth();
 
   // Load saved state on mount - runs only once
   useEffect(() => {
+    if (!user || hasLoadedInitialState) return;
+
     const loadSavedState = async () => {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved || !user) return;
+      if (!saved) {
+        setHasLoadedInitialState(true);
+        return;
+      }
 
       try {
         const savedState: VideoGenerationState = JSON.parse(saved);
@@ -48,6 +54,7 @@ export const useVideoGenerator = () => {
             setShowRecovery(false);
             localStorage.removeItem(STORAGE_KEY);
             toast.success('¡Video encontrado! Se ha sincronizado automáticamente.');
+            setHasLoadedInitialState(true);
             return;
           }
         }
@@ -68,13 +75,17 @@ export const useVideoGenerator = () => {
         console.error('Error loading saved state:', error);
         localStorage.removeItem(STORAGE_KEY);
       }
+      
+      setHasLoadedInitialState(true);
     };
 
     loadSavedState();
-  }, [user?.id]); // Only depend on user.id
+  }, [user?.id, hasLoadedInitialState]);
 
-  // Save state when it changes
+  // Save state when it changes - but only after initial load
   useEffect(() => {
+    if (!hasLoadedInitialState) return;
+
     if (isGenerating && requestId && script) {
       const state: VideoGenerationState = {
         isGenerating,
@@ -87,9 +98,9 @@ export const useVideoGenerator = () => {
     } else if (!isGenerating) {
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, [isGenerating, requestId, script, videoUrl]);
+  }, [isGenerating, requestId, script, videoUrl, hasLoadedInitialState]);
 
-  const generateVideo = async (inputScript: string) => {
+  const generateVideo = useCallback(async (inputScript: string) => {
     if (!user) {
       toast.error('Debes iniciar sesión para generar videos');
       return;
@@ -117,9 +128,9 @@ export const useVideoGenerator = () => {
       setRequestId('');
       setScript('');
     }
-  };
+  }, [user]);
 
-  const stopGeneration = () => {
+  const stopGeneration = useCallback(() => {
     setIsGenerating(false);
     setRequestId('');
     setScript('');
@@ -130,19 +141,25 @@ export const useVideoGenerator = () => {
     setError(null);
     localStorage.removeItem(STORAGE_KEY);
     toast.info('Generación cancelada');
-  };
+  }, []);
 
-  const recoverGeneration = () => {
+  const recoverGeneration = useCallback(() => {
     setShowRecovery(false);
     setCountdown(300);
     toast.info('Continuando con la generación...');
-  };
+  }, []);
 
-  const handleNewVideo = () => {
+  const handleNewVideo = useCallback(() => {
     setVideoUrl(null);
     setScript('');
     setError(null);
-  };
+  }, []);
+
+  const handleGenerateVideo = useCallback(() => {
+    if (script.trim()) {
+      generateVideo(script.trim());
+    }
+  }, [script, generateVideo]);
 
   // Return state and handlers in the expected format
   return {
@@ -157,8 +174,8 @@ export const useVideoGenerator = () => {
       error
     },
     handlers: {
-      setScript: (script: string) => setScript(script),
-      handleGenerateVideo: generateVideo,
+      setScript: (newScript: string) => setScript(newScript),
+      handleGenerateVideo, // Now this is a function that takes no parameters
       handleNewVideo,
       handleRecoverGeneration: recoverGeneration,
       handleCancelRecovery: stopGeneration
