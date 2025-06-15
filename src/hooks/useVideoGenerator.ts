@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
@@ -5,7 +6,6 @@ import { sendToWebhook } from '@/lib/webhookUtils';
 import { syncGenerationState } from '@/lib/databaseUtils';
 
 const STORAGE_KEY = 'videoGeneration';
-const CHECK_INTERVAL = 10000; // 10 seconds
 
 interface VideoGenerationState {
   isGenerating: boolean;
@@ -23,67 +23,46 @@ export const useVideoGenerator = () => {
   const [showRecovery, setShowRecovery] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [hasRecovered, setHasRecovered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const { user } = useAuth();
-
-  // Intelligent sync function - memoized to prevent recreation
-  const performIntelligentSync = useCallback(async (savedState: VideoGenerationState) => {
-    if (!user || !savedState.requestId || hasRecovered) return false;
-
-    console.log('🔄 Iniciando sincronización inteligente...');
-    
-    try {
-      const syncResult = await syncGenerationState(user, savedState.requestId, savedState.script);
-      
-      if (syncResult?.video_url) {
-        console.log('✅ Video encontrado - sincronizando estado');
-        
-        // Update state
-        setVideoUrl(syncResult.video_url);
-        setIsGenerating(false);
-        setShowRecovery(false);
-        setHasRecovered(true);
-        
-        // Clear localStorage
-        localStorage.removeItem(STORAGE_KEY);
-        
-        toast.success('¡Video encontrado! Se ha sincronizado automáticamente.');
-        return true;
-      }
-    } catch (error) {
-      console.error('Error en sincronización inteligente:', error);
-    }
-    
-    return false;
-  }, [user, hasRecovered]);
 
   // Load saved state on mount - runs only once
   useEffect(() => {
     const loadSavedState = async () => {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return;
+      if (!saved || !user) return;
 
       try {
         const savedState: VideoGenerationState = JSON.parse(saved);
         console.log('🔄 Estado guardado encontrado:', savedState);
 
         // Intelligent sync before showing recovery
-        const wasSynced = await performIntelligentSync(savedState);
-        
-        if (!wasSynced) {
-          // If not synced, proceed with normal recovery
-          setIsGenerating(savedState.isGenerating);
-          setRequestId(savedState.requestId);
-          setScript(savedState.script);
-          setVideoUrl(savedState.videoUrl || null);
+        if (savedState.requestId) {
+          const syncResult = await syncGenerationState(user, savedState.requestId, savedState.script);
           
-          if (savedState.isGenerating) {
-            setShowRecovery(true);
-            
-            const elapsed = savedState.startTime ? Date.now() - savedState.startTime : 0;
-            const remaining = Math.max(0, 300000 - elapsed);
-            setCountdown(Math.ceil(remaining / 1000));
+          if (syncResult?.video_url) {
+            console.log('✅ Video encontrado - sincronizando estado');
+            setVideoUrl(syncResult.video_url);
+            setIsGenerating(false);
+            setShowRecovery(false);
+            localStorage.removeItem(STORAGE_KEY);
+            toast.success('¡Video encontrado! Se ha sincronizado automáticamente.');
+            return;
           }
+        }
+
+        // If not synced, proceed with normal recovery
+        setIsGenerating(savedState.isGenerating);
+        setRequestId(savedState.requestId);
+        setScript(savedState.script);
+        setVideoUrl(savedState.videoUrl || null);
+        
+        if (savedState.isGenerating) {
+          setShowRecovery(true);
+          const elapsed = savedState.startTime ? Date.now() - savedState.startTime : 0;
+          const remaining = Math.max(0, 300000 - elapsed);
+          setCountdown(Math.ceil(remaining / 1000));
         }
       } catch (error) {
         console.error('Error loading saved state:', error);
@@ -92,7 +71,7 @@ export const useVideoGenerator = () => {
     };
 
     loadSavedState();
-  }, []); // Empty dependency array - runs only once
+  }, [user?.id]); // Only depend on user.id
 
   // Save state when it changes
   useEffect(() => {
@@ -125,12 +104,14 @@ export const useVideoGenerator = () => {
     setShowRecovery(false);
     setHasRecovered(false);
     setCountdown(300);
+    setError(null);
 
     try {
       await sendToWebhook(inputScript.trim(), newRequestId, user.id);
       toast.success('Video enviado para generar. Te notificaremos cuando esté listo.');
     } catch (error) {
       console.error('Error:', error);
+      setError('Error al enviar el video para generar');
       toast.error('Error al enviar el video para generar');
       setIsGenerating(false);
       setRequestId('');
@@ -146,6 +127,7 @@ export const useVideoGenerator = () => {
     setShowRecovery(false);
     setCountdown(0);
     setHasRecovered(false);
+    setError(null);
     localStorage.removeItem(STORAGE_KEY);
     toast.info('Generación cancelada');
   };
@@ -156,18 +138,30 @@ export const useVideoGenerator = () => {
     toast.info('Continuando con la generación...');
   };
 
+  const handleNewVideo = () => {
+    setVideoUrl(null);
+    setScript('');
+    setError(null);
+  };
+
+  // Return state and handlers in the expected format
   return {
-    isGenerating,
-    requestId,
-    script,
-    videoUrl,
-    showRecovery,
-    countdown,
-    generateVideo,
-    stopGeneration,
-    recoverGeneration,
-    setVideoUrl,
-    setIsGenerating,
-    setCountdown
+    state: {
+      isGenerating,
+      script,
+      videoResult: videoUrl,
+      showRecoveryOption: showRecovery,
+      timeRemaining: countdown,
+      totalTime: 300,
+      isRecovering: false,
+      error
+    },
+    handlers: {
+      setScript: (script: string) => setScript(script),
+      handleGenerateVideo: generateVideo,
+      handleNewVideo,
+      handleRecoverGeneration: recoverGeneration,
+      handleCancelRecovery: stopGeneration
+    }
   };
 };
