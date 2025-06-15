@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, Play, Pause } from 'lucide-react';
 import { VideoStyle } from '@/hooks/useVideoCreationFlow';
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
 
 const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
   const videoStyles: VideoStyle[] = [
     {
@@ -31,6 +33,42 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     onSelectStyle(style);
   };
 
+  const toggleVideoPlayback = (styleId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    const video = videoRefs.current[styleId];
+    
+    if (!video) return;
+
+    if (playingVideo === styleId) {
+      video.pause();
+      setPlayingVideo(null);
+    } else {
+      // Pausar cualquier otro video que esté reproduciéndose
+      Object.entries(videoRefs.current).forEach(([id, videoEl]) => {
+        if (videoEl && id !== styleId) {
+          videoEl.pause();
+        }
+      });
+      
+      video.play().catch(error => {
+        console.error('Error playing video:', error);
+      });
+      setPlayingVideo(styleId);
+    }
+  };
+
+  const handleVideoRef = (styleId: string) => (ref: HTMLVideoElement | null) => {
+    videoRefs.current[styleId] = ref;
+  };
+
+  const handleVideoEnded = (styleId: string) => {
+    setPlayingVideo(null);
+    const video = videoRefs.current[styleId];
+    if (video) {
+      video.currentTime = 0;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
@@ -47,60 +85,70 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
           </Button>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight">
               Elige el Estilo de Edición
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-base md:text-lg px-4">
               Selecciona el estilo de edición que quieres que tenga tu video
             </p>
           </div>
 
           {/* Grid de estilos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {videoStyles.map((style) => (
               <Card 
                 key={style.id}
-                className={`cyber-border hover:cyber-glow transition-all cursor-pointer transform hover:scale-105 ${
+                className={`cyber-border hover:cyber-glow transition-all cursor-pointer transform hover:scale-[1.02] ${
                   selectedStyleId === style.id ? 'cyber-glow-intense' : ''
                 }`}
               >
                 <CardContent className="p-6">
                   {/* Video preview */}
-                  <div className="aspect-[9/16] mb-4 rounded-lg overflow-hidden bg-black relative group">
+                  <div className="aspect-[9/16] mb-6 rounded-xl overflow-hidden bg-black relative group">
                     <video
+                      ref={handleVideoRef(style.id)}
                       src={style.video_url}
                       className="w-full h-full object-cover"
                       muted
                       loop
                       playsInline
-                      onMouseEnter={(e) => {
-                        const video = e.target as HTMLVideoElement;
-                        video.play();
-                      }}
-                      onMouseLeave={(e) => {
-                        const video = e.target as HTMLVideoElement;
-                        video.pause();
-                        video.currentTime = 0;
-                      }}
+                      onEnded={() => handleVideoEnded(style.id)}
+                      preload="metadata"
                     />
-                    {/* Play overlay */}
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                        <Play className="w-8 h-8 text-white ml-1" />
-                      </div>
+                    
+                    {/* Play/Pause overlay */}
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => toggleVideoPlayback(style.id, e)}
+                        className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors"
+                      >
+                        {playingVideo === style.id ? (
+                          <Pause className="w-8 h-8 text-white" />
+                        ) : (
+                          <Play className="w-8 h-8 text-white ml-1" />
+                        )}
+                      </button>
                     </div>
                   </div>
 
                   {/* Style info */}
-                  <h3 className="text-xl font-semibold text-center mb-4">
-                    {style.name}
-                  </h3>
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl md:text-2xl font-bold mb-3 leading-tight">
+                      {style.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {style.id === 'style-1' 
+                        ? "Estilo moderno y energético, perfecto para contenido corporativo y profesional"
+                        : "Estilo sofisticado y minimalista, ideal para presentaciones elegantes"
+                      }
+                    </p>
+                  </div>
 
                   <Button
                     onClick={() => handleSelectStyle(style)}
-                    className="w-full cyber-glow"
+                    className="w-full cyber-glow h-12 text-base font-medium"
                     variant={selectedStyleId === style.id ? "default" : "outline"}
                   >
                     {selectedStyleId === style.id ? "Continuar al Generador" : "Elegir Estilo"}
