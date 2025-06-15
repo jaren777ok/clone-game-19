@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { sendToWebhook } from '@/lib/webhookUtils';
@@ -22,23 +22,23 @@ export const useVideoGenerator = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [showRecovery, setShowRecovery] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [hasRecovered, setHasRecovered] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
   
   const { user } = useAuth();
+  const hasInitialized = useRef(false);
 
-  // Load saved state on mount - runs only once when user is available
+  // Single initialization effect - runs only once when user is available
   useEffect(() => {
-    if (!user || isInitialized) return;
+    if (!user || hasInitialized.current) return;
+    
+    console.log('🔄 Initializing video generator for user:', user.id);
+    hasInitialized.current = true;
 
     const loadSavedState = async () => {
-      console.log('🔄 Loading saved state for user:', user.id);
       const saved = localStorage.getItem(STORAGE_KEY);
       
       if (!saved) {
         console.log('No saved state found');
-        setIsInitialized(true);
         return;
       }
 
@@ -59,7 +59,6 @@ export const useVideoGenerator = () => {
             setShowRecovery(false);
             localStorage.removeItem(STORAGE_KEY);
             toast.success('¡Video encontrado! Se ha sincronizado automáticamente.');
-            setIsInitialized(true);
             return;
           }
         }
@@ -81,16 +80,14 @@ export const useVideoGenerator = () => {
         console.error('Error loading saved state:', error);
         localStorage.removeItem(STORAGE_KEY);
       }
-      
-      setIsInitialized(true);
     };
 
     loadSavedState();
-  }, [user?.id, isInitialized]);
+  }, [user]); // Only depend on user
 
-  // Save state when generation is active - separate effect to prevent loops
+  // Save state effect - separate and simple
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!hasInitialized.current) return;
 
     if (isGenerating && requestId && script) {
       const state: VideoGenerationState = {
@@ -102,13 +99,12 @@ export const useVideoGenerator = () => {
       };
       console.log('💾 Saving generation state:', state);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } else if (!isGenerating && isInitialized) {
+    } else if (!isGenerating && hasInitialized.current) {
       console.log('🗑️ Clearing saved state');
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, [isGenerating, requestId, script, videoUrl, isInitialized]);
+  }, [isGenerating, requestId, script, videoUrl]); // Simple dependencies
 
-  // Memoized functions to prevent unnecessary re-renders
   const generateVideo = useCallback(async (inputScript: string) => {
     if (!user) {
       toast.error('Debes iniciar sesión para generar videos');
@@ -124,7 +120,6 @@ export const useVideoGenerator = () => {
     setScript(inputScript.trim());
     setVideoUrl(null);
     setShowRecovery(false);
-    setHasRecovered(false);
     setCountdown(300);
     setError(null);
 
@@ -149,7 +144,6 @@ export const useVideoGenerator = () => {
     setVideoUrl(null);
     setShowRecovery(false);
     setCountdown(0);
-    setHasRecovered(false);
     setError(null);
     localStorage.removeItem(STORAGE_KEY);
     toast.info('Generación cancelada');
