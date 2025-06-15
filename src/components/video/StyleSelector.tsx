@@ -73,30 +73,30 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
-      <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="flex items-center justify-between mb-8 sm:mb-12">
           <Button
             variant="outline"
             onClick={onBack}
-            className="cyber-border hover:cyber-glow"
+            className="cyber-border hover:cyber-glow text-sm"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Cambiar avatar
           </Button>
         </div>
 
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10 sm:mb-16">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight px-4">
               Elige el Estilo de Edición
             </h1>
-            <p className="text-muted-foreground text-base md:text-lg px-4">
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4 leading-relaxed">
               Selecciona el estilo de edición que quieres que tenga tu video
             </p>
           </div>
 
           {/* Grid de estilos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto px-2">
             {videoStyles.map((style) => (
               <Card 
                 key={style.id}
@@ -104,9 +104,9 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                   selectedStyleId === style.id ? 'cyber-glow-intense' : ''
                 }`}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   {/* Video preview */}
-                  <div className="aspect-[9/16] mb-6 rounded-xl overflow-hidden bg-black relative group">
+                  <div className="aspect-[9/16] mb-4 sm:mb-6 rounded-xl overflow-hidden bg-black relative group">
                     <video
                       ref={handleVideoRef(style.id)}
                       src={style.video_url}
@@ -122,23 +122,23 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 transition-opacity">
                       <button
                         onClick={(e) => toggleVideoPlayback(style.id, e)}
-                        className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors"
+                        className="w-12 sm:w-16 h-12 sm:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors"
                       >
                         {playingVideo === style.id ? (
-                          <Pause className="w-8 h-8 text-white" />
+                          <Pause className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
                         ) : (
-                          <Play className="w-8 h-8 text-white ml-1" />
+                          <Play className="w-6 sm:w-8 h-6 sm:h-8 text-white ml-1" />
                         )}
                       </button>
                     </div>
                   </div>
 
                   {/* Style info */}
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl md:text-2xl font-bold mb-3 leading-tight">
+                  <div className="text-center mb-4 sm:mb-6 space-y-2 sm:space-y-3">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">
                       {style.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
                       {style.id === 'style-1' 
                         ? "Estilo moderno y energético, perfecto para contenido corporativo y profesional"
                         : "Estilo sofisticado y minimalista, ideal para presentaciones elegantes"
@@ -148,7 +148,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
 
                   <Button
                     onClick={() => handleSelectStyle(style)}
-                    className="w-full cyber-glow h-12 text-base font-medium"
+                    className="w-full cyber-glow h-10 sm:h-12 text-sm sm:text-base font-medium"
                     variant={selectedStyleId === style.id ? "default" : "outline"}
                   >
                     {selectedStyleId === style.id ? "Continuar al Generador" : "Elegir Estilo"}
@@ -161,8 +161,8 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       </div>
 
       {/* Background effects */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
+      <div className="absolute top-0 right-0 w-72 sm:w-96 h-72 sm:h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-72 sm:w-96 h-72 sm:h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
     </div>
   );
 };

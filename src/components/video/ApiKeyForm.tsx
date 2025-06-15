@@ -82,28 +82,29 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
 
   return (
     <Card className="cyber-border">
-      <CardHeader>
-        <CardTitle>
+      <CardHeader className="space-y-2 sm:space-y-3 pb-4 sm:pb-6">
+        <CardTitle className="text-lg sm:text-xl md:text-2xl leading-tight">
           {!hasExistingKeys ? "Configurar tu primera clave API" : "Agregar nueva clave API"}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm sm:text-base leading-relaxed">
           Ingresa los datos de tu clave API de HeyGen. Puedes obtener tu clave en tu dashboard de HeyGen.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSaveApiKey} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nombre de la clave</Label>
+        <form onSubmit={handleSaveApiKey} className="space-y-4 sm:space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-sm sm:text-base">Nombre de la clave</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Ej: Cuenta Principal, Cuenta Trabajo"
               required
+              className="h-10 sm:h-11"
             />
           </div>
-          <div>
-            <Label htmlFor="apiKey">Clave API de HeyGen</Label>
+          <div className="space-y-2">
+            <Label htmlFor="apiKey" className="text-sm sm:text-base">Clave API de HeyGen</Label>
             <Input
               id="apiKey"
               type="password"
@@ -111,13 +112,14 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
               onChange={(e) => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
               placeholder="Ingresa tu clave API de HeyGen"
               required
+              className="h-10 sm:h-11"
             />
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 cyber-glow"
+              className="flex-1 cyber-glow h-10 sm:h-11 text-sm sm:text-base"
             >
               {loading ? 'Validando...' : 'Guardar y Continuar'}
             </Button>
@@ -126,6 +128,7 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
                 type="button"
                 variant="outline"
                 onClick={onCancel}
+                className="h-10 sm:h-11 text-sm sm:text-base"
               >
                 Cancelar
               </Button>
