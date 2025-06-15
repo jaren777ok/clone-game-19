@@ -80,7 +80,7 @@ export const useVideoGenerator = () => {
     };
 
     loadSavedState();
-  }, [user?.id, hasLoadedInitialState]);
+  }, [user?.id]); // Removed hasLoadedInitialState from dependency array
 
   // Save state when it changes - but only after initial load
   useEffect(() => {
