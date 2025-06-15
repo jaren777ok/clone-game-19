@@ -1,6 +1,5 @@
-
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -8,7 +7,8 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import NeurocopyChat from "./pages/NeurocopyChat";
-import VideoGenerator from "./pages/VideoGenerator";
+import VideoCreationFlow from "./pages/VideoCreationFlow";
+import VideoGeneratorFinal from "./pages/VideoGeneratorFinal";
 import SavedVideos from "./pages/SavedVideos";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -57,7 +57,12 @@ const AppRoutes = () => (
     } />
     <Route path="/crear-video" element={
       <ProtectedRoute>
-        <VideoGenerator />
+        <VideoCreationFlow />
+      </ProtectedRoute>
+    } />
+    <Route path="/crear-video-generator" element={
+      <ProtectedRoute>
+        <VideoGeneratorFinal />
       </ProtectedRoute>
     } />
     <Route path="/videos-guardados" element={
