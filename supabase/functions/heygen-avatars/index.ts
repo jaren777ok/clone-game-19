@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { apiKey, offset = 0, limit = 10 } = await req.json()
+    const { apiKey, offset = 0, limit = 12 } = await req.json()
 
     if (!apiKey) {
       return new Response(
@@ -21,6 +21,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log(`Loading avatars: offset=${offset}, limit=${limit}`)
 
     // Llamada a la API de HeyGen
     const heygenResponse = await fetch(`https://api.heygen.com/v2/avatars?offset=${offset}&limit=${limit}`, {
@@ -49,11 +51,16 @@ serve(async (req) => {
       preview_image_url: avatar.preview_image_url
     })) || []
 
+    const total = heygenData.data?.total || 0
+    const hasMore = (offset + limit) < total
+
+    console.log(`Loaded ${avatars.length} avatars, total: ${total}, hasMore: ${hasMore}`)
+
     return new Response(
       JSON.stringify({ 
         avatars,
-        total: heygenData.data?.total || 0,
-        hasMore: (offset + limit) < (heygenData.data?.total || 0)
+        total,
+        hasMore
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

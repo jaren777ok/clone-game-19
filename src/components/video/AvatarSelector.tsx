@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +19,7 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [totalAvatars, setTotalAvatars] = useState<number>(0);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
   const [previouslySelectedAvatar, setPreviouslySelectedAvatar] = useState<Avatar | null>(null);
 
@@ -54,7 +56,7 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
         body: {
           apiKey: decryptedKey,
           offset,
-          limit: 10
+          limit: 12
         }
       });
 
@@ -62,6 +64,7 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
 
       if (isInitial) {
         setAvatars(data.avatars || []);
+        setTotalAvatars(data.total || 0);
       } else {
         setAvatars(prev => [...prev, ...(data.avatars || [])]);
       }
@@ -152,6 +155,12 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
             <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4 leading-relaxed">
               Elige el avatar que representará tu contenido en el video
             </p>
+            {/* Contador de avatares */}
+            {totalAvatars > 0 && (
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Mostrando {avatars.length} de {totalAvatars} avatares
+              </p>
+            )}
           </div>
 
           {avatars.length === 0 ? (
@@ -181,6 +190,7 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
                           src={avatar.preview_image_url}
                           alt={avatar.avatar_name}
                           className="w-full h-full object-cover"
+                          loading="lazy"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/placeholder.svg';
@@ -215,12 +225,12 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
                     {loadingMore ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Cargando...
+                        Cargando más avatares...
                       </>
                     ) : (
                       <>
                         <Search className="w-4 h-4 mr-2" />
-                        Buscar Más Avatars
+                        Cargar más Avatars
                       </>
                     )}
                   </Button>
