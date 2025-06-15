@@ -1,305 +1,173 @@
-
-import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import {
-  GenerationState,
-  getGenerationState,
-  saveGenerationState,
-  clearGenerationState,
-} from '@/lib/videoGeneration';
-import { COUNTDOWN_TIME, calculateTimeRemaining, isTimeExpired } from '@/lib/countdownUtils';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 import { sendToWebhook } from '@/lib/webhookUtils';
-import { checkVideoInDatabase, checkFinalVideoResult, checkPendingGenerationOnStart, syncGenerationState } from '@/lib/databaseUtils';
-import { clearAllIntervals, startCountdownInterval, startPollingInterval } from '@/lib/intervalUtils';
+import { syncGenerationState } from '@/lib/databaseUtils';
+
+const STORAGE_KEY = 'videoGeneration';
+const CHECK_INTERVAL = 10000; // 10 seconds
+
+interface VideoGenerationState {
+  isGenerating: boolean;
+  requestId: string;
+  script: string;
+  videoUrl?: string;
+  startTime?: number;
+}
 
 export const useVideoGenerator = () => {
-  const [script, setScript] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [videoResult, setVideoResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [generationStartTime, setGenerationStartTime] = useState<number | null>(null);
-  const [showRecoveryOption, setShowRecoveryOption] = useState(false);
-  const [isRecovering, setIsRecovering] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(COUNTDOWN_TIME);
-  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState('');
+  const [script, setScript] = useState('');
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [hasRecovered, setHasRecovered] = useState(false);
   
   const { user } = useAuth();
-  const { toast } = useToast();
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    const performIntelligentSync = async () => {
-      const savedState = getGenerationState();
-      if (savedState && savedState.status === 'pending' && user) {
-        console.log('Estado pendiente detectado, iniciando sincronización inteligente...');
-        
-        if (isTimeExpired(savedState.timestamp)) {
-          console.log('Estado expirado, limpiando localStorage');
-          clearGenerationState();
-          return;
-        }
+  // Intelligent sync function - memoized to prevent recreation
+  const performIntelligentSync = useCallback(async (savedState: VideoGenerationState) => {
+    if (!user || !savedState.requestId || hasRecovered) return false;
 
-        // Verificación inteligente: buscar video ya generado
-        const existingVideo = await syncGenerationState(user, savedState.requestId, savedState.script);
-        
-        if (existingVideo?.video_url) {
-          console.log('¡Sincronización exitosa! Video encontrado:', existingVideo.video_url);
-          
-          // Mostrar video inmediatamente sin pasar por pantalla de recuperación
-          setVideoResult(existingVideo.video_url);
-          setScript(savedState.script);
-          clearGenerationState();
-          
-          toast({
-            title: "¡Video recuperado!",
-            description: "Tu video ya estaba generado y ha sido sincronizado automáticamente.",
-          });
-        } else {
-          console.log('Video aún no generado, mostrando opción de recuperación');
-          
-          // Video aún no está generado, mostrar opción de recuperación
-          setScript(savedState.script);
-          setCurrentRequestId(savedState.requestId);
-          setShowRecoveryOption(true);
-          
-          toast({
-            title: "Procesamiento pendiente",
-            description: "Detectamos un video en procesamiento. ¿Quieres continuar verificando?",
-          });
-        }
-      }
-    };
-
-    if (user) {
-      performIntelligentSync();
-    }
-  }, [user, toast]);
-
-  useEffect(() => {
-    return () => {
-      clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
-    };
-  }, []);
-
-  const startCountdown = (requestId: string, scriptToCheck: string, customStartTime?: number) => {
-    const startTime = customStartTime || Date.now();
-    console.log('Iniciando contador para requestId:', requestId, 'desde:', new Date(startTime));
-    
-    setGenerationStartTime(startTime);
-    
-    const handleTimeUpdate = (remaining: number) => {
-      setTimeRemaining(remaining);
-    };
-
-    const handleTimeExpired = () => {
-      checkFinalResult(scriptToCheck);
-    };
-
-    startCountdownInterval(startTime, handleTimeUpdate, handleTimeExpired, countdownIntervalRef);
-  };
-
-  const startPeriodicChecking = (requestId: string, scriptToCheck: string) => {
-    console.log('Iniciando verificación periódica cada 30 segundos');
-    
-    const checkForVideo = async () => {
-      try {
-        const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
-        
-        if (videoData?.video_url) {
-          console.log('¡Video encontrado durante verificación!:', videoData.video_url);
-          
-          clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
-          
-          setVideoResult(videoData.video_url);
-          setIsGenerating(false);
-          clearGenerationState();
-          
-          toast({
-            title: "¡Video completado!",
-            description: "Tu video ha sido generado exitosamente.",
-          });
-        }
-      } catch (e) {
-        console.error('Error durante verificación periódica:', e);
-      }
-    };
-
-    startPollingInterval(checkForVideo, pollingIntervalRef);
-  };
-
-  const checkFinalResult = async (scriptToCheck: string) => {
-    console.log('Verificación final después del countdown');
+    console.log('🔄 Iniciando sincronización inteligente...');
     
     try {
-      const videoUrl = await checkFinalVideoResult(user, scriptToCheck);
+      const syncResult = await syncGenerationState(user, savedState.requestId, savedState.script);
       
-      if (videoUrl) {
-        setVideoResult(videoUrl);
-        toast({
-          title: "¡Video completado!",
-          description: "Tu video ha sido generado exitosamente.",
-        });
-      } else {
-        setError('El procesamiento tomó más tiempo del esperado. Contacta con soporte.');
-        toast({
-          title: "Tiempo agotado",
-          description: "El video está tomando más tiempo del esperado. Por favor contacta con soporte.",
-          variant: "destructive"
-        });
+      if (syncResult?.video_url) {
+        console.log('✅ Video encontrado - sincronizando estado');
+        
+        // Update state
+        setVideoUrl(syncResult.video_url);
+        setIsGenerating(false);
+        setShowRecovery(false);
+        setHasRecovered(true);
+        
+        // Clear localStorage
+        localStorage.removeItem(STORAGE_KEY);
+        
+        toast.success('¡Video encontrado! Se ha sincronizado automáticamente.');
+        return true;
       }
-    } catch (e) {
-      console.error('Error en verificación final:', e);
-      setError('Error al verificar el resultado final');
+    } catch (error) {
+      console.error('Error en sincronización inteligente:', error);
     }
     
-    setIsGenerating(false);
-    clearGenerationState();
-  };
+    return false;
+  }, [user, hasRecovered]);
 
-  const handleGenerateVideo = async () => {
-    if (!script.trim()) {
-      toast({ 
-        title: "Guion requerido", 
-        description: "Por favor, ingresa un guion para generar el video.", 
-        variant: "destructive" 
-      });
+  // Load saved state on mount - runs only once
+  useEffect(() => {
+    const loadSavedState = async () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+
+      try {
+        const savedState: VideoGenerationState = JSON.parse(saved);
+        console.log('🔄 Estado guardado encontrado:', savedState);
+
+        // Intelligent sync before showing recovery
+        const wasSynced = await performIntelligentSync(savedState);
+        
+        if (!wasSynced) {
+          // If not synced, proceed with normal recovery
+          setIsGenerating(savedState.isGenerating);
+          setRequestId(savedState.requestId);
+          setScript(savedState.script);
+          setVideoUrl(savedState.videoUrl || null);
+          
+          if (savedState.isGenerating) {
+            setShowRecovery(true);
+            
+            const elapsed = savedState.startTime ? Date.now() - savedState.startTime : 0;
+            const remaining = Math.max(0, 300000 - elapsed);
+            setCountdown(Math.ceil(remaining / 1000));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved state:', error);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    };
+
+    loadSavedState();
+  }, []); // Empty dependency array - runs only once
+
+  // Save state when it changes
+  useEffect(() => {
+    if (isGenerating && requestId && script) {
+      const state: VideoGenerationState = {
+        isGenerating,
+        requestId,
+        script,
+        videoUrl: videoUrl || undefined,
+        startTime: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } else if (!isGenerating) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [isGenerating, requestId, script, videoUrl]);
+
+  const generateVideo = async (inputScript: string) => {
+    if (!user) {
+      toast.error('Debes iniciar sesión para generar videos');
       return;
     }
 
+    const newRequestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     setIsGenerating(true);
-    setError(null);
-    setVideoResult(null);
-    setShowRecoveryOption(false);
+    setRequestId(newRequestId);
+    setScript(inputScript.trim());
+    setVideoUrl(null);
+    setShowRecovery(false);
+    setHasRecovered(false);
+    setCountdown(300);
 
-    const requestId = `${user?.id || 'anonymous'}-${Date.now()}`;
-    setCurrentRequestId(requestId);
-    
-    const generationState: GenerationState = { 
-      script: script.trim(), 
-      requestId, 
-      timestamp: Date.now(), 
-      status: 'pending' 
-    };
-    saveGenerationState(generationState);
-
-    console.log('Iniciando nuevo proceso de generación de video con requestId:', requestId);
-    
     try {
-      await sendToWebhook(script.trim(), requestId, user?.id);
-      
-      startCountdown(requestId, script.trim());
-      startPeriodicChecking(requestId, script.trim());
-      
-      toast({
-        title: "Solicitud enviada",
-        description: "Tu video se está procesando. Te notificaremos cuando esté listo.",
-      });
-      
-    } catch (err) {
-      console.error('Error en generación:', err);
-      setError(err instanceof Error ? err.message : 'Error de conexión');
-      clearGenerationState();
+      await sendToWebhook(inputScript.trim(), newRequestId, user.id);
+      toast.success('Video enviado para generar. Te notificaremos cuando esté listo.');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al enviar el video para generar');
       setIsGenerating(false);
-      
-      toast({ 
-        title: "Error de conexión", 
-        description: "No se pudo enviar la solicitud. Por favor, intenta de nuevo.", 
-        variant: "destructive" 
-      });
+      setRequestId('');
+      setScript('');
     }
   };
 
-  const handleRecoverGeneration = async () => {
-    const savedState = getGenerationState();
-    if (savedState && user) {
-      setIsRecovering(true);
-      setIsGenerating(true);
-      setShowRecoveryOption(false);
-      setCurrentRequestId(savedState.requestId);
-      
-      const timeElapsed = Date.now() - savedState.timestamp;
-      const timeElapsedSeconds = Math.floor(timeElapsed / 1000);
-      const remainingTime = Math.max(0, COUNTDOWN_TIME - timeElapsedSeconds);
-      
-      console.log('Recuperando generación con verificación inteligente:', {
-        timestampOriginal: new Date(savedState.timestamp),
-        tiempoTranscurrido: timeElapsedSeconds,
-        tiempoRestante: remainingTime
-      });
-      
-      toast({ 
-        title: "Recuperando procesamiento", 
-        description: "Verificando el estado de tu video..." 
-      });
-      
-      // Usar sincronización inteligente para verificar estado
-      const existingVideo = await syncGenerationState(user, savedState.requestId, savedState.script);
-      
-      if (existingVideo?.video_url) {
-        console.log('Video encontrado durante recuperación:', existingVideo.video_url);
-        setVideoResult(existingVideo.video_url);
-        setIsGenerating(false);
-        setIsRecovering(false);
-        clearGenerationState();
-        toast({ 
-          title: "¡Video recuperado!", 
-          description: "Tu video estaba listo y ha sido recuperado." 
-        });
-      } else {
-        console.log('Video aún no generado, continuando verificación...');
-        setIsRecovering(false);
-        if (remainingTime > 0) {
-          startCountdown(savedState.requestId, savedState.script, savedState.timestamp);
-          startPeriodicChecking(savedState.requestId, savedState.script);
-        } else {
-          checkFinalResult(savedState.script);
-        }
-      }
-    }
-  };
-
-  const handleCancelRecovery = () => {
-    clearGenerationState();
-    setShowRecoveryOption(false);
-    toast({ 
-      title: "Procesamiento cancelado", 
-      description: "El estado anterior ha sido eliminado." 
-    });
-  };
-
-  const handleNewVideo = () => {
+  const stopGeneration = () => {
+    setIsGenerating(false);
+    setRequestId('');
     setScript('');
-    setVideoResult(null);
-    setError(null);
-    setGenerationStartTime(null);
-    setShowRecoveryOption(false);
-    setIsRecovering(false);
-    setTimeRemaining(COUNTDOWN_TIME);
-    setCurrentRequestId(null);
-    clearGenerationState();
-    
-    clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
+    setVideoUrl(null);
+    setShowRecovery(false);
+    setCountdown(0);
+    setHasRecovered(false);
+    localStorage.removeItem(STORAGE_KEY);
+    toast.info('Generación cancelada');
+  };
+
+  const recoverGeneration = () => {
+    setShowRecovery(false);
+    setCountdown(300);
+    toast.info('Continuando con la generación...');
   };
 
   return {
-    state: {
-      script,
-      isGenerating,
-      videoResult,
-      error,
-      showRecoveryOption,
-      isRecovering,
-      timeRemaining,
-      totalTime: COUNTDOWN_TIME,
-    },
-    handlers: {
-      setScript,
-      handleGenerateVideo,
-      handleRecoverGeneration,
-      handleCancelRecovery,
-      handleNewVideo,
-    },
+    isGenerating,
+    requestId,
+    script,
+    videoUrl,
+    showRecovery,
+    countdown,
+    generateVideo,
+    stopGeneration,
+    recoverGeneration,
+    setVideoUrl,
+    setIsGenerating,
+    setCountdown
   };
 };
