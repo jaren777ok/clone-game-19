@@ -28,9 +28,12 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Si no hay claves API, mostrar formulario automáticamente
+    // Solo mostrar formulario automáticamente si NO hay claves API
     if (apiKeys.length === 0) {
       setShowAddForm(true);
+    } else {
+      // Si hay claves, no mostrar el formulario por defecto
+      setShowAddForm(false);
     }
   }, [apiKeys.length]);
 
@@ -136,12 +139,12 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
-              Configurar HeyGen API
+              {apiKeys.length === 0 ? "Configurar HeyGen API" : "Seleccionar Clave API"}
             </h1>
             <p className="text-muted-foreground">
               {apiKeys.length === 0 
                 ? "Agrega tu primera clave API de HeyGen para comenzar a crear videos"
-                : "Selecciona una clave API o agrega una nueva"
+                : "Selecciona una clave API existente o agrega una nueva"
               }
             </p>
           </div>
@@ -149,8 +152,9 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
           {/* Lista de claves existentes */}
           {apiKeys.length > 0 && !showAddForm && (
             <div className="space-y-4 mb-6">
+              <h2 className="text-lg font-semibold mb-4">Claves API Disponibles:</h2>
               {apiKeys.map((apiKey) => (
-                <Card key={apiKey.id} className="cyber-border hover:cyber-glow transition-all cursor-pointer">
+                <Card key={apiKey.id} className="cyber-border hover:cyber-glow transition-all">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -169,7 +173,7 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
                           onClick={() => onSelectApiKey(apiKey)}
                           className="cyber-glow"
                         >
-                          Usar esta clave
+                          Continuar con esta clave
                         </Button>
                         <Button
                           variant="outline"
@@ -207,7 +211,9 @@ const HeyGenApiKeyManager: React.FC<Props> = ({ apiKeys, onSelectApiKey, onRefre
           {showAddForm && (
             <Card className="cyber-border">
               <CardHeader>
-                <CardTitle>Agregar Clave API de HeyGen</CardTitle>
+                <CardTitle>
+                  {apiKeys.length === 0 ? "Configurar tu primera clave API" : "Agregar nueva clave API"}
+                </CardTitle>
                 <CardDescription>
                   Ingresa los datos de tu clave API de HeyGen. Puedes obtener tu clave en tu dashboard de HeyGen.
                 </CardDescription>

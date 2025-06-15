@@ -21,10 +21,6 @@ const VideoCreationFlow = () => {
   } = useVideoCreationFlow();
 
   useEffect(() => {
-    loadApiKeys();
-  }, []);
-
-  useEffect(() => {
     // Si llegamos al paso del generador, redirigir a la página del generador actual
     if (flowState.step === 'generator') {
       navigate('/crear-video-generator');
@@ -40,6 +36,20 @@ const VideoCreationFlow = () => {
       goToStep('avatar');
     }
   };
+
+  // Mostrar pantalla de carga mientras se determina el estado inicial
+  if (loading || flowState.step === 'loading') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4 animate-pulse">
+            <div className="w-8 h-8 bg-background rounded"></div>
+          </div>
+          <p className="text-muted-foreground">Cargando configuración...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Renderizar el componente apropiado según el paso actual
   switch (flowState.step) {
