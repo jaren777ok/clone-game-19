@@ -2,16 +2,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import {
   GenerationState,
   getGenerationState,
   saveGenerationState,
   clearGenerationState,
-  saveVideoToDatabase,
 } from '@/lib/videoGeneration';
-
-const COUNTDOWN_TIME = 57 * 60; // 57 minutes in seconds
+import { COUNTDOWN_TIME, calculateTimeRemaining, isTimeExpired } from '@/lib/countdownUtils';
+import { sendToWebhook } from '@/lib/webhookUtils';
+import { checkVideoInDatabase, checkFinalVideoResult } from '@/lib/databaseUtils';
+import { clearAllIntervals, startCountdownInterval, startPollingInterval } from '@/lib/intervalUtils';
 
 export const useVideoGenerator = () => {
   const [script, setScript] = useState('');
@@ -32,10 +32,7 @@ export const useVideoGenerator = () => {
   useEffect(() => {
     const savedState = getGenerationState();
     if (savedState && savedState.status === 'pending') {
-      const timeElapsed = Date.now() - savedState.timestamp;
-      const maxWaitTime = COUNTDOWN_TIME * 1000;
-
-      if (timeElapsed < maxWaitTime) {
+      if (!isTimeExpired(savedState.timestamp)) {
         setScript(savedState.script);
         setCurrentRequestId(savedState.requestId);
         setShowRecoveryOption(true);
@@ -51,12 +48,7 @@ export const useVideoGenerator = () => {
 
   useEffect(() => {
     return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
+      clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
     };
   }, []);
 
@@ -66,90 +58,65 @@ export const useVideoGenerator = () => {
     
     setGenerationStartTime(startTime);
     
-    // Calcular el tiempo restante basado en el tiempo real transcurrido
-    const updateTimeRemaining = () => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
+    const handleTimeUpdate = (remaining: number) => {
       setTimeRemaining(remaining);
-      
-      if (remaining <= 0) {
-        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-        checkFinalResult(scriptToCheck);
-      }
     };
 
-    // Actualizar inmediatamente
-    updateTimeRemaining();
+    const handleTimeExpired = () => {
+      checkFinalResult(scriptToCheck);
+    };
 
-    // Continuar actualizando cada segundo
-    countdownIntervalRef.current = setInterval(updateTimeRemaining, 1000);
+    startCountdownInterval(startTime, handleTimeUpdate, handleTimeExpired, countdownIntervalRef);
   };
 
   const startPeriodicChecking = (requestId: string, scriptToCheck: string) => {
     console.log('Iniciando verificación periódica cada 30 segundos');
     
-    pollingIntervalRef.current = setInterval(async () => {
+    const checkForVideo = async () => {
       try {
-        if (user) {
-          const { data, error: dbError } = await supabase
-            .from('generated_videos')
-            .select('video_url, request_id')
-            .eq('user_id', user.id)
-            .or(`request_id.eq.${requestId},script.eq.${scriptToCheck.trim()}`)
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-          if (data && data.length > 0 && !dbError) {
-            const videoUrl = data[0].video_url;
-            console.log('¡Video encontrado durante verificación!:', videoUrl);
-            
-            // Detener todos los intervalos
-            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-            
-            setVideoResult(videoUrl);
-            setIsGenerating(false);
-            clearGenerationState();
-            
-            toast({
-              title: "¡Video completado!",
-              description: "Tu video ha sido generado exitosamente.",
-            });
-          }
+        const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
+        
+        if (videoData?.video_url) {
+          console.log('¡Video encontrado durante verificación!:', videoData.video_url);
+          
+          clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
+          
+          setVideoResult(videoData.video_url);
+          setIsGenerating(false);
+          clearGenerationState();
+          
+          toast({
+            title: "¡Video completado!",
+            description: "Tu video ha sido generado exitosamente.",
+          });
         }
       } catch (e) {
         console.error('Error durante verificación periódica:', e);
       }
-    }, 30000); // Verificar cada 30 segundos
+    };
+
+    startPollingInterval(checkForVideo, pollingIntervalRef);
   };
 
   const checkFinalResult = async (scriptToCheck: string) => {
     console.log('Verificación final después del countdown');
     
     try {
-      if (user) {
-        const { data, error: dbError } = await supabase
-          .from('generated_videos')
-          .select('video_url')
-          .eq('user_id', user.id)
-          .eq('script', scriptToCheck.trim())
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (data && data.length > 0 && !dbError) {
-          setVideoResult(data[0].video_url);
-          toast({
-            title: "¡Video completado!",
-            description: "Tu video ha sido generado exitosamente.",
-          });
-        } else {
-          setError('El procesamiento tomó más tiempo del esperado. Contacta con soporte.');
-          toast({
-            title: "Tiempo agotado",
-            description: "El video está tomando más tiempo del esperado. Por favor contacta con soporte.",
-            variant: "destructive"
-          });
-        }
+      const videoUrl = await checkFinalVideoResult(user, scriptToCheck);
+      
+      if (videoUrl) {
+        setVideoResult(videoUrl);
+        toast({
+          title: "¡Video completado!",
+          description: "Tu video ha sido generado exitosamente.",
+        });
+      } else {
+        setError('El procesamiento tomó más tiempo del esperado. Contacta con soporte.');
+        toast({
+          title: "Tiempo agotado",
+          description: "El video está tomando más tiempo del esperado. Por favor contacta con soporte.",
+          variant: "destructive"
+        });
       }
     } catch (e) {
       console.error('Error en verificación final:', e);
@@ -158,38 +125,6 @@ export const useVideoGenerator = () => {
     
     setIsGenerating(false);
     clearGenerationState();
-  };
-
-  const sendToWebhook = async (script: string, requestId: string) => {
-    try {
-      console.log('Enviando datos a webhook con respuesta inmediata...');
-      
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/veroia', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          script: script.trim(), 
-          userId: user?.id || 'anonymous', 
-          requestId, 
-          timestamp: new Date().toISOString(),
-          appMode: 'immediate_response'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Respuesta inmediata recibida:', data);
-      
-      return true;
-    } catch (err) {
-      console.error('Error enviando a webhook:', err);
-      throw err;
-    }
   };
 
   const handleGenerateVideo = async () => {
@@ -221,13 +156,9 @@ export const useVideoGenerator = () => {
     console.log('Iniciando nuevo proceso de generación de video');
     
     try {
-      // Enviar a webhook y recibir respuesta inmediata
-      await sendToWebhook(script.trim(), requestId);
+      await sendToWebhook(script.trim(), requestId, user?.id);
       
-      // Iniciar contador de 57 minutos desde ahora
       startCountdown(requestId, script.trim());
-      
-      // Iniciar verificación periódica
       startPeriodicChecking(requestId, script.trim());
       
       toast({
@@ -257,7 +188,6 @@ export const useVideoGenerator = () => {
       setShowRecoveryOption(false);
       setCurrentRequestId(savedState.requestId);
       
-      // Calcular el tiempo real transcurrido
       const timeElapsed = Date.now() - savedState.timestamp;
       const timeElapsedSeconds = Math.floor(timeElapsed / 1000);
       const remainingTime = Math.max(0, COUNTDOWN_TIME - timeElapsedSeconds);
@@ -273,17 +203,11 @@ export const useVideoGenerator = () => {
         description: "Verificando el estado de tu video..." 
       });
       
-      // Verificar primero en la base de datos
       if (user) {
-        supabase.from('generated_videos')
-          .select('video_url')
-          .eq('user_id', user.id)
-          .or(`request_id.eq.${savedState.requestId},script.eq.${savedState.script}`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .then(({ data, error: dbError }) => {
-            if (data && data.length > 0 && !dbError) {
-              setVideoResult(data[0].video_url);
+        checkVideoInDatabase(user, savedState.requestId, savedState.script)
+          .then((videoData) => {
+            if (videoData?.video_url) {
+              setVideoResult(videoData.video_url);
               setIsGenerating(false);
               setIsRecovering(false);
               clearGenerationState();
@@ -292,14 +216,11 @@ export const useVideoGenerator = () => {
                 description: "Tu video estaba listo y ha sido recuperado." 
               });
             } else {
-              // Si no está en BD, continuar con verificación usando el tiempo real
               setIsRecovering(false);
               if (remainingTime > 0) {
-                // Continuar desde el punto correcto usando el timestamp original
                 startCountdown(savedState.requestId, savedState.script, savedState.timestamp);
                 startPeriodicChecking(savedState.requestId, savedState.script);
               } else {
-                // Si ya se agotó el tiempo, ir directo a verificación final
                 checkFinalResult(savedState.script);
               }
             }
@@ -328,12 +249,7 @@ export const useVideoGenerator = () => {
     setCurrentRequestId(null);
     clearGenerationState();
     
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-    }
+    clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
   };
 
   return {
