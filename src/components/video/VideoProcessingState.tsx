@@ -11,70 +11,74 @@ interface VideoProcessingStateProps {
 
 const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoProcessingStateProps) => {
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
+    <div className="min-h-screen bg-background relative overflow-hidden py-16">
       {/* Animated background */}
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
-      <div className="relative z-10 text-center max-w-3xl mx-auto px-6">
-        {/* Main Icon */}
-        <div className="mb-8 relative">
-          <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-6 animate-cyber-pulse">
-            {isRecovering ? (
-              <Wifi className="w-12 h-12 text-background" />
-            ) : (
-              <Video className="w-12 h-12 text-background" />
-            )}
+      <div className="relative z-10 container mx-auto px-6">
+        <div className="text-center max-w-3xl mx-auto space-y-8">
+          {/* Main Icon */}
+          <div className="relative">
+            <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto animate-cyber-pulse">
+              {isRecovering ? (
+                <Wifi className="w-12 h-12 text-background" />
+              ) : (
+                <Video className="w-12 h-12 text-background" />
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Title */}
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-          {isRecovering ? 'Verificando Video' : 'Generando tu Video'}
-        </h1>
-        
-        <p className="text-muted-foreground text-lg mb-8">
-          {isRecovering 
-            ? 'Verificando si tu video ya está listo en segundo plano...'
-            : 'Nuestro sistema está procesando tu solicitud con inteligencia artificial'
-          }
-        </p>
-
-        {/* Countdown Timer */}
-        <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
-
-        {/* Important Notice */}
-        <div className="bg-card/50 cyber-border border-amber-500/30 rounded-xl p-6">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
-            <h3 className="text-lg font-semibold text-amber-300">Información Importante</h3>
-          </div>
-          <div className="space-y-3 text-center">
-            <p className="text-muted-foreground text-sm">
-              🔄 El sistema verifica automáticamente cada 30 segundos
-            </p>
-            <p className="text-muted-foreground text-sm">
-              ⚡ Tu video puede estar listo antes del tiempo estimado
-            </p>
-            <p className="text-muted-foreground text-sm">
-              💻 Puedes navegar a otras páginas, pero mantén esta pestaña abierta
+          {/* Title */}
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
+              {isRecovering ? 'Verificando Video' : 'Generando tu Video'}
+            </h1>
+            
+            <p className="text-muted-foreground text-lg">
+              {isRecovering 
+                ? 'Verificando si tu video ya está listo en segundo plano...'
+                : 'Nuestro sistema está procesando tu solicitud con inteligencia artificial'
+              }
             </p>
           </div>
-        </div>
 
-        {/* Connection Status */}
-        <div className="mt-8 flex items-center justify-center space-x-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-sm text-muted-foreground">
-            Sistema de verificación activo
-          </span>
-        </div>
+          {/* Countdown Timer */}
+          <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-        {/* Animated Dots */}
-        <div className="flex justify-center mt-6">
-          <div className="flex space-x-2">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-200"></div>
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-400"></div>
+          {/* Important Notice */}
+          <div className="bg-card/50 cyber-border border-amber-500/30 rounded-xl p-6">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
+              <h3 className="text-lg font-semibold text-amber-300">Información Importante</h3>
+            </div>
+            <div className="space-y-3 text-center">
+              <p className="text-muted-foreground text-sm">
+                🔄 El sistema verifica automáticamente cada 30 segundos
+              </p>
+              <p className="text-muted-foreground text-sm">
+                ⚡ Tu video puede estar listo antes del tiempo estimado
+              </p>
+              <p className="text-muted-foreground text-sm">
+                💻 Puedes navegar a otras páginas, pero mantén esta pestaña abierta
+              </p>
+            </div>
+          </div>
+
+          {/* Connection Status */}
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-muted-foreground">
+              Sistema de verificación activo
+            </span>
+          </div>
+
+          {/* Animated Dots */}
+          <div className="flex justify-center">
+            <div className="flex space-x-2">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-200"></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-400"></div>
+            </div>
           </div>
         </div>
       </div>
