@@ -22,8 +22,12 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [totalAvatars, setTotalAvatars] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(0);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
   const [previouslySelectedAvatar, setPreviouslySelectedAvatar] = useState<Avatar | null>(null);
+
+  const AVATARS_PER_PAGE = 12;
 
   useEffect(() => {
     // Cargar selección previa del localStorage
@@ -46,6 +50,7 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   const loadAvatars = async (offset: number = 0, isInitial: boolean = false) => {
     if (isInitial) {
       setLoading(true);
+      setAvatars([]); // Limpiar avatares existentes
     } else {
       setLoadingMore(true);
     }
@@ -54,24 +59,36 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
       // Desencriptar la clave API
       const decryptedKey = atob(selectedApiKey.api_key_encrypted);
 
+      console.log(`Loading avatars: offset=${offset}, limit=${AVATARS_PER_PAGE}`);
+
       const { data, error } = await supabase.functions.invoke('heygen-avatars', {
         body: {
           apiKey: decryptedKey,
           offset,
-          limit: 12
+          limit: AVATARS_PER_PAGE
         }
       });
 
       if (error) throw error;
 
+      console.log(`Received ${data.avatars?.length || 0} avatars from API`);
+
       if (isInitial) {
         setAvatars(data.avatars || []);
         setTotalAvatars(data.total || 0);
+        setCurrentPage(data.currentPage || 1);
+        setTotalPages(data.totalPages || 0);
       } else {
-        setAvatars(prev => [...prev, ...(data.avatars || [])]);
+        setAvatars(prev => {
+          const newAvatars = [...prev, ...(data.avatars || [])];
+          console.log(`Total avatars after adding more: ${newAvatars.length}`);
+          return newAvatars;
+        });
+        setCurrentPage(data.currentPage || currentPage + 1);
       }
 
       setHasMore(data.hasMore || false);
+      
     } catch (error) {
       console.error('Error loading avatars:', error);
       toast({
@@ -87,7 +104,9 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
 
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
-      loadAvatars(avatars.length, false);
+      const nextOffset = avatars.length;
+      console.log(`Loading more avatars from offset: ${nextOffset}`);
+      loadAvatars(nextOffset, false);
     }
   };
 
@@ -142,11 +161,14 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
             <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4 leading-relaxed">
               Elige el avatar que representará tu contenido en el video
             </p>
-            {/* Contador de avatares */}
+            {/* Contador de avatares con información de paginación */}
             {totalAvatars > 0 && (
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Mostrando {avatars.length} de {totalAvatars} avatares
-              </p>
+              <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                <p>Mostrando {avatars.length} de {totalAvatars} avatares</p>
+                {totalPages > 1 && (
+                  <p>Página {Math.ceil(avatars.length / AVATARS_PER_PAGE)} de {totalPages}</p>
+                )}
+              </div>
             )}
           </div>
 
