@@ -43,7 +43,7 @@ const ScriptForm = ({ script, setScript, onSubmit, isGenerating, error }: Script
                 Tiempo de procesamiento extendido
               </p>
               <p className="text-muted-foreground text-sm">
-                La generación puede tomar hasta 50 minutos. El sistema verificará automáticamente 
+                La generación puede tomar hasta 2 horas. El sistema monitorea automáticamente 
                 el progreso y te notificará cuando esté listo.
               </p>
             </div>
@@ -55,10 +55,10 @@ const ScriptForm = ({ script, setScript, onSubmit, isGenerating, error }: Script
             <Wifi className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-green-300 text-sm font-medium mb-1">
-                Conexión mejorada y reintentos automáticos
+                Sistema de monitoreo inteligente
               </p>
               <p className="text-muted-foreground text-sm">
-                Sistema con múltiples intentos de conexión y modo de respaldo automático 
+                Conexión estable de larga duración con sistema de monitoreo automático 
                 para garantizar que tu video se procese correctamente.
               </p>
             </div>

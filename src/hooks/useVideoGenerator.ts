@@ -25,8 +25,6 @@ export const useVideoGenerator = () => {
   const { toast } = useToast();
   const abortControllerRef = useRef<AbortController | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
-  const maxReconnectAttempts = 3;
 
   useEffect(() => {
     const savedState = getGenerationState();
@@ -59,7 +57,7 @@ export const useVideoGenerator = () => {
   }, []);
 
   const startPolling = (requestId: string, scriptToPoll: string) => {
-    console.log('Iniciando polling para requestId:', requestId);
+    console.log('Activando sistema de monitoreo para requestId:', requestId);
     
     pollingIntervalRef.current = setInterval(async () => {
       try {
@@ -74,7 +72,7 @@ export const useVideoGenerator = () => {
 
           if (data && data.length > 0 && !dbError) {
             const videoUrl = data[0].video_url;
-            console.log('Video encontrado en BD durante polling:', videoUrl);
+            console.log('Video completado y encontrado:', videoUrl);
             
             if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
             
@@ -89,21 +87,24 @@ export const useVideoGenerator = () => {
           }
         }
       } catch (e) {
-        console.error('Error durante polling:', e);
+        console.error('Error durante monitoreo:', e);
       }
-    }, 15000); // Verificar cada 15 segundos para ser más eficiente
+    }, 20000); // Verificar cada 20 segundos para ser eficiente
   };
 
-  const attemptWebhookConnection = async (script: string, requestId: string, retryCount = 0) => {
+  const connectToWebhook = async (script: string, requestId: string) => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    // Timeout dinámico: aumenta con cada reintento
-    const timeoutDuration = Math.min(30000 + (retryCount * 10000), 60000); // 30s base, max 60s
-    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+    // Timeout de 2 horas para permitir conexión estable
+    const webhookTimeout = 2 * 60 * 60 * 1000; // 2 horas = 7,200,000 ms
+    const timeoutId = setTimeout(() => {
+      console.log('Timeout de webhook alcanzado, activando sistema de monitoreo');
+      controller.abort();
+    }, webhookTimeout);
 
     try {
-      console.log(`Intento ${retryCount + 1} de conexión con webhook`);
+      console.log('Conectando con el servicio de generación de video...');
       
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/veroia', {
         method: 'POST',
@@ -123,11 +124,11 @@ export const useVideoGenerator = () => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Error del servidor: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Respuesta del webhook recibida:', data);
+      console.log('Respuesta del servicio recibida:', data);
       
       const videoUrl = extractVideoUrl(data);
       
@@ -141,46 +142,33 @@ export const useVideoGenerator = () => {
         });
         return true;
       } else {
-        console.log('No se encontró URL inmediata, activando polling...');
+        console.log('Video en procesamiento, activando monitoreo automático...');
         startPolling(requestId, script);
         toast({ 
-          title: "Procesando video", 
-          description: "Tu video se está generando en segundo plano. Te notificaremos cuando esté listo." 
+          title: "Video en procesamiento", 
+          description: "Tu video se está generando. Te notificaremos cuando esté listo." 
         });
         return true;
       }
 
     } catch (err) {
       clearTimeout(timeoutId);
-      console.error(`Error en intento ${retryCount + 1}:`, err);
+      console.log('Conexión finalizada, activando sistema de monitoreo:', err);
 
-      // Si es un error de red/timeout y tenemos reintentos disponibles
-      if (retryCount < maxReconnectAttempts && 
-          (err instanceof Error && (err.name === 'AbortError' || err.message.includes('fetch')))) {
-        
-        reconnectAttemptsRef.current = retryCount + 1;
-        console.log(`Reintentando conexión en ${(retryCount + 1) * 2} segundos...`);
-        
-        toast({
-          title: "Reintentando conexión",
-          description: `Intento ${retryCount + 1}/${maxReconnectAttempts}. Reconectando...`,
-        });
-
-        // Esperar antes del siguiente intento
-        await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 2000));
-        
-        return attemptWebhookConnection(script, requestId, retryCount + 1);
-      } else {
-        // Todos los reintentos fallaron, activar polling como respaldo
-        console.log('Todos los reintentos fallaron, activando sistema de respaldo');
+      // Si es por timeout o abort (normal), activar polling sin mostrar error
+      if (err instanceof Error && (err.name === 'AbortError' || err.message.includes('timeout'))) {
+        console.log('Activando monitoreo automático del progreso...');
         startPolling(requestId, script);
         
         toast({
-          title: "Activando modo de respaldo",
-          description: "La conexión directa falló, pero tu video se está procesando. Te notificaremos cuando esté listo.",
+          title: "Procesamiento en curso",
+          description: "Tu video se está generando en segundo plano. Te notificaremos cuando esté listo.",
         });
         
-        return true; // No es realmente un error, solo cambio de estrategia
+        return true;
+      } else {
+        // Solo mostrar error si es un error real (no timeout)
+        throw err;
       }
     }
   };
@@ -200,7 +188,6 @@ export const useVideoGenerator = () => {
     setVideoResult(null);
     setGenerationStartTime(Date.now());
     setShowRecoveryOption(false);
-    reconnectAttemptsRef.current = 0;
 
     const requestId = `${user?.id || 'anonymous'}-${Date.now()}`;
     const generationState: GenerationState = { 
@@ -211,24 +198,19 @@ export const useVideoGenerator = () => {
     };
     saveGenerationState(generationState);
 
-    console.log('Iniciando generación de video con conexión mejorada');
+    console.log('Iniciando generación de video con conexión estable');
     
     try {
-      const success = await attemptWebhookConnection(script.trim(), requestId);
-      
-      if (!success) {
-        throw new Error('No se pudo establecer conexión con el servicio');
-      }
-
+      await connectToWebhook(script.trim(), requestId);
     } catch (err) {
-      console.error('Error final en generación:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error en generación:', err);
+      setError(err instanceof Error ? err.message : 'Error de conexión');
       clearGenerationState();
       setIsGenerating(false);
       
       toast({ 
         title: "Error de conexión", 
-        description: "No se pudo conectar con el servicio. Por favor, intenta de nuevo.", 
+        description: "No se pudo conectar con el servicio. Por favor, verifica tu conexión e intenta de nuevo.", 
         variant: "destructive" 
       });
     }
@@ -266,7 +248,7 @@ export const useVideoGenerator = () => {
                 description: "Tu video estaba listo y ha sido recuperado." 
               });
             } else {
-              // Si no está en BD, activar polling
+              // Si no está en BD, activar monitoreo
               setIsRecovering(false);
               startPolling(savedState.requestId, savedState.script);
             }
@@ -291,7 +273,6 @@ export const useVideoGenerator = () => {
     setGenerationStartTime(null);
     setShowRecoveryOption(false);
     setIsRecovering(false);
-    reconnectAttemptsRef.current = 0;
     clearGenerationState();
     
     if (pollingIntervalRef.current) {
