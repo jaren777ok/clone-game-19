@@ -3,7 +3,7 @@ export const sendToWebhook = async (script: string, requestId: string, userId?: 
   try {
     console.log('Enviando datos a webhook con respuesta inmediata...');
     
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/veroia', {
+    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/veroia', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
