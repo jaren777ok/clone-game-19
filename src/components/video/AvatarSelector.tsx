@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Search, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, HeyGenApiKey } from '@/hooks/useVideoCreationFlow';
+import AvatarGrid from './AvatarGrid';
+import LoadMoreButton from './LoadMoreButton';
+import PreviousSelectionBanner from './PreviousSelectionBanner';
 
 interface Props {
   selectedApiKey: HeyGenApiKey;
@@ -126,25 +128,10 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
 
         {/* Mostrar selección previa si existe */}
         {previouslySelectedAvatar && (
-          <div className="max-w-6xl mx-auto mb-6 sm:mb-8">
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 sm:p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
-                <h3 className="text-base sm:text-lg font-semibold">Selección anterior</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Tienes <strong>{previouslySelectedAvatar.avatar_name}</strong> seleccionado previamente. 
-                Puedes continuar con esta selección o elegir un avatar diferente.
-              </p>
-              <Button
-                onClick={() => handleSelectAvatar(previouslySelectedAvatar)}
-                className="cyber-glow text-sm"
-                size="sm"
-              >
-                Continuar con {previouslySelectedAvatar.avatar_name}
-              </Button>
-            </div>
-          </div>
+          <PreviousSelectionBanner
+            previouslySelectedAvatar={previouslySelectedAvatar}
+            onContinueWithPrevious={handleSelectAvatar}
+          />
         )}
 
         <div className="max-w-6xl mx-auto">
@@ -163,81 +150,17 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
             )}
           </div>
 
-          {avatars.length === 0 ? (
-            <div className="text-center py-12">
-              <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No se encontraron avatares en tu cuenta de HeyGen.</p>
-            </div>
-          ) : (
-            <>
-              {/* Grid de avatares */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8 px-2">
-                {avatars.map((avatar) => (
-                  <Card 
-                    key={avatar.avatar_id}
-                    className={`cyber-border hover:cyber-glow transition-all cursor-pointer transform hover:scale-[1.02] ${
-                      selectedAvatarId === avatar.avatar_id ? 'cyber-glow-intense' : ''
-                    }`}
-                  >
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="aspect-square mb-3 sm:mb-4 rounded-lg overflow-hidden bg-muted relative">
-                        {selectedAvatarId === avatar.avatar_id && (
-                          <div className="absolute top-2 right-2 z-10">
-                            <CheckCircle2 className="w-5 h-5 text-primary bg-background rounded-full" />
-                          </div>
-                        )}
-                        <img
-                          src={avatar.preview_image_url}
-                          alt={avatar.avatar_name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/placeholder.svg';
-                          }}
-                        />
-                      </div>
-                      <h3 className="font-semibold text-center mb-3 text-sm sm:text-base truncate">
-                        {avatar.avatar_name}
-                      </h3>
-                      <Button
-                        onClick={() => handleSelectAvatar(avatar)}
-                        className="w-full cyber-glow text-xs sm:text-sm"
-                        size="sm"
-                        variant={selectedAvatarId === avatar.avatar_id ? "default" : "outline"}
-                      >
-                        {selectedAvatarId === avatar.avatar_id ? "Continuar" : "Elegir Avatar"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+          <AvatarGrid
+            avatars={avatars}
+            selectedAvatarId={selectedAvatarId}
+            onSelectAvatar={handleSelectAvatar}
+          />
 
-              {/* Botón cargar más */}
-              {hasMore && (
-                <div className="text-center">
-                  <Button
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    variant="outline"
-                    className="cyber-border hover:cyber-glow"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Cargando más avatares...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="w-4 h-4 mr-2" />
-                        Cargar más Avatars
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
+          <LoadMoreButton
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={handleLoadMore}
+          />
         </div>
       </div>
 
