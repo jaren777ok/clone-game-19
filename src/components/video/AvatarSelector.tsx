@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, HeyGenApiKey } from '@/hooks/useVideoCreationFlow';
+import { Avatar, HeyGenApiKey } from '@/types/videoFlow';
 import AvatarGrid from './AvatarGrid';
 import LoadMoreButton from './LoadMoreButton';
 import PreviousSelectionBanner from './PreviousSelectionBanner';

@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
-import { Avatar } from '@/hooks/useVideoCreationFlow';
+import { Avatar } from '@/types/videoFlow';
 
 interface Props {
   avatar: Avatar;

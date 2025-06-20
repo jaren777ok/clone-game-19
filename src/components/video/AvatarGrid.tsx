@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Search } from 'lucide-react';
-import { Avatar } from '@/hooks/useVideoCreationFlow';
+import { Avatar } from '@/types/videoFlow';
 import AvatarCard from './AvatarCard';
 
 interface Props {

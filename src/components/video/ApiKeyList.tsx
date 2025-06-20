@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
-import { HeyGenApiKey } from '@/hooks/useVideoCreationFlow';
+import { HeyGenApiKey } from '@/types/videoFlow';
 import ApiKeyCard from './ApiKeyCard';
 
 interface Props {

@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Key, Trash2 } from 'lucide-react';
-import { HeyGenApiKey } from '@/hooks/useVideoCreationFlow';
+import { HeyGenApiKey } from '@/types/videoFlow';
 
 interface Props {
   apiKey: HeyGenApiKey;
