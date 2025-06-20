@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Fetching voices from HeyGen API with offset: ${offset}, limit: ${limit}`);
+    console.log(`Using API key: ${apiKey.substring(0, 10)}...`);
 
     // Fetch voices from HeyGen API
     const response = await fetch('https://api.heygen.com/v2/voices', {
@@ -44,6 +45,8 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error('HeyGen API error:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('HeyGen API error details:', errorText);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch voices from HeyGen' }),
         { 
@@ -54,14 +57,37 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log(`HeyGen API returned ${data.data?.length || 0} total voices`);
+    console.log('HeyGen API response structure:', JSON.stringify(data, null, 2));
 
-    // HeyGen returns all voices at once, so we need to paginate manually
-    const allVoices: Voice[] = (data.data || []).map((voice: any) => ({
-      voice_id: voice.voice_id,
-      voice_name: voice.name || voice.voice_name,
-      preview_audio_url: voice.preview_audio || voice.preview_audio_url || '',
-    }));
+    // Extract voices from the correct path in HeyGen response
+    let allVoices: Voice[] = [];
+    
+    if (data.data && data.data.voices && Array.isArray(data.data.voices)) {
+      // HeyGen API returns voices in data.data.voices
+      allVoices = data.data.voices.map((voice: any) => ({
+        voice_id: voice.voice_id,
+        voice_name: voice.name || voice.voice_name || 'Unknown Voice',
+        preview_audio_url: voice.preview_audio || voice.preview_audio_url || '',
+      }));
+    } else if (data.data && Array.isArray(data.data)) {
+      // Fallback: if voices are directly in data.data
+      allVoices = data.data.map((voice: any) => ({
+        voice_id: voice.voice_id,
+        voice_name: voice.name || voice.voice_name || 'Unknown Voice',
+        preview_audio_url: voice.preview_audio || voice.preview_audio_url || '',
+      }));
+    } else {
+      console.error('Unexpected HeyGen API response structure:', data);
+      return new Response(
+        JSON.stringify({ error: 'Unexpected response structure from HeyGen API' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log(`Extracted ${allVoices.length} voices from HeyGen API`);
 
     // Manual pagination
     const startIndex = offset;
