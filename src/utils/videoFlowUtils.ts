@@ -11,6 +11,7 @@ export const determineInitialStep = (
       step: 'api-key',
       selectedApiKey: null,
       selectedAvatar: null,
+      selectedVoice: null,
       selectedStyle: null
     };
   }
@@ -21,17 +22,26 @@ export const determineInitialStep = (
     
     if (savedKeyExists) {
       // If has all selections, go to generator
-      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedStyle) {
+      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle) {
         return {
           ...savedState,
           step: 'generator'
         };
       }
-      // If has key and avatar, go to style
-      if (savedState.selectedApiKey && savedState.selectedAvatar) {
+      // If has key, avatar, and voice, go to style
+      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice) {
         return {
           ...savedState,
           step: 'style',
+          selectedStyle: null
+        };
+      }
+      // If has key and avatar, go to voice
+      if (savedState.selectedApiKey && savedState.selectedAvatar) {
+        return {
+          ...savedState,
+          step: 'voice',
+          selectedVoice: null,
           selectedStyle: null
         };
       }
@@ -41,6 +51,7 @@ export const determineInitialStep = (
           ...savedState,
           step: 'avatar',
           selectedAvatar: null,
+          selectedVoice: null,
           selectedStyle: null
         };
       }
@@ -52,6 +63,7 @@ export const determineInitialStep = (
     step: 'api-key',
     selectedApiKey: null,
     selectedAvatar: null,
+    selectedVoice: null,
     selectedStyle: null
   };
 };

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
 import AvatarSelector from '@/components/video/AvatarSelector';
+import VoiceSelector from '@/components/video/VoiceSelector';
 import StyleSelector from '@/components/video/StyleSelector';
 
 const VideoCreationFlow = () => {
@@ -15,6 +16,7 @@ const VideoCreationFlow = () => {
     loadApiKeys,
     selectApiKey,
     selectAvatar,
+    selectVoice,
     selectStyle,
     goToStep,
     resetFlow
@@ -25,14 +27,16 @@ const VideoCreationFlow = () => {
       navigate('/dashboard');
     } else if (flowState.step === 'avatar') {
       goToStep('api-key');
-    } else if (flowState.step === 'style') {
+    } else if (flowState.step === 'voice') {
       goToStep('avatar');
+    } else if (flowState.step === 'style') {
+      goToStep('voice');
     }
   };
 
   const handleProceedToGenerator = () => {
     // Solo navegar si tenemos todas las selecciones necesarias
-    if (flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedStyle) {
+    if (flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle) {
       navigate('/crear-video-generator');
     }
   };
@@ -107,9 +111,22 @@ const VideoCreationFlow = () => {
         />
       );
 
-    case 'style':
-      if (!flowState.selectedAvatar) {
+    case 'voice':
+      if (!flowState.selectedAvatar || !flowState.selectedApiKey) {
         goToStep('avatar');
+        return null;
+      }
+      return (
+        <VoiceSelector
+          selectedApiKey={flowState.selectedApiKey}
+          onSelectVoice={selectVoice}
+          onBack={handleBack}
+        />
+      );
+
+    case 'style':
+      if (!flowState.selectedVoice) {
+        goToStep('voice');
         return null;
       }
       return (

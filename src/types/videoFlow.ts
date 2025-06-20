@@ -12,6 +12,12 @@ export interface Avatar {
   preview_image_url: string;
 }
 
+export interface Voice {
+  voice_id: string;
+  voice_name: string;
+  preview_audio_url: string;
+}
+
 export interface VideoStyle {
   id: string;
   name: string;
@@ -19,8 +25,9 @@ export interface VideoStyle {
 }
 
 export interface FlowState {
-  step: 'loading' | 'api-key' | 'avatar' | 'style' | 'generator';
+  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
   selectedAvatar: Avatar | null;
+  selectedVoice: Voice | null;
   selectedStyle: VideoStyle | null;
 }

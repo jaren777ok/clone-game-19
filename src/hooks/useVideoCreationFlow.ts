@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FlowState, HeyGenApiKey, Avatar, VideoStyle } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { 
   determineInitialStep, 
@@ -15,6 +15,7 @@ export const useVideoCreationFlow = () => {
     step: 'loading',
     selectedApiKey: null,
     selectedAvatar: null,
+    selectedVoice: null,
     selectedStyle: null
   });
   const [isInitialized, setIsInitialized] = useState(false);
@@ -59,6 +60,7 @@ export const useVideoCreationFlow = () => {
       selectedApiKey: apiKey,
       step: 'avatar',
       selectedAvatar: null,
+      selectedVoice: null,
       selectedStyle: null
     }));
   }, []);
@@ -67,6 +69,14 @@ export const useVideoCreationFlow = () => {
     setFlowState(prev => ({
       ...prev,
       selectedAvatar: avatar,
+      step: 'voice'
+    }));
+  }, []);
+
+  const selectVoice = useCallback((voice: Voice) => {
+    setFlowState(prev => ({
+      ...prev,
+      selectedVoice: voice,
       step: 'style'
     }));
   }, []);
@@ -88,6 +98,7 @@ export const useVideoCreationFlow = () => {
       step: 'api-key',
       selectedApiKey: null,
       selectedAvatar: null,
+      selectedVoice: null,
       selectedStyle: null
     });
     clearFlowState();
@@ -100,6 +111,7 @@ export const useVideoCreationFlow = () => {
     loadApiKeys,
     selectApiKey,
     selectAvatar,
+    selectVoice,
     selectStyle,
     goToStep,
     resetFlow

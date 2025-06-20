@@ -21,7 +21,7 @@ const VideoGeneratorFinal = () => {
     // Solo verificar una vez para evitar bucles
     if (!hasCheckedFlow) {
       const timeoutId = setTimeout(() => {
-        if (!flowState.selectedApiKey || !flowState.selectedAvatar || !flowState.selectedStyle) {
+        if (!flowState.selectedApiKey || !flowState.selectedAvatar || !flowState.selectedVoice || !flowState.selectedStyle) {
           console.log('Datos del flujo incompletos, redirigiendo...');
           navigate('/crear-video');
         }
@@ -95,10 +95,10 @@ const VideoGeneratorFinal = () => {
 
         <div className="max-w-4xl mx-auto">
           {/* Mostrar información del flujo seleccionado */}
-          {flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedStyle && (
+          {flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle && (
             <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-6 mb-8">
               <h2 className="text-lg font-semibold mb-4">Configuración seleccionada:</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Clave API:</p>
                   <p className="font-medium">{flowState.selectedApiKey.api_key_name}</p>
@@ -106,6 +106,10 @@ const VideoGeneratorFinal = () => {
                 <div>
                   <p className="text-muted-foreground">Avatar:</p>
                   <p className="font-medium">{flowState.selectedAvatar.avatar_name}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Voz:</p>
+                  <p className="font-medium">{flowState.selectedVoice.voice_name}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Estilo:</p>
@@ -120,7 +124,7 @@ const VideoGeneratorFinal = () => {
               Generador de Videos IA
             </h1>
             <p className="text-muted-foreground text-lg">
-              Escribe tu guión y genera tu video con el avatar y estilo seleccionados
+              Escribe tu guión y genera tu video con el avatar, voz y estilo seleccionados
             </p>
           </div>
 
