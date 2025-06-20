@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,84 +39,69 @@ export const useVideoCreationFlow = () => {
   });
   const [apiKeys, setApiKeys] = useState<HeyGenApiKey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Función mejorada para determinar el paso inicial correcto
-  const determineInitialStep = (savedState: FlowState | null, availableKeys: HeyGenApiKey[]) => {
+  // Función simplificada para determinar el paso inicial
+  const determineInitialStep = (savedState: FlowState | null, availableKeys: HeyGenApiKey[]): FlowState => {
     // Si no hay claves API disponibles, ir a configuración de API
     if (availableKeys.length === 0) {
       return {
-        ...flowState,
-        step: 'api-key' as const,
+        step: 'api-key',
         selectedApiKey: null,
         selectedAvatar: null,
         selectedStyle: null
       };
     }
 
-    // Si hay un estado guardado válido, verificar configuraciones
-    if (savedState) {
+    // Si hay un estado guardado válido, usarlo pero ser conservador
+    if (savedState && savedState.selectedApiKey) {
       // Verificar si la clave API guardada todavía existe
-      const savedKeyExists = savedState.selectedApiKey && 
-        availableKeys.some(key => key.id === savedState.selectedApiKey?.id);
+      const savedKeyExists = availableKeys.some(key => key.id === savedState.selectedApiKey?.id);
       
       if (savedKeyExists) {
-        // Solo ir directamente al generador si está específicamente en ese paso
-        // y tiene todas las selecciones completas
-        if (savedState.step === 'generator' && 
-            savedState.selectedApiKey && 
-            savedState.selectedAvatar && 
-            savedState.selectedStyle) {
+        // Si tiene todas las selecciones, ir a generator
+        if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedStyle) {
           return {
             ...savedState,
-            step: 'generator' as const
+            step: 'generator'
           };
         }
-        
-        // En todos los demás casos, ir al paso correspondiente pero conservar selecciones previas
-        if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedStyle) {
-          // Si tiene todo pero no está en generator, ir a style para permitir revisión
+        // Si tiene clave y avatar, ir a style
+        if (savedState.selectedApiKey && savedState.selectedAvatar) {
           return {
             ...savedState,
-            step: 'style' as const
+            step: 'style',
+            selectedStyle: null
           };
-        } else if (savedState.selectedApiKey && savedState.selectedAvatar) {
-          // Si tiene clave y avatar, ir a style
+        }
+        // Si solo tiene clave, ir a avatar
+        if (savedState.selectedApiKey) {
           return {
             ...savedState,
-            step: 'style' as const
-          };
-        } else if (savedState.selectedApiKey) {
-          // Si solo tiene clave, ir a avatar pero conservar la clave seleccionada
-          return {
-            ...savedState,
-            step: 'avatar' as const,
-            selectedAvatar: null, // Resetear avatar para forzar nueva selección
-            selectedStyle: null   // Resetear estilo también
+            step: 'avatar',
+            selectedAvatar: null,
+            selectedStyle: null
           };
         }
       }
     }
 
-    // Si hay claves disponibles pero no hay estado válido, mostrar selección de clave
+    // Por defecto, ir a selección de clave
     return {
-      ...flowState,
-      step: 'api-key' as const,
+      step: 'api-key',
       selectedApiKey: null,
       selectedAvatar: null,
       selectedStyle: null
     };
   };
 
-  // Cargar estado del localStorage al inicializar
+  // Cargar estado del localStorage al inicializar (solo una vez)
   useEffect(() => {
-    const initializeFlow = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    if (!user || isInitialized) return;
 
+    const initializeFlow = async () => {
       try {
-        // Cargar claves API primero
+        // Cargar claves API
         const { data: keysData, error } = await supabase
           .from('heygen_api_keys')
           .select('*')
@@ -140,27 +126,33 @@ export const useVideoCreationFlow = () => {
           }
         }
 
-        // Determinar el paso inicial correcto
+        // Determinar el paso inicial
         const initialState = determineInitialStep(parsedState, keys);
         setFlowState(initialState);
+        setIsInitialized(true);
 
       } catch (error) {
         console.error('Error initializing flow:', error);
         setFlowState(prev => ({ ...prev, step: 'api-key' }));
+        setIsInitialized(true);
       } finally {
         setLoading(false);
       }
     };
 
     initializeFlow();
-  }, [user]);
+  }, [user, isInitialized]);
 
-  // Guardar estado en localStorage cuando cambie (pero no en loading)
+  // Guardar estado en localStorage cuando cambie (pero evitar loops)
   useEffect(() => {
-    if (flowState.step !== 'loading') {
-      localStorage.setItem('video_creation_flow', JSON.stringify(flowState));
+    if (isInitialized && flowState.step !== 'loading') {
+      const timeoutId = setTimeout(() => {
+        localStorage.setItem('video_creation_flow', JSON.stringify(flowState));
+      }, 100); // Debounce para evitar múltiples escrituras
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [flowState]);
+  }, [flowState, isInitialized]);
 
   // Recargar claves API del usuario
   const loadApiKeys = async () => {
@@ -183,13 +175,12 @@ export const useVideoCreationFlow = () => {
     }
   };
 
-  // Funciones mejoradas para navegar en el flujo
+  // Funciones de navegación simplificadas
   const selectApiKey = (apiKey: HeyGenApiKey) => {
     setFlowState(prev => ({
       ...prev,
       selectedApiKey: apiKey,
       step: 'avatar',
-      // Resetear selecciones posteriores para forzar nueva selección
       selectedAvatar: null,
       selectedStyle: null
     }));
@@ -228,7 +219,7 @@ export const useVideoCreationFlow = () => {
   return {
     flowState,
     apiKeys,
-    loading,
+    loading: loading || !isInitialized,
     loadApiKeys,
     selectApiKey,
     selectAvatar,

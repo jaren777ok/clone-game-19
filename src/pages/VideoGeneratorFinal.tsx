@@ -1,12 +1,11 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
-import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
 import RecoveryNotification from '@/components/video/RecoveryNotification';
 import ScriptForm from '@/components/video/ScriptForm';
 import TipsSection from '@/components/video/TipsSection';
@@ -16,18 +15,41 @@ const VideoGeneratorFinal = () => {
   const navigate = useNavigate();
   const { state, handlers } = useVideoGenerator();
   const { flowState, goToStep } = useVideoCreationFlow();
+  const [hasCheckedFlow, setHasCheckedFlow] = useState(false);
 
   useEffect(() => {
-    // Si no tenemos datos del flujo, redirigir al inicio
-    if (!flowState.selectedApiKey || !flowState.selectedAvatar || !flowState.selectedStyle) {
-      navigate('/crear-video');
+    // Solo verificar una vez para evitar bucles
+    if (!hasCheckedFlow) {
+      const timeoutId = setTimeout(() => {
+        if (!flowState.selectedApiKey || !flowState.selectedAvatar || !flowState.selectedStyle) {
+          console.log('Datos del flujo incompletos, redirigiendo...');
+          navigate('/crear-video');
+        }
+        setHasCheckedFlow(true);
+      }, 500); // Delay pequeño para permitir que se cargue el estado
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [flowState, navigate]);
+  }, [flowState, navigate, hasCheckedFlow]);
 
   const handleBack = () => {
     goToStep('style');
     navigate('/crear-video');
   };
+
+  // Si aún no hemos verificado el flujo, mostrar loading
+  if (!hasCheckedFlow) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4 animate-pulse">
+            <div className="w-8 h-8 bg-background rounded"></div>
+          </div>
+          <p className="text-muted-foreground">Verificando configuración...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (state.isGenerating) {
     return (

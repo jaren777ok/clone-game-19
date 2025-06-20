@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
@@ -20,13 +20,6 @@ const VideoCreationFlow = () => {
     resetFlow
   } = useVideoCreationFlow();
 
-  useEffect(() => {
-    // Si llegamos al paso del generador, redirigir a la página del generador actual
-    if (flowState.step === 'generator') {
-      navigate('/crear-video-generator');
-    }
-  }, [flowState.step, navigate]);
-
   const handleBack = () => {
     if (flowState.step === 'api-key') {
       navigate('/dashboard');
@@ -34,6 +27,13 @@ const VideoCreationFlow = () => {
       goToStep('api-key');
     } else if (flowState.step === 'style') {
       goToStep('avatar');
+    }
+  };
+
+  const handleProceedToGenerator = () => {
+    // Solo navegar si tenemos todas las selecciones necesarias
+    if (flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedStyle) {
+      navigate('/crear-video-generator');
     }
   };
 
@@ -46,6 +46,37 @@ const VideoCreationFlow = () => {
             <div className="w-8 h-8 bg-background rounded"></div>
           </div>
           <p className="text-muted-foreground">Cargando configuración...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Si el flujo está completo pero aún estamos aquí, mostrar botón para ir al generador
+  if (flowState.step === 'generator') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-6">
+            <div className="w-8 h-8 bg-background rounded"></div>
+          </div>
+          <h2 className="text-2xl font-bold mb-4">¡Configuración Completa!</h2>
+          <p className="text-muted-foreground mb-6">
+            Has completado la configuración del video. Ahora puedes proceder al generador.
+          </p>
+          <div className="space-y-4">
+            <button
+              onClick={handleProceedToGenerator}
+              className="w-full bg-gradient-to-r from-primary to-accent text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+            >
+              Ir al Generador de Videos
+            </button>
+            <button
+              onClick={() => goToStep('style')}
+              className="w-full border border-border text-muted-foreground px-6 py-3 rounded-lg hover:bg-muted transition-colors"
+            >
+              Revisar Configuración
+            </button>
+          </div>
         </div>
       </div>
     );
