@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { HeyGenApiKey } from '@/hooks/useVideoCreationFlow';
+import { HeyGenApiKey } from '@/types/videoFlow';
 import ApiKeyList from './ApiKeyList';
 import ApiKeyForm from './ApiKeyForm';
 

@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Play, Pause, CheckCircle2 } from 'lucide-react';
-import { VideoStyle } from '@/hooks/useVideoCreationFlow';
+import { VideoStyle } from '@/types/videoFlow';
 
 interface Props {
   onSelectStyle: (style: VideoStyle) => void;
