@@ -133,7 +133,7 @@ const VideoGeneratorFinal = () => {
 
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-              Generador de Videos IA
+              CloneGame - Generador de Videos IA
             </h1>
             <p className="text-muted-foreground text-lg">
               Tu guión ha sido generado con NeuroCopy GPT. Puedes editarlo si deseas antes de crear tu video.

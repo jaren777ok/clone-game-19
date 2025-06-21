@@ -36,7 +36,7 @@ const Index = () => {
         {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-            NEWS VERO IA
+            CloneGame
           </h1>
         </div>
 
