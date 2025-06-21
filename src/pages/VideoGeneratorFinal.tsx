@@ -2,13 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit3 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
 import RecoveryNotification from '@/components/video/RecoveryNotification';
 import ScriptForm from '@/components/video/ScriptForm';
-import TipsSection from '@/components/video/TipsSection';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 
 const VideoGeneratorFinal = () => {
@@ -141,13 +140,6 @@ const VideoGeneratorFinal = () => {
             </p>
           </div>
 
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Edit3 className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">Guión generado (editable)</span>
-            </div>
-          </div>
-
           <ScriptForm 
             script={state.script}
             setScript={handlers.setScript}
@@ -155,8 +147,6 @@ const VideoGeneratorFinal = () => {
             isGenerating={state.isGenerating}
             error={state.error}
           />
-
-          <TipsSection />
         </div>
       </div>
 

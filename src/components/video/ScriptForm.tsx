@@ -18,14 +18,14 @@ const ScriptForm = ({ script, setScript, onSubmit, isGenerating, error }: Script
       <div className="space-y-6">
         <div>
           <label htmlFor="script" className="block text-lg font-semibold text-foreground mb-3">
-            Ingresa tu enlace de Noticia y Opcional alguna indicación
+            Guión a Usar
           </label>
           <Textarea
             id="script"
             value={script}
             onChange={(e) => setScript(e.target.value)}
-            placeholder="Pega aquí el enlace de la noticia y opcionalmente agrega indicaciones sobre cómo quieres el guion..."
-            className="min-h-[200px] text-base cyber-border focus:cyber-glow resize-none"
+            placeholder="Aquí aparecerá tu guión generado que puedes editar antes de crear el video..."
+            className="min-h-[400px] text-base cyber-border focus:cyber-glow resize-none"
             maxLength={1400}
           />
           <div className="flex justify-end items-center mt-2">

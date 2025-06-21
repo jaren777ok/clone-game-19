@@ -2,7 +2,7 @@
 import { useAuth } from '@/hooks/useAuth';
 
 interface NeurocopyResponse {
-  output: string;
+  guion_IA: string;
 }
 
 export const generateScript = async (instructions: string, userId?: string): Promise<string> => {
@@ -33,9 +33,9 @@ export const generateScript = async (instructions: string, userId?: string): Pro
     const data: NeurocopyResponse[] = await response.json();
     console.log('Respuesta de NeuroCopy GPT:', data);
     
-    // La webhook retorna un array con un objeto que tiene la propiedad "output"
-    if (data && data.length > 0 && data[0].output) {
-      return data[0].output;
+    // La webhook retorna un array con un objeto que tiene la propiedad "guion_IA"
+    if (data && data.length > 0 && data[0].guion_IA) {
+      return data[0].guion_IA;
     } else {
       throw new Error('Respuesta inesperada del servidor');
     }
