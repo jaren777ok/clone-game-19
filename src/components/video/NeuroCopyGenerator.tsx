@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Sparkles, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { generateScript } from '@/lib/neurocopyUtils';
 
 interface Props {
@@ -16,6 +17,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
   const [generatedScript, setGeneratedScript] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleGenerateScript = async () => {
     if (!instructions.trim()) {
@@ -30,7 +32,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
     setIsGenerating(true);
     
     try {
-      const script = await generateScript(instructions);
+      const script = await generateScript(instructions, user?.id);
       setGeneratedScript(script);
       
       toast({
@@ -47,10 +49,6 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleGenerateAnother = () => {
-    setGeneratedScript(null);
   };
 
   const handleUseThisScript = () => {
@@ -93,49 +91,54 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
             </p>
           </div>
 
-          {!generatedScript ? (
-            <Card className="cyber-border mb-8">
-              <CardContent className="p-8">
-                <div className="space-y-6">
-                  <div>
-                    <label htmlFor="instructions" className="block text-sm font-medium mb-3">
-                      Instrucciones para tu guión
-                    </label>
-                    <textarea
-                      id="instructions"
-                      value={instructions}
-                      onChange={(e) => setInstructions(e.target.value)}
-                      placeholder="Describe el tipo de video que quieres crear, incluye enlaces de referencia, tema principal, tono deseado, duración aproximada, etc..."
-                      className="w-full h-40 p-4 border rounded-lg bg-background/50 backdrop-blur-sm cyber-border focus:cyber-glow resize-none"
-                      disabled={isGenerating}
-                    />
-                  </div>
-                  
-                  <Button
-                    onClick={handleGenerateScript}
-                    disabled={isGenerating || !instructions.trim()}
-                    className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-lg font-semibold"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                        Generando guión...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5 mr-2" />
-                        Generar Guión con IA
-                      </>
-                    )}
-                  </Button>
+          <Card className="cyber-border mb-6">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="instructions" className="block text-sm font-medium mb-3">
+                    Instrucciones para tu guión
+                  </label>
+                  <textarea
+                    id="instructions"
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    placeholder="Describe el tipo de video que quieres crear, incluye enlaces de referencia, tema principal, tono deseado, duración aproximada, etc..."
+                    className="w-full h-32 p-4 border rounded-lg bg-background/50 backdrop-blur-sm cyber-border focus:cyber-glow resize-none"
+                    disabled={isGenerating}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
+                
+                <Button
+                  onClick={handleGenerateScript}
+                  disabled={isGenerating || !instructions.trim()}
+                  className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-lg font-semibold"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                      Generando guión...
+                    </>
+                  ) : generatedScript ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 mr-2" />
+                      Generar Otro Guión
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Generar Guión con IA
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {generatedScript && (
             <div className="space-y-6">
               <Card className="cyber-border cyber-glow-intense">
                 <CardContent className="p-8">
-                  <div className="flex items-center mb-4">
+                  <div className="flex items-center mb-6">
                     <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mr-3">
                       <Sparkles className="w-4 h-4 text-white" />
                     </div>
@@ -150,24 +153,13 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
                 </CardContent>
               </Card>
 
-              <div className="flex gap-4">
-                <Button
-                  onClick={handleGenerateAnother}
-                  variant="outline"
-                  className="flex-1 h-12 cyber-border hover:cyber-glow text-lg"
-                >
-                  <RefreshCw className="w-5 h-5 mr-2" />
-                  Generar otro Copy
-                </Button>
-                
-                <Button
-                  onClick={handleUseThisScript}
-                  className="flex-1 h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-lg font-semibold"
-                >
-                  <Check className="w-5 h-5 mr-2" />
-                  Usar este Copy
-                </Button>
-              </div>
+              <Button
+                onClick={handleUseThisScript}
+                className="w-full h-14 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-xl font-semibold"
+              >
+                <Check className="w-6 h-6 mr-3" />
+                Usar este Guión
+              </Button>
             </div>
           )}
         </div>

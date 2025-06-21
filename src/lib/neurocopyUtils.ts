@@ -1,20 +1,29 @@
 
+import { useAuth } from '@/hooks/useAuth';
+
 interface NeurocopyResponse {
   output: string;
 }
 
-export const generateScript = async (instructions: string): Promise<string> => {
+export const generateScript = async (instructions: string, userId?: string): Promise<string> => {
   try {
     console.log('Enviando instrucciones a NeuroCopy GPT:', instructions);
+    
+    const requestBody: any = { 
+      instructions: instructions.trim()
+    };
+    
+    // Agregar userId si está disponible
+    if (userId) {
+      requestBody.Userid = userId;
+    }
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/guion_base', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ 
-        instructions: instructions.trim()
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
