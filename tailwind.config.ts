@@ -83,18 +83,18 @@ export default {
 				},
 				'cyber-pulse': {
 					'0%, 100%': {
-						boxShadow: '0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.1)'
+						boxShadow: '0 0 20px rgba(255, 0, 128, 0.4), 0 0 40px rgba(255, 0, 128, 0.15)'
 					},
 					'50%': {
-						boxShadow: '0 0 30px rgba(0, 255, 255, 0.5), 0 0 60px rgba(0, 255, 255, 0.2)'
+						boxShadow: '0 0 30px rgba(255, 0, 128, 0.6), 0 0 60px rgba(255, 0, 128, 0.25)'
 					}
 				},
 				'glow-text': {
 					'0%, 100%': {
-						textShadow: '0 0 10px rgba(0, 255, 255, 0.5)'
+						textShadow: '0 0 10px rgba(255, 0, 128, 0.6)'
 					},
 					'50%': {
-						textShadow: '0 0 20px rgba(0, 255, 255, 0.8), 0 0 30px rgba(0, 255, 255, 0.4)'
+						textShadow: '0 0 20px rgba(255, 0, 128, 0.9), 0 0 30px rgba(255, 0, 128, 0.5)'
 					}
 				}
 			},

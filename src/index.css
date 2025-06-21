@@ -7,39 +7,39 @@
 
 @layer base {
   :root {
-    --background: 0 0% 5%;
+    --background: 0 0% 3%;
     --foreground: 0 0% 98%;
 
-    --card: 0 0% 8%;
+    --card: 0 0% 6%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 8%;
+    --popover: 0 0% 6%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 180 100% 50%;
-    --primary-foreground: 0 0% 5%;
+    --primary: 320 100% 50%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 0 0% 12%;
+    --secondary: 0 0% 10%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 12%;
+    --muted: 0 0% 10%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 180 100% 40%;
+    --accent: 15 100% 60%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 180 100% 50%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 320 100% 50%;
 
     --radius: 0.5rem;
 
-    --cyber-glow: 180 100% 50%;
-    --cyber-glow-intense: 180 100% 60%;
-    --cyber-dark: 0 0% 3%;
+    --cyber-glow: 320 100% 50%;
+    --cyber-glow-intense: 320 100% 65%;
+    --cyber-dark: 0 0% 2%;
   }
 }
 
@@ -51,27 +51,27 @@
   body {
     @apply bg-background text-foreground;
     background-image: 
-      radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 40% 80%, rgba(0, 255, 255, 0.08) 0%, transparent 50%);
+      radial-gradient(circle at 20% 50%, rgba(255, 0, 128, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 107, 53, 0.06) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, rgba(255, 20, 147, 0.07) 0%, transparent 50%);
   }
 }
 
 @layer utilities {
   .cyber-glow {
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 20px rgba(255, 0, 128, 0.4), 0 0 40px rgba(255, 0, 128, 0.15);
   }
   
   .cyber-glow-intense {
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5), 0 0 60px rgba(0, 255, 255, 0.2), inset 0 0 20px rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 30px rgba(255, 0, 128, 0.6), 0 0 60px rgba(255, 0, 128, 0.25), inset 0 0 20px rgba(255, 0, 128, 0.1);
   }
   
   .cyber-border {
-    border: 1px solid rgba(0, 255, 255, 0.3);
+    border: 1px solid rgba(255, 0, 128, 0.4);
   }
   
   .cyber-gradient {
-    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(0, 255, 255, 0.05) 100%);
+    background: linear-gradient(135deg, rgba(255, 0, 128, 0.12) 0%, rgba(255, 107, 53, 0.08) 100%);
   }
 
   .animate-float {
