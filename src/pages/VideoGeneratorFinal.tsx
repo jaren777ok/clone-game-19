@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit3 } from 'lucide-react';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
@@ -17,11 +17,18 @@ const VideoGeneratorFinal = () => {
   const { state, handlers } = useVideoGenerator({ flowState });
   const [hasCheckedFlow, setHasCheckedFlow] = useState(false);
 
+  // Pre-fill script with generated script from flow
+  useEffect(() => {
+    if (flowState.generatedScript && !state.script) {
+      handlers.setScript(flowState.generatedScript);
+    }
+  }, [flowState.generatedScript, state.script, handlers]);
+
   useEffect(() => {
     // Solo verificar una vez para evitar bucles
     if (!hasCheckedFlow) {
       const timeoutId = setTimeout(() => {
-        if (!flowState.selectedApiKey || !flowState.selectedAvatar || !flowState.selectedVoice || !flowState.selectedStyle) {
+        if (!flowState.selectedApiKey || !flowState.selectedAvatar || !flowState.selectedVoice || !flowState.selectedStyle || !flowState.generatedScript) {
           console.log('Datos del flujo incompletos, redirigiendo...');
           navigate('/crear-video');
         }
@@ -33,7 +40,7 @@ const VideoGeneratorFinal = () => {
   }, [flowState, navigate, hasCheckedFlow]);
 
   const handleBack = () => {
-    goToStep('style');
+    goToStep('neurocopy');
     navigate('/crear-video');
   };
 
@@ -82,7 +89,7 @@ const VideoGeneratorFinal = () => {
             className="cyber-border hover:cyber-glow"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Cambiar estilo
+            Modificar guión
           </Button>
         </div>
 
@@ -96,8 +103,14 @@ const VideoGeneratorFinal = () => {
         <div className="max-w-4xl mx-auto">
           {/* Mostrar información del flujo seleccionado */}
           {flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle && (
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-6 mb-8">
-              <h2 className="text-lg font-semibold mb-4">Configuración seleccionada:</h2>
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-6 mb-8 cyber-border">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Configuración seleccionada:</h2>
+                <div className="flex items-center text-sm text-green-400">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                  Configuración completa
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Clave API:</p>
@@ -124,8 +137,15 @@ const VideoGeneratorFinal = () => {
               Generador de Videos IA
             </h1>
             <p className="text-muted-foreground text-lg">
-              Escribe tu guión y genera tu video con el avatar, voz y estilo seleccionados
+              Tu guión ha sido generado con NeuroCopy GPT. Puedes editarlo si deseas antes de crear tu video.
             </p>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Edit3 className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">Guión generado (editable)</span>
+            </div>
           </div>
 
           <ScriptForm 

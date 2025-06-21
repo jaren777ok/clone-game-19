@@ -12,7 +12,8 @@ export const determineInitialStep = (
       selectedApiKey: null,
       selectedAvatar: null,
       selectedVoice: null,
-      selectedStyle: null
+      selectedStyle: null,
+      generatedScript: null
     };
   }
 
@@ -21,11 +22,19 @@ export const determineInitialStep = (
     const savedKeyExists = availableKeys.some(key => key.id === savedState.selectedApiKey?.id);
     
     if (savedKeyExists) {
-      // If has all selections, go to generator
-      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle) {
+      // If has all selections including generated script, go to generator
+      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle && savedState.generatedScript) {
         return {
           ...savedState,
           step: 'generator'
+        };
+      }
+      // If has all selections but no script, go to neurocopy
+      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle) {
+        return {
+          ...savedState,
+          step: 'neurocopy',
+          generatedScript: null
         };
       }
       // If has key, avatar, and voice, go to style
@@ -33,7 +42,8 @@ export const determineInitialStep = (
         return {
           ...savedState,
           step: 'style',
-          selectedStyle: null
+          selectedStyle: null,
+          generatedScript: null
         };
       }
       // If has key and avatar, go to voice
@@ -42,7 +52,8 @@ export const determineInitialStep = (
           ...savedState,
           step: 'voice',
           selectedVoice: null,
-          selectedStyle: null
+          selectedStyle: null,
+          generatedScript: null
         };
       }
       // If only has key, go to avatar
@@ -52,7 +63,8 @@ export const determineInitialStep = (
           step: 'avatar',
           selectedAvatar: null,
           selectedVoice: null,
-          selectedStyle: null
+          selectedStyle: null,
+          generatedScript: null
         };
       }
     }
@@ -64,7 +76,8 @@ export const determineInitialStep = (
     selectedApiKey: null,
     selectedAvatar: null,
     selectedVoice: null,
-    selectedStyle: null
+    selectedStyle: null,
+    generatedScript: null
   };
 };
 

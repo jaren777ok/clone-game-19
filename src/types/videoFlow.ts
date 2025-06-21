@@ -25,9 +25,10 @@ export interface VideoStyle {
 }
 
 export interface FlowState {
-  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'generator';
+  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'neurocopy' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
   selectedAvatar: Avatar | null;
   selectedVoice: Voice | null;
   selectedStyle: VideoStyle | null;
+  generatedScript: string | null;
 }

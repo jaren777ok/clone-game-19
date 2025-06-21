@@ -6,6 +6,7 @@ import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
 import AvatarSelector from '@/components/video/AvatarSelector';
 import VoiceSelector from '@/components/video/VoiceSelector';
 import StyleSelector from '@/components/video/StyleSelector';
+import NeuroCopyGenerator from '@/components/video/NeuroCopyGenerator';
 
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const VideoCreationFlow = () => {
     selectAvatar,
     selectVoice,
     selectStyle,
+    selectGeneratedScript,
     goToStep,
     resetFlow
   } = useVideoCreationFlow();
@@ -31,12 +33,14 @@ const VideoCreationFlow = () => {
       goToStep('avatar');
     } else if (flowState.step === 'style') {
       goToStep('voice');
+    } else if (flowState.step === 'neurocopy') {
+      goToStep('style');
     }
   };
 
   const handleProceedToGenerator = () => {
-    // Solo navegar si tenemos todas las selecciones necesarias
-    if (flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle) {
+    // Solo navegar si tenemos todas las selecciones necesarias incluyendo el script
+    if (flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle && flowState.generatedScript) {
       navigate('/crear-video-generator');
     }
   };
@@ -65,7 +69,7 @@ const VideoCreationFlow = () => {
           </div>
           <h2 className="text-2xl font-bold mb-4">¡Configuración Completa!</h2>
           <p className="text-muted-foreground mb-6">
-            Has completado la configuración del video. Ahora puedes proceder al generador.
+            Has completado la configuración del video incluyendo la generación del guión. Ahora puedes proceder al generador.
           </p>
           <div className="space-y-4">
             <button
@@ -75,10 +79,10 @@ const VideoCreationFlow = () => {
               Ir al Generador de Videos
             </button>
             <button
-              onClick={() => goToStep('style')}
+              onClick={() => goToStep('neurocopy')}
               className="w-full border border-border text-muted-foreground px-6 py-3 rounded-lg hover:bg-muted transition-colors"
             >
-              Revisar Configuración
+              Revisar Guión
             </button>
           </div>
         </div>
@@ -133,6 +137,18 @@ const VideoCreationFlow = () => {
         <StyleSelector
           onSelectStyle={selectStyle}
           onBack={handleBack}
+        />
+      );
+
+    case 'neurocopy':
+      if (!flowState.selectedStyle) {
+        goToStep('style');
+        return null;
+      }
+      return (
+        <NeuroCopyGenerator
+          onBack={handleBack}
+          onUseScript={selectGeneratedScript}
         />
       );
 

@@ -16,7 +16,8 @@ export const useVideoCreationFlow = () => {
     selectedApiKey: null,
     selectedAvatar: null,
     selectedVoice: null,
-    selectedStyle: null
+    selectedStyle: null,
+    generatedScript: null
   });
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -61,7 +62,8 @@ export const useVideoCreationFlow = () => {
       step: 'avatar',
       selectedAvatar: null,
       selectedVoice: null,
-      selectedStyle: null
+      selectedStyle: null,
+      generatedScript: null
     }));
   }, []);
 
@@ -85,6 +87,14 @@ export const useVideoCreationFlow = () => {
     setFlowState(prev => ({
       ...prev,
       selectedStyle: style,
+      step: 'neurocopy'
+    }));
+  }, []);
+
+  const selectGeneratedScript = useCallback((script: string) => {
+    setFlowState(prev => ({
+      ...prev,
+      generatedScript: script,
       step: 'generator'
     }));
   }, []);
@@ -99,7 +109,8 @@ export const useVideoCreationFlow = () => {
       selectedApiKey: null,
       selectedAvatar: null,
       selectedVoice: null,
-      selectedStyle: null
+      selectedStyle: null,
+      generatedScript: null
     });
     clearFlowState();
   }, []);
@@ -113,6 +124,7 @@ export const useVideoCreationFlow = () => {
     selectAvatar,
     selectVoice,
     selectStyle,
+    selectGeneratedScript,
     goToStep,
     resetFlow
   };
