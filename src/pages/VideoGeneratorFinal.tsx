@@ -13,8 +13,8 @@ import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 
 const VideoGeneratorFinal = () => {
   const navigate = useNavigate();
-  const { state, handlers } = useVideoGenerator();
   const { flowState, goToStep } = useVideoCreationFlow();
+  const { state, handlers } = useVideoGenerator({ flowState });
   const [hasCheckedFlow, setHasCheckedFlow] = useState(false);
 
   useEffect(() => {

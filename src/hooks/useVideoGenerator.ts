@@ -12,8 +12,14 @@ import { COUNTDOWN_TIME, calculateTimeRemaining, isTimeExpired } from '@/lib/cou
 import { sendToWebhook } from '@/lib/webhookUtils';
 import { checkVideoInDatabase, checkFinalVideoResult } from '@/lib/databaseUtils';
 import { clearAllIntervals, startCountdownInterval, startPollingInterval } from '@/lib/intervalUtils';
+import { getStyleInternalId } from '@/utils/styleMapping';
+import { FlowState } from '@/types/videoFlow';
 
-export const useVideoGenerator = () => {
+interface UseVideoGeneratorProps {
+  flowState?: FlowState;
+}
+
+export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   const [script, setScript] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoResult, setVideoResult] = useState<string | null>(null);
@@ -137,6 +143,17 @@ export const useVideoGenerator = () => {
       return;
     }
 
+    // Validar que tenemos todos los datos del flujo
+    const flowState = props?.flowState;
+    if (!flowState?.selectedApiKey || !flowState?.selectedAvatar || !flowState?.selectedVoice || !flowState?.selectedStyle) {
+      toast({ 
+        title: "Configuración incompleta", 
+        description: "Faltan datos de configuración. Por favor, completa el flujo de creación.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
     setVideoResult(null);
@@ -156,14 +173,29 @@ export const useVideoGenerator = () => {
     console.log('Iniciando nuevo proceso de generación de video');
     
     try {
-      await sendToWebhook(script.trim(), requestId, user?.id);
+      // Preparar el payload con todos los datos
+      const webhookPayload = {
+        script: script.trim(),
+        userId: user?.id || 'anonymous',
+        requestId,
+        timestamp: new Date().toISOString(),
+        appMode: 'immediate_response',
+        ClaveAPI: flowState.selectedApiKey.api_key_encrypted,
+        AvatarID: flowState.selectedAvatar.avatar_id,
+        VoiceID: flowState.selectedVoice.voice_id,
+        Estilo: getStyleInternalId(flowState.selectedStyle)
+      };
+
+      console.log('Enviando payload completo:', webhookPayload);
+      
+      await sendToWebhook(webhookPayload);
       
       startCountdown(requestId, script.trim());
       startPeriodicChecking(requestId, script.trim());
       
       toast({
         title: "Solicitud enviada",
-        description: "Tu video se está procesando. Te notificaremos cuando esté listo.",
+        description: "Tu video se está procesando con la configuración seleccionada. Te notificaremos cuando esté listo.",
       });
       
     } catch (err) {

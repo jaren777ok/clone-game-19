@@ -1,20 +1,27 @@
 
-export const sendToWebhook = async (script: string, requestId: string, userId?: string) => {
+interface WebhookPayload {
+  script: string;
+  userId: string;
+  requestId: string;
+  timestamp: string;
+  appMode: string;
+  ClaveAPI?: string;
+  AvatarID?: string;
+  VoiceID?: string;
+  Estilo?: string;
+}
+
+export const sendToWebhook = async (payload: WebhookPayload) => {
   try {
     console.log('Enviando datos a webhook con respuesta inmediata...');
+    console.log('Payload completo:', payload);
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/veroia', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ 
-        script: script.trim(), 
-        userId: userId || 'anonymous', 
-        requestId, 
-        timestamp: new Date().toISOString(),
-        appMode: 'immediate_response'
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
