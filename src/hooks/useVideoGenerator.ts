@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -41,8 +42,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   } = useVideoMonitoring();
 
   // Wrapper functions to provide state setters to monitoring hooks
-  const startCountdown = (requestId: string, scriptToCheck: string, customStartTime?: number) => {
-    baseStartCountdown(requestId, scriptToCheck, setVideoResult, setIsGenerating, customStartTime);
+  const startCountdown = (requestId: string, scriptToCheck: string, setVideoResultParam: (result: string) => void, setIsGeneratingParam: (generating: boolean) => void, customStartTime?: number) => {
+    baseStartCountdown(requestId, scriptToCheck, setVideoResultParam, setIsGeneratingParam, customStartTime);
   };
 
   const startPeriodicChecking = (requestId: string, scriptToCheck: string) => {
@@ -104,7 +105,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       );
       
       setCurrentRequestId(requestId);
-      startCountdown(requestId, script.trim());
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
       startPeriodicChecking(requestId, script.trim());
       
     } catch (err) {
