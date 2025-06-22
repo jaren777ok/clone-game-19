@@ -124,11 +124,13 @@ const Auth = () => {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
 
       <div className="relative z-10 w-full max-w-md">
-        {/* Header Section */}
+        {/* Header Section with Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-            NEWS VERO IA
-          </h1>
+          <img 
+            src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gKDEpLnBuZyIsImlhdCI6MTc1MDU1MDgwMywiZXhwIjoxNzgyMDg2ODAzfQ.UOfbfE5UrSHXBz5z-bQUsWRzVyFJwoFy5EAyKgh-QLg"
+            alt="CloneGame"
+            className="w-full max-w-xs mx-auto h-auto mb-4"
+          />
           <p className="text-muted-foreground text-lg">
             Accede a tu plataforma de inteligencia artificial
           </p>
