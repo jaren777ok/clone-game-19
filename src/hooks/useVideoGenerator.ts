@@ -180,7 +180,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         requestId,
         timestamp: new Date().toISOString(),
         appMode: 'immediate_response',
-        ClaveAPI: flowState.selectedApiKey.api_key_encrypted,
+        ClaveAPI: atob(flowState.selectedApiKey.api_key_encrypted), // Decodificar la clave API
         AvatarID: flowState.selectedAvatar.avatar_id,
         VoiceID: flowState.selectedVoice.voice_id,
         Estilo: getStyleInternalId(flowState.selectedStyle)
