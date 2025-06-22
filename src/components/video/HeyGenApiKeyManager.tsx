@@ -82,7 +82,7 @@ const HeyGenApiKeyManager: React.FC<Props> = ({
 
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight px-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gradient-safe">
               {apiKeys.length === 0 ? "Configurar HeyGen API" : "Seleccionar Clave API"}
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-4 leading-relaxed">
