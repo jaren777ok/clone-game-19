@@ -125,8 +125,8 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
         )}
 
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight px-4">
+          <div className="text-center mb-8 sm:mb-12 space-y-4 sm:space-y-6">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gradient-safe leading-normal py-3 px-4">
               Elige el Estilo de Edición
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4 leading-relaxed">
@@ -178,8 +178,8 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                   </div>
 
                   {/* Style info */}
-                  <div className="text-center mb-4 sm:mb-6 space-y-2 sm:space-y-3">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">
+                  <div className="text-center mb-4 sm:mb-6 space-y-3 sm:space-y-4 py-2">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold leading-normal py-1">
                       {style.name}
                     </h3>
                     <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">

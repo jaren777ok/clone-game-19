@@ -80,7 +80,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gradient-safe leading-normal py-4 animate-glow-text">
               NeuroCopy GPT
             </h1>
             <p className="text-muted-foreground text-lg mb-2">

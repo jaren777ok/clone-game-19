@@ -74,6 +74,16 @@
     background: linear-gradient(135deg, rgba(255, 0, 128, 0.12) 0%, rgba(255, 107, 53, 0.08) 100%);
   }
 
+  .text-gradient-safe {
+    background: linear-gradient(to right, hsl(var(--foreground)), hsl(var(--primary)), hsl(var(--accent)));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.3;
+    padding: 0.25rem 0;
+    margin: 0.25rem 0;
+  }
+
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
