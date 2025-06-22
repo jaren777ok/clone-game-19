@@ -35,7 +35,7 @@ export const useVideoRecovery = () => {
     setCurrentRequestId: (id: string) => void,
     setIsGenerating: (generating: boolean) => void,
     setVideoResult: (result: string) => void,
-    startCountdown: (requestId: string, script: string, startTime?: number) => void,
+    startCountdown: (requestId: string, script: string, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void, startTime?: number) => void,
     startPeriodicChecking: (requestId: string, script: string) => void,
     checkFinalResult: (script: string) => void
   ) => {
@@ -77,7 +77,7 @@ export const useVideoRecovery = () => {
           } else {
             setIsRecovering(false);
             if (remainingTime > 0) {
-              startCountdown(savedState.requestId, savedState.script, savedState.timestamp);
+              startCountdown(savedState.requestId, savedState.script, setVideoResult, setIsGenerating, savedState.timestamp);
               startPeriodicChecking(savedState.requestId, savedState.script);
             } else {
               checkFinalResult(savedState.script);

@@ -25,9 +25,9 @@ export const useVideoMonitoring = () => {
   const startCountdown = (
     requestId: string, 
     scriptToCheck: string, 
-    customStartTime?: number,
     setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void
+    setIsGenerating: (generating: boolean) => void,
+    customStartTime?: number
   ) => {
     const startTime = customStartTime || Date.now();
     console.log('Iniciando contador para requestId:', requestId, 'desde:', new Date(startTime));
