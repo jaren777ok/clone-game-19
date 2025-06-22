@@ -133,10 +133,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_video_title: {
-        Args: { script_content: string }
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

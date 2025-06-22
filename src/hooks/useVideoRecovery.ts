@@ -72,7 +72,7 @@ export const useVideoRecovery = () => {
             clearGenerationState();
             toast({ 
               title: "¡Video recuperado!", 
-              description: "Tu video estaba listo y ha sido recuperado." 
+              description: videoData.title || "Tu video estaba listo y ha sido recuperado." 
             });
           } else {
             setIsRecovering(false);

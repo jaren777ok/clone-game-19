@@ -59,6 +59,7 @@ export const useVideoMonitoring = () => {
         
         if (videoData?.video_url) {
           console.log('¡Video encontrado durante verificación!:', videoData.video_url);
+          console.log('Con título:', videoData.title);
           
           clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
           
@@ -68,7 +69,7 @@ export const useVideoMonitoring = () => {
           
           toast({
             title: "¡Video completado!",
-            description: "Tu video ha sido generado exitosamente.",
+            description: videoData.title || "Tu video ha sido generado exitosamente.",
           });
         }
       } catch (e) {
@@ -87,13 +88,13 @@ export const useVideoMonitoring = () => {
     console.log('Verificación final después del countdown');
     
     try {
-      const videoUrl = await checkFinalVideoResult(user, scriptToCheck);
+      const videoData = await checkFinalVideoResult(user, scriptToCheck);
       
-      if (videoUrl) {
-        setVideoResult(videoUrl);
+      if (videoData?.video_url) {
+        setVideoResult(videoData.video_url);
         toast({
           title: "¡Video completado!",
-          description: "Tu video ha sido generado exitosamente.",
+          description: videoData.title || "Tu video ha sido generado exitosamente.",
         });
       } else {
         toast({

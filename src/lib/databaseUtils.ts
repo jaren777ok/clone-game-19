@@ -8,7 +8,7 @@ export const checkVideoInDatabase = async (user: User | null, requestId: string,
   try {
     const { data, error } = await supabase
       .from('generated_videos')
-      .select('video_url, request_id')
+      .select('video_url, request_id, title')
       .eq('user_id', user.id)
       .or(`request_id.eq.${requestId},script.eq.${script.trim()}`)
       .order('created_at', { ascending: false })
@@ -32,7 +32,7 @@ export const checkFinalVideoResult = async (user: User | null, script: string) =
   try {
     const { data, error } = await supabase
       .from('generated_videos')
-      .select('video_url')
+      .select('video_url, title')
       .eq('user_id', user.id)
       .eq('script', script.trim())
       .order('created_at', { ascending: false })
@@ -43,7 +43,7 @@ export const checkFinalVideoResult = async (user: User | null, script: string) =
       return null;
     }
 
-    return data && data.length > 0 ? data[0].video_url : null;
+    return data && data.length > 0 ? { video_url: data[0].video_url, title: data[0].title } : null;
   } catch (error) {
     console.error('Error in final verification:', error);
     return null;
