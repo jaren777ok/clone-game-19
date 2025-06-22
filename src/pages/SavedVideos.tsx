@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Bookmark, Search, Loader2, Video } from 'lucide-react';
+import { ArrowLeft, Bookmark, Search, Loader2, Video, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import VideoCard from '@/components/video/VideoCard';
 
 interface SavedVideo {
   id: string;
+  title?: string;
   script: string;
   video_url: string;
   created_at: string;
@@ -65,14 +66,24 @@ const SavedVideos = () => {
       return;
     }
 
-    const filtered = videos.filter(video =>
-      video.script.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const searchLower = searchTerm.toLowerCase();
+    const filtered = videos.filter(video => {
+      const titleMatch = video.title?.toLowerCase().includes(searchLower);
+      const scriptMatch = video.script.toLowerCase().includes(searchLower);
+      return titleMatch || scriptMatch;
+    });
     setFilteredVideos(filtered);
   };
 
   const handleDeleteVideo = (videoId: string) => {
     setVideos(prevVideos => prevVideos.filter(video => video.id !== videoId));
+  };
+
+  const getSearchResultsText = () => {
+    if (!searchTerm.trim()) {
+      return `${videos.length} videos guardados`;
+    }
+    return `${filteredVideos.length} de ${videos.length} videos encontrados`;
   };
 
   if (isLoading) {
@@ -136,7 +147,7 @@ const SavedVideos = () => {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Buscar en tus guiones..."
+                placeholder="Buscar por título o guion..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 cyber-border focus:cyber-glow"
@@ -145,10 +156,25 @@ const SavedVideos = () => {
             <div className="flex items-center text-muted-foreground">
               <Video className="w-4 h-4 mr-2" />
               <span className="text-sm">
-                {filteredVideos.length} de {videos.length} videos
+                {getSearchResultsText()}
               </span>
             </div>
           </div>
+
+          {/* Search info */}
+          {searchTerm.trim() && (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-6">
+              <div className="flex items-center text-sm">
+                <Search className="w-4 h-4 mr-2 text-primary" />
+                <span className="text-foreground">
+                  Buscando: <strong>"{searchTerm}"</strong>
+                </span>
+                <span className="text-muted-foreground ml-2">
+                  (en títulos y guiones)
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Videos Grid */}
@@ -178,9 +204,16 @@ const SavedVideos = () => {
                   <h3 className="text-xl font-semibold text-foreground mb-2">
                     No se encontraron videos
                   </h3>
-                  <p className="text-muted-foreground">
-                    Intenta con otro término de búsqueda
+                  <p className="text-muted-foreground mb-4">
+                    No hay videos que coincidan con tu búsqueda: <strong>"{searchTerm}"</strong>
                   </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSearchTerm('')}
+                    className="cyber-border hover:cyber-glow"
+                  >
+                    Limpiar búsqueda
+                  </Button>
                 </>
               )}
             </div>
@@ -190,6 +223,7 @@ const SavedVideos = () => {
                 <VideoCard
                   key={video.id}
                   id={video.id}
+                  title={video.title}
                   script={video.script}
                   videoUrl={video.video_url}
                   createdAt={video.created_at}
@@ -204,13 +238,20 @@ const SavedVideos = () => {
         {videos.length > 0 && (
           <div className="max-w-4xl mx-auto mt-12">
             <div className="bg-card/50 cyber-border rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                💡 Consejos para gestionar tus videos:
-              </h3>
+              <div className="flex items-center mb-4">
+                <Sparkles className="w-5 h-5 mr-2 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  💡 Consejos para gestionar tus videos:
+                </h3>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-muted-foreground text-sm">
                 <div className="flex items-start">
                   <span className="text-primary mr-2">•</span>
-                  Usa la búsqueda para encontrar videos por contenido del guion
+                  Los títulos se generan automáticamente con IA basándose en tu guion
+                </div>
+                <div className="flex items-start">
+                  <span className="text-primary mr-2">•</span>
+                  Usa la búsqueda para encontrar videos por título o contenido
                 </div>
                 <div className="flex items-start">
                   <span className="text-primary mr-2">•</span>
@@ -219,10 +260,6 @@ const SavedVideos = () => {
                 <div className="flex items-start">
                   <span className="text-primary mr-2">•</span>
                   Los videos se ordenan por fecha de creación más reciente
-                </div>
-                <div className="flex items-start">
-                  <span className="text-primary mr-2">•</span>
-                  Elimina videos que ya no necesites para mantener orden
                 </div>
               </div>
             </div>

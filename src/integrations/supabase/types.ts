@@ -39,6 +39,7 @@ export type Database = {
           id: string
           request_id: string | null
           script: string
+          title: string | null
           updated_at: string
           user_id: string
           video_url: string
@@ -48,6 +49,7 @@ export type Database = {
           id?: string
           request_id?: string | null
           script: string
+          title?: string | null
           updated_at?: string
           user_id: string
           video_url: string
@@ -57,6 +59,7 @@ export type Database = {
           id?: string
           request_id?: string | null
           script?: string
+          title?: string | null
           updated_at?: string
           user_id?: string
           video_url?: string
@@ -130,7 +133,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_video_title: {
+        Args: { script_content: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
