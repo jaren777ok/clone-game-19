@@ -1,5 +1,5 @@
 
-export const COUNTDOWN_TIME = 57 * 60; // 57 minutes in seconds
+export const COUNTDOWN_TIME = 39 * 60; // 39 minutes in seconds (cambiado de 57 a 39 minutos)
 
 export const calculateTimeRemaining = (startTime: number): number => {
   const elapsed = Math.floor((Date.now() - startTime) / 1000);

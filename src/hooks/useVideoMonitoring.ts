@@ -30,7 +30,7 @@ export const useVideoMonitoring = () => {
     customStartTime?: number
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('Iniciando contador para requestId:', requestId, 'desde:', new Date(startTime));
+    console.log('🚀 Iniciando contador de 39 minutos para requestId:', requestId, 'desde:', new Date(startTime));
     
     setGenerationStartTime(startTime);
     
@@ -39,6 +39,7 @@ export const useVideoMonitoring = () => {
     };
 
     const handleTimeExpired = () => {
+      console.log('⏰ Contador finalizado, ejecutando verificación final');
       checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
     };
 
@@ -51,15 +52,17 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('Iniciando verificación periódica cada 30 segundos');
+    console.log('🔄 Iniciando verificación cada 3 minutos para requestId:', requestId);
     
+    // Verificación inmediata al iniciar
     const checkForVideo = async () => {
       try {
+        console.log('🔍 Verificando video en base de datos...');
         const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
         
         if (videoData?.video_url) {
-          console.log('¡Video encontrado durante verificación!:', videoData.video_url);
-          console.log('Con título:', videoData.title);
+          console.log('✅ ¡Video encontrado!:', videoData.video_url);
+          console.log('📝 Con título:', videoData.title);
           
           clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
           
@@ -71,13 +74,20 @@ export const useVideoMonitoring = () => {
             title: "¡Video completado!",
             description: videoData.title || "Tu video ha sido generado exitosamente.",
           });
+        } else {
+          const minutesElapsed = Math.floor((Date.now() - (generationStartTime || Date.now())) / 60000);
+          console.log(`⏳ Video no encontrado aún. Tiempo transcurrido: ${minutesElapsed} minutos`);
         }
       } catch (e) {
-        console.error('Error durante verificación periódica:', e);
+        console.error('❌ Error durante verificación periódica:', e);
       }
     };
 
-    startPollingInterval(checkForVideo, pollingIntervalRef);
+    // Ejecutar verificación inmediata
+    checkForVideo();
+    
+    // Luego iniciar verificaciones cada 3 minutos
+    startPollingInterval(checkForVideo, pollingIntervalRef, 180000); // 3 minutos
   };
 
   const checkFinalResult = async (
@@ -85,18 +95,20 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('Verificación final después del countdown');
+    console.log('🔍 Verificación final después del contador de 39 minutos');
     
     try {
       const videoData = await checkFinalVideoResult(user, scriptToCheck);
       
       if (videoData?.video_url) {
+        console.log('✅ Video encontrado en verificación final:', videoData.video_url);
         setVideoResult(videoData.video_url);
         toast({
           title: "¡Video completado!",
           description: videoData.title || "Tu video ha sido generado exitosamente.",
         });
       } else {
+        console.log('❌ Video no encontrado después de 39 minutos');
         toast({
           title: "Tiempo agotado",
           description: "El video está tomando más tiempo del esperado. Por favor contacta con soporte.",
@@ -104,7 +116,7 @@ export const useVideoMonitoring = () => {
         });
       }
     } catch (e) {
-      console.error('Error en verificación final:', e);
+      console.error('❌ Error en verificación final:', e);
     }
     
     setIsGenerating(false);
@@ -112,6 +124,7 @@ export const useVideoMonitoring = () => {
   };
 
   const cleanup = () => {
+    console.log('🧹 Limpiando intervalos de monitoreo');
     clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
   };
 

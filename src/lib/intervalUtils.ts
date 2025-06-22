@@ -1,5 +1,6 @@
 
 import { MutableRefObject } from 'react';
+import { COUNTDOWN_TIME } from './countdownUtils';
 
 export const clearAllIntervals = (
   pollingRef: MutableRefObject<NodeJS.Timeout | null>,
@@ -23,10 +24,14 @@ export const startCountdownInterval = (
 ) => {
   const updateTimeRemaining = () => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const remaining = Math.max(0, 3420 - elapsed); // 57 * 60 = 3420
+    const remaining = Math.max(0, COUNTDOWN_TIME - elapsed); // ARREGLADO: Ahora usa la constante dinámica
+    
+    console.log(`⏰ Contador actualizado: ${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')} restantes`);
+    
     onTimeUpdate(remaining);
     
     if (remaining <= 0) {
+      console.log('⏰ Tiempo agotado, ejecutando verificación final');
       if (countdownRef.current) clearInterval(countdownRef.current);
       onTimeExpired();
     }
@@ -42,7 +47,8 @@ export const startCountdownInterval = (
 export const startPollingInterval = (
   checkFunction: () => Promise<void>,
   pollingRef: MutableRefObject<NodeJS.Timeout | null>,
-  intervalMs: number = 30000
+  intervalMs: number = 180000 // CAMBIADO: Ahora cada 3 minutos (180 segundos) en lugar de 30 segundos
 ) => {
+  console.log(`🔄 Iniciando verificación cada ${intervalMs / 1000} segundos (${intervalMs / 60000} minutos)`);
   pollingRef.current = setInterval(checkFunction, intervalMs);
 };

@@ -53,10 +53,10 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
             </div>
             <div className="space-y-3 text-center">
               <p className="text-muted-foreground text-sm">
-                🔄 El sistema verifica automáticamente cada 30 segundos
+                🔄 El sistema verifica automáticamente cada 3 minutos
               </p>
               <p className="text-muted-foreground text-sm">
-                ⚡ Tu video puede estar listo antes del tiempo estimado
+                ⚡ Tu video puede estar listo antes de los 39 minutos
               </p>
               <p className="text-muted-foreground text-sm">
                 💻 Puedes navegar a otras páginas, pero mantén esta pestaña abierta
@@ -68,7 +68,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
           <div className="flex items-center justify-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-sm text-muted-foreground">
-              Sistema de verificación activo
+              Sistema de verificación activo cada 3 minutos
             </span>
           </div>
 

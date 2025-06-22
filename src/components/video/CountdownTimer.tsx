@@ -79,7 +79,7 @@ const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
           
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
             <p className="text-blue-300 text-sm">
-              ⚡ El proceso puede completarse antes del tiempo estimado
+              ⚡ Verificación cada 3 minutos - El proceso puede completarse antes de los 39 minutos
             </p>
           </div>
         </div>
