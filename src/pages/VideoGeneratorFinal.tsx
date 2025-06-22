@@ -1,8 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
@@ -81,16 +79,7 @@ const VideoGeneratorFinal = () => {
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            className="cyber-border hover:cyber-glow"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Modificar guión
-          </Button>
-        </div>
+        <VideoGeneratorHeader />
 
         {state.showRecoveryOption && (
           <RecoveryNotification 
