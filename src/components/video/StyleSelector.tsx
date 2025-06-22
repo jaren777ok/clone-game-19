@@ -23,8 +23,8 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     },
     {
       id: 'style-2',
-      name: 'Estilo Elegante',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/esquina.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2VzcXVpbmEubXA0IiwiaWF0IjoxNzUwMDI2NTU3LCJleHAiOjE3NTI2MTg1NTd9.srmYsafAWHFucPiqcqXyGI2c_mlRr-xNSaMyM2luVzw'
+      name: 'Estilo Noticiero',
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%202.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyAyLm1wNCIsImlhdCI6MTc1MDU3NDI2NiwiZXhwIjoxNzgyMTEwMjY2fQ.DnoUX_dchVZkgiprnWvBeElxmn_k183nU8H5W1E0IiE'
     }
   ];
 
@@ -182,12 +182,17 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">
                       {style.name}
                     </h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
-                      {style.id === 'style-1' 
-                        ? "Estilo moderno y energético, perfecto para contenido corporativo y profesional"
-                        : "Estilo sofisticado y minimalista, ideal para presentaciones elegantes"
-                      }
-                    </p>
+                    <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
+                      {style.id === 'style-1' ? (
+                        <p>Estilo moderno y energético, perfecto para contenido corporativo y profesional</p>
+                      ) : (
+                        <div className="space-y-1">
+                          <p className="font-medium text-yellow-400">Requisitos:</p>
+                          <p>1. Se requiere Avatar en Fondo Total Negro</p>
+                          <p>2. Se requiere Avatar Horizontal</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <Button
