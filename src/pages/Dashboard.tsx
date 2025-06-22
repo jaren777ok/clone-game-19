@@ -1,4 +1,3 @@
-
 import { Smartphone, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,7 +35,7 @@ const Dashboard = () => {
         className="absolute inset-0 w-full h-full object-cover opacity-20"
       >
         <source
-          src="https://hxqdmjiqfjnaqganavog.supabase.co/storage/v1/object/sign/fondo/fondo%20de%20login%20.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mZDNjMjgwYS00YjczLTRlNTItOWY5MS05ZmVjM2MyZmZhN2EiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb25kby9mb25kbyBkZSBsb2dpbiAubXA0IiwiaWF0IjoxNzQ5NzczMjA5LCJleHAiOjIwNjUxMzMyMDl9.N_d0ajv13x02HMQvxIsvPXmb3ln46obgnOk0WurH4oM"
+          src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/fondo%20del%20dashboard.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2ZvbmRvIGRlbCBkYXNoYm9hcmQubXA0IiwiaWF0IjoxNzUwNTUyMzAwLCJleHAiOjE3ODIwODgzMDB9.zK0ijbIhmiLjTodcNP2pJeTOxzd1wOGNH8oEdzHYKqc"
           type="video/mp4"
         />
       </video>
@@ -64,8 +63,9 @@ const Dashboard = () => {
       <div className="relative z-10 container mx-auto px-6">
         {/* Header Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-            CloneGame
+          <h1 className="text-5xl md:text-7xl font-bold mb-6">
+            <span className="text-white">Clone</span>
+            <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">Game</span>
           </h1>
           <p className="text-muted-foreground text-lg">
             ¡Bienvenido de vuelta! Selecciona una herramienta para comenzar.

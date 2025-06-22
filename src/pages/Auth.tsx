@@ -111,7 +111,7 @@ const Auth = () => {
         className="absolute inset-0 w-full h-full object-cover opacity-30"
       >
         <source
-          src="https://hxqdmjiqfjnaqganavog.supabase.co/storage/v1/object/sign/fondo/fondo%20de%20interfaz%20principal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mZDNjMjgwYS00YjczLTRlNTItOWY5MS05ZmVjM2MyZmZhN2EiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb25kby9mb25kbyBkZSBpbnRlcmZheiBwcmluY2lwYWwubXA0IiwiaWF0IjoxNzQ5NzcyODAyLCJleHAiOjIwNjUxMzI4MDJ9.1B9S0ti_v-UO3wiNdR0PL8uFHM1W7E_Q3ycJYyU0hZA"
+          src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/fondo%20del%20login.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2ZvbmRvIGRlbCBsb2dpbi5tcDQiLCJpYXQiOjE3NTA1NTIyNDAsImV4cCI6MTc4MjA4ODI0MH0.ytpXEu6gzu_hpaGlWYX2FUp3SC1hM9niyE_ZVHzJ5Uw"
           type="video/mp4"
         />
       </video>
