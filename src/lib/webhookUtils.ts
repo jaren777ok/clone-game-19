@@ -11,6 +11,12 @@ interface WebhookPayload {
   Estilo?: string;
 }
 
+interface EstiloNoticiaPayload extends WebhookPayload {
+  fecha?: string;
+  titulo?: string;
+  subtitulo?: string;
+}
+
 export const sendToWebhook = async (payload: WebhookPayload) => {
   try {
     console.log('Enviando datos a webhook con respuesta inmediata...');
@@ -34,6 +40,33 @@ export const sendToWebhook = async (payload: WebhookPayload) => {
     return true;
   } catch (err) {
     console.error('Error enviando a webhook:', err);
+    throw err;
+  }
+};
+
+export const sendToEstiloNoticiaWebhook = async (payload: EstiloNoticiaPayload) => {
+  try {
+    console.log('Enviando datos a webhook Estilo Noticia...');
+    console.log('Payload completo Estilo Noticia:', payload);
+    
+    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/Estilo1', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error del servidor: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Respuesta inmediata recibida Estilo Noticia:', data);
+    
+    return true;
+  } catch (err) {
+    console.error('Error enviando a webhook Estilo Noticia:', err);
     throw err;
   }
 };

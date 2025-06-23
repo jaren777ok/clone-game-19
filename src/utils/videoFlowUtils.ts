@@ -13,7 +13,8 @@ export const determineInitialStep = (
       selectedAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
-      generatedScript: null
+      generatedScript: null,
+      cardCustomization: null
     };
   }
 
@@ -43,7 +44,8 @@ export const determineInitialStep = (
           ...savedState,
           step: 'style',
           selectedStyle: null,
-          generatedScript: null
+          generatedScript: null,
+          cardCustomization: null
         };
       }
       // If has key and avatar, go to voice
@@ -53,7 +55,8 @@ export const determineInitialStep = (
           step: 'voice',
           selectedVoice: null,
           selectedStyle: null,
-          generatedScript: null
+          generatedScript: null,
+          cardCustomization: null
         };
       }
       // If only has key, go to avatar
@@ -64,7 +67,8 @@ export const determineInitialStep = (
           selectedAvatar: null,
           selectedVoice: null,
           selectedStyle: null,
-          generatedScript: null
+          generatedScript: null,
+          cardCustomization: null
         };
       }
     }
@@ -77,7 +81,8 @@ export const determineInitialStep = (
     selectedAvatar: null,
     selectedVoice: null,
     selectedStyle: null,
-    generatedScript: null
+    generatedScript: null,
+    cardCustomization: null
   };
 };
 

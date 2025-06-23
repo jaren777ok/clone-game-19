@@ -24,6 +24,12 @@ export interface VideoStyle {
   video_url: string;
 }
 
+export interface CardCustomization {
+  fecha: string;
+  titulo: string;
+  subtitulo: string;
+}
+
 export interface FlowState {
   step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'neurocopy' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
@@ -31,4 +37,5 @@ export interface FlowState {
   selectedVoice: Voice | null;
   selectedStyle: VideoStyle | null;
   generatedScript: string | null;
+  cardCustomization?: CardCustomization | null;
 }

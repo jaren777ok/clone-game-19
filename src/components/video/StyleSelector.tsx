@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Play, Pause, CheckCircle2 } from 'lucide-react';
-import { VideoStyle } from '@/types/videoFlow';
+import { VideoStyle, CardCustomization } from '@/types/videoFlow';
+import CustomizeCardsModal from './CustomizeCardsModal';
 
 interface Props {
-  onSelectStyle: (style: VideoStyle) => void;
+  onSelectStyle: (style: VideoStyle, customization?: CardCustomization) => void;
   onBack: () => void;
 }
 
@@ -13,12 +14,14 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [previouslySelectedStyle, setPreviouslySelectedStyle] = useState<VideoStyle | null>(null);
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [pendingStyle, setPendingStyle] = useState<VideoStyle | null>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
   const videoStyles: VideoStyle[] = [
     {
       id: 'style-1',
-      name: 'Estilo Dinámico',
+      name: 'Estilo Noticia',
       video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/esquina%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2VzcXVpbmEgKDEpLm1wNCIsImlhdCI6MTc1MDAyNjU0NCwiZXhwIjoxNzUyNjE4NTQ0fQ.E1GFP10IPk9IPHaxHLIZlpaWXsNQvmKFzYeR0yxc0ZE'
     },
     {
@@ -45,8 +48,29 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   }, []);
 
   const handleSelectStyle = (style: VideoStyle) => {
-    setSelectedStyleId(style.id);
-    onSelectStyle(style);
+    if (style.id === 'style-1') {
+      // Estilo Noticia requiere personalización
+      setPendingStyle(style);
+      setShowCustomizeModal(true);
+    } else {
+      // Estilo Noticiero continúa directamente
+      setSelectedStyleId(style.id);
+      onSelectStyle(style);
+    }
+  };
+
+  const handleCustomizeConfirm = (customization: CardCustomization) => {
+    if (pendingStyle) {
+      setSelectedStyleId(pendingStyle.id);
+      onSelectStyle(pendingStyle, customization);
+    }
+    setShowCustomizeModal(false);
+    setPendingStyle(null);
+  };
+
+  const handleCustomizeCancel = () => {
+    setShowCustomizeModal(false);
+    setPendingStyle(null);
   };
 
   const toggleVideoPlayback = (styleId: string, event: React.MouseEvent) => {
@@ -184,7 +208,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                     </h3>
                     <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
                       {style.id === 'style-1' ? (
-                        <p>Estilo moderno y energético, perfecto para contenido corporativo y profesional</p>
+                        <p>Estilo personalizable con tarjetas dinámicas para noticias y contenido editorial</p>
                       ) : (
                         <div className="space-y-1">
                           <p className="font-medium text-yellow-400">Requisitos:</p>
@@ -208,6 +232,13 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal de personalización */}
+      <CustomizeCardsModal
+        isOpen={showCustomizeModal}
+        onClose={handleCustomizeCancel}
+        onConfirm={handleCustomizeConfirm}
+      />
 
       {/* Background effects */}
       <div className="absolute top-0 right-0 w-72 sm:w-96 h-72 sm:h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>

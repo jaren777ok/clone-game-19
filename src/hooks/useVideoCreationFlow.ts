@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { 
   determineInitialStep, 
@@ -17,7 +17,8 @@ export const useVideoCreationFlow = () => {
     selectedAvatar: null,
     selectedVoice: null,
     selectedStyle: null,
-    generatedScript: null
+    generatedScript: null,
+    cardCustomization: null
   });
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -63,7 +64,8 @@ export const useVideoCreationFlow = () => {
       selectedAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
-      generatedScript: null
+      generatedScript: null,
+      cardCustomization: null
     }));
   }, []);
 
@@ -83,10 +85,11 @@ export const useVideoCreationFlow = () => {
     }));
   }, []);
 
-  const selectStyle = useCallback((style: VideoStyle) => {
+  const selectStyle = useCallback((style: VideoStyle, customization?: CardCustomization) => {
     setFlowState(prev => ({
       ...prev,
       selectedStyle: style,
+      cardCustomization: customization || null,
       step: 'neurocopy'
     }));
   }, []);
@@ -110,7 +113,8 @@ export const useVideoCreationFlow = () => {
       selectedAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
-      generatedScript: null
+      generatedScript: null,
+      cardCustomization: null
     });
     clearFlowState();
   }, []);
