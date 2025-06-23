@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, X } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -42,13 +42,7 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md cyber-border cyber-gradient backdrop-blur-sm">
-        <DialogHeader className="relative">
-          <button
-            onClick={onClose}
-            className="absolute -top-2 -right-2 p-2 rounded-full bg-background/80 hover:bg-background cyber-border transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        <DialogHeader>
           <DialogTitle className="text-xl sm:text-2xl font-bold text-gradient-safe text-center py-2">
             Personaliza las Tarjetas
           </DialogTitle>

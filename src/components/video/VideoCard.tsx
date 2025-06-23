@@ -95,43 +95,22 @@ const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCa
 
   return (
     <div className="bg-card cyber-border rounded-xl hover:cyber-glow transition-all duration-300 group overflow-hidden">
-      {/* Header con título y fecha */}
+      {/* Header con título, fecha y solo botón de basura */}
       <div className="p-6 pb-4">
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 mr-4">
+          <div className="flex-1 pr-4">
             <div className="flex items-center mb-2">
-              <Video className="w-5 h-5 mr-2 text-primary" />
-              <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight">
+              <Video className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+              <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight break-words">
                 {getDisplayTitle()}
               </h3>
             </div>
             <div className="flex items-center text-muted-foreground text-sm">
-              <Calendar className="w-4 h-4 mr-2" />
+              <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
               {formatDate(createdAt)}
             </div>
           </div>
-          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCopyLink}
-              className="text-muted-foreground hover:text-primary"
-              disabled={copied}
-            >
-              {copied ? (
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleOpenVideo}
-              className="text-muted-foreground hover:text-primary"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </Button>
+          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
               size="sm"
