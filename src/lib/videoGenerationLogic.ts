@@ -10,6 +10,11 @@ import { sendToWebhook, sendToEstiloNoticiaWebhook } from '@/lib/webhookUtils';
 import { getStyleInternalId } from '@/utils/styleMapping';
 import { FlowState, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
 
+// Función utilitaria para asegurar que no haya comillas dobles problemáticas
+const sanitizeForJson = (value: string): string => {
+  return value.replace(/"/g, "'");
+};
+
 export const createVideoGenerationPayload = (
   script: string,
   userId: string,
@@ -19,7 +24,7 @@ export const createVideoGenerationPayload = (
   presenterCustomization?: PresenterCustomization
 ) => {
   const basePayload = {
-    script: script.trim(),
+    script: sanitizeForJson(script.trim()),
     userId,
     requestId,
     timestamp: new Date().toISOString(),
@@ -34,9 +39,9 @@ export const createVideoGenerationPayload = (
   if (flowState.selectedStyle?.id === 'style-1' && cardCustomization) {
     return {
       ...basePayload,
-      fecha: cardCustomization.fecha,
-      titulo: cardCustomization.titulo,
-      subtitulo: cardCustomization.subtitulo
+      fecha: sanitizeForJson(cardCustomization.fecha),
+      titulo: sanitizeForJson(cardCustomization.titulo),
+      subtitulo: sanitizeForJson(cardCustomization.subtitulo)
     };
   }
 
@@ -44,7 +49,7 @@ export const createVideoGenerationPayload = (
   if (flowState.selectedStyle?.id === 'style-2' && presenterCustomization) {
     return {
       ...basePayload,
-      nombrePresentador: presenterCustomization.nombrePresentador
+      nombrePresentador: sanitizeForJson(presenterCustomization.nombrePresentador)
     };
   }
 
@@ -69,7 +74,7 @@ export const initiateVideoGeneration = async (
   const requestId = `${user?.id || 'anonymous'}-${Date.now()}`;
   
   const generationState: GenerationState = { 
-    script: script.trim(), 
+    script: sanitizeForJson(script.trim()), 
     requestId, 
     timestamp: Date.now(), 
     status: 'pending' 

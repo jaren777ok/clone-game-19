@@ -14,12 +14,17 @@ interface Props {
   onConfirm: (customization: PresenterCustomization) => void;
 }
 
+// Función utilitaria para transformar comillas dobles a simples
+const transformQuotes = (value: string): string => {
+  return value.replace(/"/g, "'");
+};
+
 const PresenterNameModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) => {
   const [nombrePresentador, setNombrePresentador] = useState('');
 
   const handleConfirm = () => {
     const customization: PresenterCustomization = {
-      nombrePresentador: nombrePresentador.trim()
+      nombrePresentador: transformQuotes(nombrePresentador.trim())
     };
     onConfirm(customization);
   };
@@ -65,7 +70,7 @@ const PresenterNameModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) => 
             <Input
               id="nombrePresentador"
               value={nombrePresentador}
-              onChange={(e) => setNombrePresentador(e.target.value.slice(0, 21))}
+              onChange={(e) => setNombrePresentador(transformQuotes(e.target.value.slice(0, 21)))}
               placeholder="Ingresa el nombre del presentador"
               className="cyber-border focus:cyber-glow h-12"
               maxLength={21}

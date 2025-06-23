@@ -18,6 +18,11 @@ interface Props {
   onConfirm: (customization: CardCustomization) => void;
 }
 
+// Función utilitaria para transformar comillas dobles a simples
+const transformQuotes = (value: string): string => {
+  return value.replace(/"/g, "'");
+};
+
 const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) => {
   const [date, setDate] = useState<Date>(new Date());
   const [titulo, setTitulo] = useState('');
@@ -26,8 +31,8 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
   const handleConfirm = () => {
     const customization: CardCustomization = {
       fecha: format(date, 'dd/MM/yyyy'),
-      titulo: titulo.trim(),
-      subtitulo: subtitulo.trim()
+      titulo: transformQuotes(titulo.trim()),
+      subtitulo: transformQuotes(subtitulo.trim())
     };
     onConfirm(customization);
   };
@@ -96,7 +101,7 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
             <Input
               id="titulo"
               value={titulo}
-              onChange={(e) => setTitulo(e.target.value.slice(0, 70))}
+              onChange={(e) => setTitulo(transformQuotes(e.target.value.slice(0, 70)))}
               placeholder="Ingresa el título de la tarjeta"
               className="cyber-border focus:cyber-glow h-12"
               maxLength={70}
@@ -119,7 +124,7 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
             <Input
               id="subtitulo"
               value={subtitulo}
-              onChange={(e) => setSubtitulo(e.target.value.slice(0, 45))}
+              onChange={(e) => setSubtitulo(transformQuotes(e.target.value.slice(0, 45)))}
               placeholder="Ingresa el subtítulo de la tarjeta"
               className="cyber-border focus:cyber-glow h-12"
               maxLength={45}
