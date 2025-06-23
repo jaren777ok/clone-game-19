@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Play, Pause, CheckCircle2 } from 'lucide-react';
-import { VideoStyle, CardCustomization } from '@/types/videoFlow';
+import { VideoStyle, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
 import CustomizeCardsModal from './CustomizeCardsModal';
+import PresenterNameModal from './PresenterNameModal';
 
 interface Props {
-  onSelectStyle: (style: VideoStyle, customization?: CardCustomization) => void;
+  onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization) => void;
   onBack: () => void;
 }
 
@@ -15,6 +16,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [previouslySelectedStyle, setPreviouslySelectedStyle] = useState<VideoStyle | null>(null);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [showPresenterModal, setShowPresenterModal] = useState(false);
   const [pendingStyle, setPendingStyle] = useState<VideoStyle | null>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
@@ -22,7 +24,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     {
       id: 'style-1',
       name: 'Estilo Noticia',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/esquina%20(1).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2VzcXVpbmEgKDEpLm1wNCIsImlhdCI6MTc1MDAyNjU0NCwiZXhwIjoxNzUyNjE4NTQ0fQ.E1GFP10IPk9IPHaxHLIZlpaWXsNQvmKFzYeR0yxc0ZE'
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/Estilo%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VzdGlsbyAxLm1wNCIsImlhdCI6MTc1MDcxOTI1NiwiZXhwIjoxNzgyMjU1MjU2fQ.9-Ji-AgsIbAv9Jl0FZW6dNikiNevfGVu_M1LVN6PA4A'
     },
     {
       id: 'style-2',
@@ -49,11 +51,15 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
 
   const handleSelectStyle = (style: VideoStyle) => {
     if (style.id === 'style-1') {
-      // Estilo Noticia requiere personalización
+      // Estilo Noticia requiere personalización de tarjetas
       setPendingStyle(style);
       setShowCustomizeModal(true);
+    } else if (style.id === 'style-2') {
+      // Estilo Noticiero requiere nombre del presentador
+      setPendingStyle(style);
+      setShowPresenterModal(true);
     } else {
-      // Estilo Noticiero continúa directamente
+      // Fallback para otros estilos
       setSelectedStyleId(style.id);
       onSelectStyle(style);
     }
@@ -62,14 +68,28 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   const handleCustomizeConfirm = (customization: CardCustomization) => {
     if (pendingStyle) {
       setSelectedStyleId(pendingStyle.id);
-      onSelectStyle(pendingStyle, customization);
+      onSelectStyle(pendingStyle, customization, undefined);
     }
     setShowCustomizeModal(false);
     setPendingStyle(null);
   };
 
+  const handlePresenterConfirm = (customization: PresenterCustomization) => {
+    if (pendingStyle) {
+      setSelectedStyleId(pendingStyle.id);
+      onSelectStyle(pendingStyle, undefined, customization);
+    }
+    setShowPresenterModal(false);
+    setPendingStyle(null);
+  };
+
   const handleCustomizeCancel = () => {
     setShowCustomizeModal(false);
+    setPendingStyle(null);
+  };
+
+  const handlePresenterCancel = () => {
+    setShowPresenterModal(false);
     setPendingStyle(null);
   };
 
@@ -206,23 +226,12 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold leading-normal py-1">
                       {style.name}
                     </h3>
-                    <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
-                      {style.id === 'style-1' ? (
-                        <div className="space-y-2">
-                          <p>Estilo personalizable con tarjetas dinámicas para noticias y contenido editorial</p>
-                          <div className="text-yellow-400">
-                            <p className="font-medium">Requisitos:</p>
-                            <p>1. Se requiere Avatar en Fondo Total Negro</p>
-                            <p>2. Se requiere Avatar Horizontal</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <p className="font-medium text-yellow-400">Requisitos:</p>
-                          <p>1. Se requiere Avatar en Fondo Total Negro</p>
-                          <p>2. Se requiere Avatar Horizontal</p>
-                        </div>
-                      )}
+                    <div className="text-xs sm:text-sm leading-relaxed px-2">
+                      <div className="space-y-1">
+                        <p className="font-medium text-yellow-400">Requisitos:</p>
+                        <p className="text-muted-foreground">1. Se requiere Avatar en Fondo Total Negro</p>
+                        <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
+                      </div>
                     </div>
                   </div>
 
@@ -240,11 +249,18 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
         </div>
       </div>
 
-      {/* Modal de personalización */}
+      {/* Modal de personalización de tarjetas */}
       <CustomizeCardsModal
         isOpen={showCustomizeModal}
         onClose={handleCustomizeCancel}
         onConfirm={handleCustomizeConfirm}
+      />
+
+      {/* Modal de nombre del presentador */}
+      <PresenterNameModal
+        isOpen={showPresenterModal}
+        onClose={handlePresenterCancel}
+        onConfirm={handlePresenterConfirm}
       />
 
       {/* Background effects */}

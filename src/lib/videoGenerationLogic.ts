@@ -8,14 +8,15 @@ import {
 } from '@/lib/videoGeneration';
 import { sendToWebhook, sendToEstiloNoticiaWebhook } from '@/lib/webhookUtils';
 import { getStyleInternalId } from '@/utils/styleMapping';
-import { FlowState, CardCustomization } from '@/types/videoFlow';
+import { FlowState, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
 
 export const createVideoGenerationPayload = (
   script: string,
   userId: string,
   requestId: string,
   flowState: FlowState,
-  cardCustomization?: CardCustomization
+  cardCustomization?: CardCustomization,
+  presenterCustomization?: PresenterCustomization
 ) => {
   const basePayload = {
     script: script.trim(),
@@ -29,13 +30,21 @@ export const createVideoGenerationPayload = (
     Estilo: getStyleInternalId(flowState.selectedStyle!)
   };
 
-  // Si es Estilo Noticia y hay personalización, agregar campos adicionales
+  // Si es Estilo Noticia y hay personalización de tarjetas
   if (flowState.selectedStyle?.id === 'style-1' && cardCustomization) {
     return {
       ...basePayload,
       fecha: cardCustomization.fecha,
       titulo: cardCustomization.titulo,
       subtitulo: cardCustomization.subtitulo
+    };
+  }
+
+  // Si es Estilo Noticiero y hay personalización del presentador
+  if (flowState.selectedStyle?.id === 'style-2' && presenterCustomization) {
+    return {
+      ...basePayload,
+      nombrePresentador: presenterCustomization.nombrePresentador
     };
   }
 
@@ -74,7 +83,8 @@ export const initiateVideoGeneration = async (
     user?.id || 'anonymous',
     requestId,
     flowState,
-    flowState.cardCustomization
+    flowState.cardCustomization || undefined,
+    flowState.presenterCustomization || undefined
   );
 
   console.log('Enviando payload completo:', webhookPayload);

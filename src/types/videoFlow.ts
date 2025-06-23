@@ -30,6 +30,10 @@ export interface CardCustomization {
   subtitulo: string;
 }
 
+export interface PresenterCustomization {
+  nombrePresentador: string;
+}
+
 export interface FlowState {
   step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'neurocopy' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
@@ -38,4 +42,5 @@ export interface FlowState {
   selectedStyle: VideoStyle | null;
   generatedScript: string | null;
   cardCustomization?: CardCustomization | null;
+  presenterCustomization?: PresenterCustomization | null;
 }

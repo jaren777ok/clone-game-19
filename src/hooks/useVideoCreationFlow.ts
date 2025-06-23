@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { 
   determineInitialStep, 
@@ -18,7 +18,8 @@ export const useVideoCreationFlow = () => {
     selectedVoice: null,
     selectedStyle: null,
     generatedScript: null,
-    cardCustomization: null
+    cardCustomization: null,
+    presenterCustomization: null
   });
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -65,7 +66,8 @@ export const useVideoCreationFlow = () => {
       selectedVoice: null,
       selectedStyle: null,
       generatedScript: null,
-      cardCustomization: null
+      cardCustomization: null,
+      presenterCustomization: null
     }));
   }, []);
 
@@ -85,11 +87,12 @@ export const useVideoCreationFlow = () => {
     }));
   }, []);
 
-  const selectStyle = useCallback((style: VideoStyle, customization?: CardCustomization) => {
+  const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization) => {
     setFlowState(prev => ({
       ...prev,
       selectedStyle: style,
-      cardCustomization: customization || null,
+      cardCustomization: cardCustomization || null,
+      presenterCustomization: presenterCustomization || null,
       step: 'neurocopy'
     }));
   }, []);
@@ -114,7 +117,8 @@ export const useVideoCreationFlow = () => {
       selectedVoice: null,
       selectedStyle: null,
       generatedScript: null,
-      cardCustomization: null
+      cardCustomization: null,
+      presenterCustomization: null
     });
     clearFlowState();
   }, []);
