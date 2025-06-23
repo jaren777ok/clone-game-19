@@ -208,7 +208,14 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                     </h3>
                     <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
                       {style.id === 'style-1' ? (
-                        <p>Estilo personalizable con tarjetas dinámicas para noticias y contenido editorial</p>
+                        <div className="space-y-2">
+                          <p>Estilo personalizable con tarjetas dinámicas para noticias y contenido editorial</p>
+                          <div className="text-yellow-400">
+                            <p className="font-medium">Requisitos:</p>
+                            <p>1. Se requiere Avatar en Fondo Total Negro</p>
+                            <p>2. Se requiere Avatar Horizontal</p>
+                          </div>
+                        </div>
                       ) : (
                         <div className="space-y-1">
                           <p className="font-medium text-yellow-400">Requisitos:</p>

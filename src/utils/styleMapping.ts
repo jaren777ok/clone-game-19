@@ -3,7 +3,7 @@ import { VideoStyle } from '@/types/videoFlow';
 
 // Mapeo interno de estilos a sus IDs
 export const STYLE_ID_MAPPING: Record<string, string> = {
-  'style-1': '333333', // Estilo Dinámico
+  'style-1': '4a3e5937-129b-4201-ae8d-6d7ab019dd61', // Estilo Noticia
   'style-2': 'bde14447-d0cf-45cf-8143-c8ebaaab4163', // Estilo Noticiero
 };
 
@@ -15,7 +15,7 @@ export const getStyleInternalId = (style: VideoStyle): string => {
   }
   
   // Fallback: usar el primer estilo como predeterminado
-  return '333333';
+  return '4a3e5937-129b-4201-ae8d-6d7ab019dd61';
 };
 
 // Función para obtener todos los IDs de estilos disponibles

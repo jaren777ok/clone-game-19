@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, Sparkles } from 'lucide-react';
 
 interface CountdownTimerProps {
@@ -8,9 +8,16 @@ interface CountdownTimerProps {
 }
 
 const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
-  const minutes = Math.floor(timeRemaining / 60);
-  const seconds = timeRemaining % 60;
-  const progress = ((totalTime - timeRemaining) / totalTime) * 100;
+  const [displayTime, setDisplayTime] = useState(timeRemaining);
+  
+  // Force re-render when timeRemaining changes
+  useEffect(() => {
+    setDisplayTime(timeRemaining);
+  }, [timeRemaining]);
+
+  const minutes = Math.floor(displayTime / 60);
+  const seconds = displayTime % 60;
+  const progress = ((totalTime - displayTime) / totalTime) * 100;
 
   return (
     <div className="bg-card cyber-border rounded-2xl p-8 mb-8 hover:cyber-glow transition-all duration-500">
@@ -47,7 +54,7 @@ const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
             {/* Timer Text */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="text-2xl font-bold text-foreground font-mono">
+                <div className="text-2xl font-bold text-foreground font-mono" key={displayTime}>
                   {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
                 </div>
                 <div className="text-xs text-muted-foreground">minutos</div>

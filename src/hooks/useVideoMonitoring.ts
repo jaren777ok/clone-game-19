@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -21,8 +21,14 @@ export const useVideoMonitoring = () => {
   const { toast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isActiveRef = useRef(false);
 
-  const startCountdown = (
+  // Force component updates for real-time counter
+  const updateTimeRemaining = useCallback((remaining: number) => {
+    setTimeRemaining(remaining);
+  }, []);
+
+  const startCountdown = useCallback((
     requestId: string, 
     scriptToCheck: string, 
     setVideoResult: (result: string) => void,
@@ -33,20 +39,24 @@ export const useVideoMonitoring = () => {
     console.log('🚀 Iniciando contador de 39 minutos para requestId:', requestId, 'desde:', new Date(startTime));
     
     setGenerationStartTime(startTime);
+    isActiveRef.current = true;
     
     const handleTimeUpdate = (remaining: number) => {
-      setTimeRemaining(remaining);
+      if (isActiveRef.current) {
+        updateTimeRemaining(remaining);
+      }
     };
 
     const handleTimeExpired = () => {
       console.log('⏰ Contador finalizado, ejecutando verificación final');
+      isActiveRef.current = false;
       checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
     };
 
     startCountdownInterval(startTime, handleTimeUpdate, handleTimeExpired, countdownIntervalRef);
-  };
+  }, [updateTimeRemaining]);
 
-  const startPeriodicChecking = (
+  const startPeriodicChecking = useCallback((
     requestId: string, 
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
@@ -54,8 +64,9 @@ export const useVideoMonitoring = () => {
   ) => {
     console.log('🔄 Iniciando verificación cada 3 minutos para requestId:', requestId);
     
-    // Verificación inmediata al iniciar
     const checkForVideo = async () => {
+      if (!isActiveRef.current) return;
+      
       try {
         console.log('🔍 Verificando video en base de datos...');
         const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
@@ -64,6 +75,7 @@ export const useVideoMonitoring = () => {
           console.log('✅ ¡Video encontrado!:', videoData.video_url);
           console.log('📝 Con título:', videoData.title);
           
+          isActiveRef.current = false;
           clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
           
           setVideoResult(videoData.video_url);
@@ -87,10 +99,10 @@ export const useVideoMonitoring = () => {
     checkForVideo();
     
     // Luego iniciar verificaciones cada 3 minutos
-    startPollingInterval(checkForVideo, pollingIntervalRef, 180000); // 3 minutos
-  };
+    startPollingInterval(checkForVideo, pollingIntervalRef, 180000);
+  }, [user, generationStartTime, toast]);
 
-  const checkFinalResult = async (
+  const checkFinalResult = useCallback(async (
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
@@ -119,14 +131,21 @@ export const useVideoMonitoring = () => {
       console.error('❌ Error en verificación final:', e);
     }
     
+    isActiveRef.current = false;
     setIsGenerating(false);
     clearGenerationState();
-  };
+  }, [user, toast]);
 
-  const cleanup = () => {
+  const cleanup = useCallback(() => {
     console.log('🧹 Limpiando intervalos de monitoreo');
+    isActiveRef.current = false;
     clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
-  };
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
 
   return {
     timeRemaining,
