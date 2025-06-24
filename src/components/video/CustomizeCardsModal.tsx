@@ -96,7 +96,7 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
               id="titulo"
               value={titulo}
               onChange={(e) => setTitulo(transformQuotes(e.target.value.slice(0, 70)))}
-              placeholder="Ingresa el título de la tarjeta"
+              placeholder="Ingresa el título de la noticia"
               className="cyber-border focus:cyber-glow h-12"
               maxLength={70}
             />
@@ -119,7 +119,7 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
               id="subtitulo"
               value={subtitulo}
               onChange={(e) => setSubtitulo(transformQuotes(e.target.value.slice(0, 45)))}
-              placeholder="Ingresa el subtítulo de la tarjeta"
+              placeholder="Ingresa el subtítulo de la noticia"
               className="cyber-border focus:cyber-glow h-12"
               maxLength={45}
             />
