@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Video, Wifi, AlertTriangle } from 'lucide-react';
+import { Video, Wifi, AlertTriangle, Clock } from 'lucide-react';
 import CountdownTimer from './CountdownTimer';
+import { hasReachedPollingTime } from '@/lib/countdownUtils';
 
 interface VideoProcessingStateProps {
   timeRemaining: number;
@@ -10,6 +11,10 @@ interface VideoProcessingStateProps {
 }
 
 const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoProcessingStateProps) => {
+  const startTime = Date.now() - (totalTime - timeRemaining) * 1000;
+  const isInPollingPhase = hasReachedPollingTime(startTime);
+  const minutesRemaining = Math.floor(timeRemaining / 60);
+  
   return (
     <div className="min-h-screen bg-background relative overflow-hidden py-16">
       {/* Animated background */}
@@ -22,6 +27,8 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
             <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto animate-cyber-pulse">
               {isRecovering ? (
                 <Wifi className="w-12 h-12 text-background" />
+              ) : isInPollingPhase ? (
+                <Clock className="w-12 h-12 text-background" />
               ) : (
                 <Video className="w-12 h-12 text-background" />
               )}
@@ -31,12 +38,14 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
           {/* Title */}
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-              {isRecovering ? 'Verificando Video' : 'Generando tu Video'}
+              {isRecovering ? 'Verificando Video' : isInPollingPhase ? 'Verificando Resultado' : 'Generando tu Video'}
             </h1>
             
             <p className="text-muted-foreground text-lg">
               {isRecovering 
                 ? 'Verificando si tu video ya está listo en segundo plano...'
+                : isInPollingPhase
+                ? 'Verificando cada minuto si tu video está disponible...'
                 : 'Nuestro sistema está procesando tu solicitud con inteligencia artificial'
               }
             </p>
@@ -45,30 +54,51 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Important Notice */}
+          {/* Phase-specific Information */}
           <div className="bg-card/50 cyber-border border-amber-500/30 rounded-xl p-6">
             <div className="flex items-center justify-center space-x-2 mb-4">
               <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
-              <h3 className="text-lg font-semibold text-amber-300">Información Importante</h3>
+              <h3 className="text-lg font-semibold text-amber-300">
+                {isInPollingPhase ? 'Fase de Verificación Activa' : 'Información del Proceso'}
+              </h3>
             </div>
             <div className="space-y-3 text-center">
-              <p className="text-muted-foreground text-sm">
-                🔄 El sistema verifica automáticamente cada 3 minutos
-              </p>
-              <p className="text-muted-foreground text-sm">
-                ⚡ Tu video puede estar listo antes de los 39 minutos
-              </p>
-              <p className="text-muted-foreground text-sm">
-                💻 Puedes navegar a otras páginas, pero mantén esta pestaña abierta
-              </p>
+              {isInPollingPhase ? (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    🔍 Verificando cada minuto si tu video está disponible
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    ⚡ Tu video debería estar disponible pronto
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    ⏰ Tiempo restante: {minutesRemaining} minutos
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    🎬 Generando video (primeros 30 minutos)
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    🕒 Las verificaciones iniciarán automáticamente a los 30 minutos
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    💻 Puedes navegar a otras páginas, pero mantén esta pestaña abierta
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
           {/* Connection Status */}
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${isInPollingPhase ? 'bg-blue-500' : 'bg-green-500'}`}></div>
             <span className="text-sm text-muted-foreground">
-              Sistema de verificación activo cada 3 minutos
+              {isInPollingPhase 
+                ? 'Verificación activa cada minuto' 
+                : 'Sistema de generación en proceso'
+              }
             </span>
           </div>
 

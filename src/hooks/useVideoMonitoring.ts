@@ -4,14 +4,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { 
   COUNTDOWN_TIME, 
-  calculateTimeRemaining 
+  calculateTimeRemaining,
+  hasReachedPollingTime 
 } from '@/lib/countdownUtils';
 import { checkVideoInDatabase, checkFinalVideoResult } from '@/lib/databaseUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
 import { 
   clearAllIntervals, 
   startCountdownInterval, 
-  startPollingInterval 
+  startDelayedPolling 
 } from '@/lib/intervalUtils';
 
 export const useVideoMonitoring = () => {
@@ -53,22 +54,27 @@ export const useVideoMonitoring = () => {
       checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
     };
 
+    // Iniciar contador visual
     startCountdownInterval(startTime, handleTimeUpdate, handleTimeExpired, countdownIntervalRef);
+    
+    // Iniciar verificaciones retrasadas (después de 30 minutos)
+    startDelayedVideoChecking(requestId, scriptToCheck, setVideoResult, setIsGenerating, startTime);
   }, [updateTimeRemaining]);
 
-  const startPeriodicChecking = useCallback((
+  const startDelayedVideoChecking = useCallback((
     requestId: string, 
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void
+    setIsGenerating: (generating: boolean) => void,
+    startTime: number
   ) => {
-    console.log('🔄 Iniciando verificación cada 3 minutos para requestId:', requestId);
+    console.log('🕐 Programando verificaciones retrasadas para requestId:', requestId);
     
     const checkForVideo = async () => {
       if (!isActiveRef.current) return;
       
       try {
-        console.log('🔍 Verificando video en base de datos...');
+        console.log('🔍 Verificando video en base de datos (después de 30 min)...');
         const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
         
         if (videoData?.video_url) {
@@ -87,20 +93,28 @@ export const useVideoMonitoring = () => {
             description: videoData.title || "Tu video ha sido generado exitosamente.",
           });
         } else {
-          const minutesElapsed = Math.floor((Date.now() - (generationStartTime || Date.now())) / 60000);
+          const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
           console.log(`⏳ Video no encontrado aún. Tiempo transcurrido: ${minutesElapsed} minutos`);
         }
       } catch (e) {
-        console.error('❌ Error durante verificación periódica:', e);
+        console.error('❌ Error durante verificación retrasada:', e);
       }
     };
 
-    // Ejecutar verificación inmediata
-    checkForVideo();
-    
-    // Luego iniciar verificaciones cada 3 minutos
-    startPollingInterval(checkForVideo, pollingIntervalRef, 180000);
-  }, [user, generationStartTime, toast]);
+    // Usar la nueva función de verificación retrasada
+    startDelayedPolling(startTime, checkForVideo, pollingIntervalRef);
+  }, [user, toast]);
+
+  // Función legacy mantenida para compatibilidad
+  const startPeriodicChecking = useCallback((
+    requestId: string, 
+    scriptToCheck: string,
+    setVideoResult: (result: string) => void,
+    setIsGenerating: (generating: boolean) => void
+  ) => {
+    // En el nuevo flujo, esta función no se usa porque usamos startDelayedVideoChecking
+    console.log('⚠️ startPeriodicChecking llamado - usando nueva lógica retrasada');
+  }, []);
 
   const checkFinalResult = useCallback(async (
     scriptToCheck: string,
@@ -151,7 +165,7 @@ export const useVideoMonitoring = () => {
     timeRemaining,
     generationStartTime,
     startCountdown,
-    startPeriodicChecking,
+    startPeriodicChecking, // Mantenido para compatibilidad
     checkFinalResult,
     cleanup
   };
