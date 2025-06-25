@@ -1,115 +1,114 @@
 
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { 
-  GenerationState, 
-  saveGenerationState, 
-  clearGenerationState 
-} from '@/lib/videoGeneration';
+import { User } from '@supabase/supabase-js';
+import { FlowState } from '@/types/videoFlow';
+import { saveGenerationState } from '@/lib/videoGeneration';
 import { sendToWebhook, sendToEstiloNoticiaWebhook } from '@/lib/webhookUtils';
-import { getStyleInternalId } from '@/utils/styleMapping';
-import { FlowState, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
-
-// Función utilitaria para asegurar que no haya comillas dobles problemáticas
-const sanitizeForJson = (value: string): string => {
-  return value.replace(/"/g, "'");
-};
-
-export const createVideoGenerationPayload = (
-  script: string,
-  userId: string,
-  requestId: string,
-  flowState: FlowState,
-  cardCustomization?: CardCustomization,
-  presenterCustomization?: PresenterCustomization
-) => {
-  const basePayload = {
-    script: sanitizeForJson(script.trim()),
-    userId,
-    requestId,
-    timestamp: new Date().toISOString(),
-    appMode: 'immediate_response',
-    ClaveAPI: atob(flowState.selectedApiKey!.api_key_encrypted),
-    AvatarID: flowState.selectedAvatar!.avatar_id,
-    VoiceID: flowState.selectedVoice!.voice_id,
-    Estilo: getStyleInternalId(flowState.selectedStyle!)
-  };
-
-  // Si es Estilo Noticia y hay personalización de tarjetas
-  if (flowState.selectedStyle?.id === 'style-1' && cardCustomization) {
-    return {
-      ...basePayload,
-      fecha: sanitizeForJson(cardCustomization.fecha),
-      titulo: sanitizeForJson(cardCustomization.titulo),
-      subtitulo: sanitizeForJson(cardCustomization.subtitulo)
-    };
-  }
-
-  // Si es Estilo Noticiero y hay personalización del presentador
-  if (flowState.selectedStyle?.id === 'style-2' && presenterCustomization) {
-    return {
-      ...basePayload,
-      nombrePresentador: sanitizeForJson(presenterCustomization.nombrePresentador)
-    };
-  }
-
-  return basePayload;
-};
 
 export const validateFlowState = (flowState?: FlowState): boolean => {
+  if (!flowState) return false;
+  
   return !!(
-    flowState?.selectedApiKey && 
-    flowState?.selectedAvatar && 
-    flowState?.selectedVoice && 
-    flowState?.selectedStyle
+    flowState.selectedApiKey &&
+    flowState.selectedAvatar &&
+    flowState.selectedVoice &&
+    flowState.selectedStyle
   );
 };
 
 export const initiateVideoGeneration = async (
   script: string,
-  user: any,
+  user: User | null,
   flowState: FlowState,
-  toast: ReturnType<typeof useToast>['toast']
-) => {
-  const requestId = `${user?.id || 'anonymous'}-${Date.now()}`;
-  
-  const generationState: GenerationState = { 
-    script: sanitizeForJson(script.trim()), 
-    requestId, 
-    timestamp: Date.now(), 
-    status: 'pending' 
-  };
-  saveGenerationState(generationState);
-
-  console.log('Iniciando nuevo proceso de generación de video');
-  
-  const webhookPayload = createVideoGenerationPayload(
-    script,
-    user?.id || 'anonymous',
-    requestId,
-    flowState,
-    flowState.cardCustomization || undefined,
-    flowState.presenterCustomization || undefined
-  );
-
-  console.log('Enviando payload completo:', webhookPayload);
-
-  // Determinar qué webhook usar según el estilo
-  if (flowState.selectedStyle?.id === 'style-1') {
-    // Estilo Noticia -> webhook Estilo1
-    await sendToEstiloNoticiaWebhook(webhookPayload);
-    toast({
-      title: "Solicitud enviada",
-      description: "Tu video estilo noticia se está procesando con la personalización seleccionada. Te notificaremos cuando esté listo.",
-    });
-  } else {
-    // Estilo Noticiero -> webhook veroia (original)
-    await sendToWebhook(webhookPayload);
-    toast({
-      title: "Solicitud enviada",
-      description: "Tu video se está procesando con la configuración seleccionada. Te notificaremos cuando esté listo.",
-    });
+  toast: any
+): Promise<string> => {
+  if (!user) {
+    throw new Error('Usuario no autenticado');
   }
 
-  return requestId;
+  // Generar requestId único basado en timestamp + random
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  const requestId = `${timestamp}-${random}`;
+  
+  console.log('🎬 Iniciando generación de video:', {
+    requestId: requestId,
+    timestamp: timestamp,
+    timestampDate: new Date(timestamp).toISOString(),
+    userId: user.id,
+    scriptLength: script.length,
+    selectedApiKey: flowState.selectedApiKey?.api_key_name,
+    selectedAvatar: flowState.selectedAvatar?.avatar_name,
+    selectedVoice: flowState.selectedVoice?.voice_name,
+    selectedStyle: flowState.selectedStyle?.name
+  });
+
+  // Guardar estado de generación
+  saveGenerationState({
+    requestId,
+    script: script.trim(),
+    timestamp,
+    status: 'pending'
+  });
+
+  // Preparar payload base
+  const basePayload = {
+    script: script.trim(),
+    userId: user.id,
+    requestId: requestId,
+    timestamp: new Date(timestamp).toISOString(),
+    appMode: "produccion",
+    ClaveAPI: flowState.selectedApiKey!.api_key_encrypted,
+    AvatarID: flowState.selectedAvatar!.avatar_id,
+    VoiceID: flowState.selectedVoice!.voice_id,
+    Estilo: flowState.selectedStyle!.id,
+    nombrePresentador: flowState.presenterName || flowState.selectedAvatar!.avatar_name
+  };
+
+  console.log('📤 Enviando payload al webhook:', {
+    requestId: requestId,
+    webhook: flowState.selectedStyle!.id === 'estilo-noticia' ? 'Estilo1' : 'veroia',
+    payloadSize: JSON.stringify(basePayload).length
+  });
+
+  try {
+    if (flowState.selectedStyle!.id === 'estilo-noticia') {
+      const noticiaPayload = {
+        ...basePayload,
+        fecha: flowState.newsDate || new Date().toLocaleDateString('es-ES'),
+        titulo: flowState.newsTitle || 'Noticia importante',
+        subtitulo: flowState.newsSubtitle || 'Información relevante'
+      };
+      
+      console.log('📰 Enviando a webhook Estilo Noticia con datos adicionales:', {
+        requestId: requestId,
+        fecha: noticiaPayload.fecha,
+        titulo: noticiaPayload.titulo
+      });
+      
+      await sendToEstiloNoticiaWebhook(noticiaPayload);
+    } else {
+      console.log('🎥 Enviando a webhook estándar');
+      await sendToWebhook(basePayload);
+    }
+
+    console.log('✅ Payload enviado exitosamente al webhook:', {
+      requestId: requestId,
+      timestamp: new Date().toISOString()
+    });
+
+    toast({
+      title: "Video en procesamiento",
+      description: `Solicitud enviada correctamente. ID: ${requestId.substring(0, 8)}...`
+    });
+
+    return requestId;
+
+  } catch (error) {
+    console.error('❌ Error enviando al webhook:', {
+      requestId: requestId,
+      error: error,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
 };

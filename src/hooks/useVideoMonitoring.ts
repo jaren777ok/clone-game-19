@@ -37,7 +37,12 @@ export const useVideoMonitoring = () => {
     customStartTime?: number
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando contador de 39 minutos para requestId:', requestId, 'desde:', new Date(startTime));
+    console.log('🚀 Iniciando contador de 39 minutos:', {
+      requestId: requestId,
+      startTime: new Date(startTime).toISOString(),
+      scriptLength: scriptToCheck.length,
+      userId: user?.id
+    });
     
     setGenerationStartTime(startTime);
     isActiveRef.current = true;
@@ -49,7 +54,7 @@ export const useVideoMonitoring = () => {
     };
 
     const handleTimeExpired = () => {
-      console.log('⏰ Contador finalizado, ejecutando verificación final');
+      console.log('⏰ Contador finalizado, ejecutando verificación final para requestId:', requestId);
       isActiveRef.current = false;
       checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
     };
@@ -59,7 +64,7 @@ export const useVideoMonitoring = () => {
     
     // Iniciar verificaciones retrasadas (después de 30 minutos)
     startDelayedVideoChecking(requestId, scriptToCheck, setVideoResult, setIsGenerating, startTime);
-  }, [updateTimeRemaining]);
+  }, [updateTimeRemaining, user]);
 
   const startDelayedVideoChecking = useCallback((
     requestId: string, 
@@ -68,18 +73,35 @@ export const useVideoMonitoring = () => {
     setIsGenerating: (generating: boolean) => void,
     startTime: number
   ) => {
-    console.log('🕐 Programando verificaciones retrasadas para requestId:', requestId);
+    console.log('🕐 Programando verificaciones retrasadas:', {
+      requestId: requestId,
+      startTime: new Date(startTime).toISOString(),
+      delayMinutes: 30
+    });
     
     const checkForVideo = async () => {
-      if (!isActiveRef.current) return;
+      if (!isActiveRef.current) {
+        console.log('⚠️ Verificación cancelada - proceso inactivo');
+        return;
+      }
       
       try {
-        console.log('🔍 Verificando video en base de datos (después de 30 min)...');
+        const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
+        console.log('🔍 Verificando video (minuto ' + minutesElapsed + '):', {
+          requestId: requestId,
+          userId: user?.id,
+          scriptPreview: scriptToCheck.substring(0, 50) + '...'
+        });
+        
         const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
         
         if (videoData?.video_url) {
-          console.log('✅ ¡Video encontrado!:', videoData.video_url);
-          console.log('📝 Con título:', videoData.title);
+          console.log('🎉 ¡VIDEO ENCONTRADO!:', {
+            videoUrl: videoData.video_url,
+            title: videoData.title,
+            requestId: videoData.request_id,
+            minutesElapsed: minutesElapsed
+          });
           
           isActiveRef.current = false;
           clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
@@ -93,11 +115,18 @@ export const useVideoMonitoring = () => {
             description: videoData.title || "Tu video ha sido generado exitosamente.",
           });
         } else {
-          const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-          console.log(`⏳ Video no encontrado aún. Tiempo transcurrido: ${minutesElapsed} minutos`);
+          console.log('⏳ Video no encontrado aún:', {
+            requestId: requestId,
+            minutesElapsed: minutesElapsed,
+            nextCheckIn: '1 minuto'
+          });
         }
       } catch (e) {
-        console.error('❌ Error durante verificación retrasada:', e);
+        console.error('❌ Error durante verificación retrasada:', {
+          requestId: requestId,
+          error: e,
+          minutesElapsed: Math.floor((Date.now() - startTime) / 60000)
+        });
       }
     };
 
@@ -112,8 +141,8 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
+    console.log('⚠️ startPeriodicChecking llamado (legacy) - requestId:', requestId);
     // En el nuevo flujo, esta función no se usa porque usamos startDelayedVideoChecking
-    console.log('⚠️ startPeriodicChecking llamado - usando nueva lógica retrasada');
   }, []);
 
   const checkFinalResult = useCallback(async (
@@ -121,28 +150,40 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 Verificación final después del contador de 39 minutos');
+    console.log('🔍 VERIFICACIÓN FINAL después de 39 minutos:', {
+      scriptPreview: scriptToCheck.substring(0, 50) + '...',
+      userId: user?.id,
+      timestamp: new Date().toISOString()
+    });
     
     try {
       const videoData = await checkFinalVideoResult(user, scriptToCheck);
       
       if (videoData?.video_url) {
-        console.log('✅ Video encontrado en verificación final:', videoData.video_url);
+        console.log('✅ Video encontrado en verificación final:', {
+          videoUrl: videoData.video_url,
+          title: videoData.title
+        });
         setVideoResult(videoData.video_url);
         toast({
           title: "¡Video completado!",
           description: videoData.title || "Tu video ha sido generado exitosamente.",
         });
       } else {
-        console.log('❌ Video no encontrado después de 39 minutos');
+        console.log('❌ Video NO encontrado después de 39 minutos');
         toast({
           title: "Tiempo agotado",
-          description: "El video está tomando más tiempo del esperado. Por favor contacta con soporte.",
+          description: "El video está tomando más tiempo del esperado. Revisa la sección 'Videos Guardados' en unos minutos.",
           variant: "destructive"
         });
       }
     } catch (e) {
       console.error('❌ Error en verificación final:', e);
+      toast({
+        title: "Error en verificación",
+        description: "Hubo un error al verificar el video. Revisa la sección 'Videos Guardados'.",
+        variant: "destructive"
+      });
     }
     
     isActiveRef.current = false;
