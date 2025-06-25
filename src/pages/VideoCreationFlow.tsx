@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
+import { useAuth } from '@/hooks/useAuth';
 import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
 import AvatarSelector from '@/components/video/AvatarSelector';
 import VoiceSelector from '@/components/video/VoiceSelector';
@@ -10,6 +11,7 @@ import NeuroCopyGenerator from '@/components/video/NeuroCopyGenerator';
 
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     flowState,
     apiKeys,
@@ -39,9 +41,16 @@ const VideoCreationFlow = () => {
   };
 
   const handleProceedToGenerator = () => {
-    // Solo navegar si tenemos todas las selecciones necesarias incluyendo el script
+    // Validar que tenemos todas las selecciones necesarias incluyendo el script
     if (flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle && flowState.generatedScript) {
-      navigate('/crear-video-generator');
+      console.log('✅ Navegando al generador con configuración completa');
+      // Navegar directamente pasando el estado via location
+      navigate('/crear-video-generator', { 
+        state: flowState,
+        replace: false 
+      });
+    } else {
+      console.warn('⚠️ Configuración incompleta para navegar al generador');
     }
   };
 

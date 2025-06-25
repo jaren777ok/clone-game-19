@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   determineInitialStep, 
   loadSavedFlowState, 
@@ -10,6 +11,7 @@ import {
 } from '@/utils/videoFlowUtils';
 
 export const useVideoCreationFlow = () => {
+  const { user } = useAuth();
   const { apiKeys, loading: apiKeysLoading, loadApiKeys } = useApiKeys();
   const [flowState, setFlowState] = useState<FlowState>({
     step: 'loading',
@@ -25,13 +27,24 @@ export const useVideoCreationFlow = () => {
 
   // Initialize flow state once
   useEffect(() => {
-    if (isInitialized) return;
+    if (isInitialized || !user) return;
 
     const initializeFlow = async () => {
       try {
+        console.log('🚀 Inicializando flujo de creación de video para usuario:', user.id);
+        
         const keys = await loadApiKeys();
-        const savedState = loadSavedFlowState();
+        const savedState = await loadSavedFlowState(user);
         const initialState = determineInitialStep(savedState, keys);
+        
+        console.log('📋 Estado inicial determinado:', {
+          step: initialState.step,
+          hasApiKey: !!initialState.selectedApiKey,
+          hasAvatar: !!initialState.selectedAvatar,
+          hasVoice: !!initialState.selectedVoice,
+          hasStyle: !!initialState.selectedStyle,
+          hasScript: !!initialState.generatedScript
+        });
         
         setFlowState(initialState);
         setIsInitialized(true);
@@ -43,21 +56,26 @@ export const useVideoCreationFlow = () => {
     };
 
     initializeFlow();
-  }, [isInitialized, loadApiKeys]);
+  }, [isInitialized, user, loadApiKeys]);
 
-  // Save state to localStorage when it changes (with debouncing)
+  // Save state to Supabase when it changes (with debouncing)
   useEffect(() => {
-    if (!isInitialized || flowState.step === 'loading') return;
+    if (!isInitialized || !user || flowState.step === 'loading') return;
 
-    const timeoutId = setTimeout(() => {
-      saveFlowState(flowState);
+    const timeoutId = setTimeout(async () => {
+      try {
+        await saveFlowState(user, flowState);
+      } catch (error) {
+        console.error('Error saving flow state:', error);
+      }
     }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [flowState, isInitialized]);
+  }, [flowState, isInitialized, user]);
 
   // Navigation functions
   const selectApiKey = useCallback((apiKey: HeyGenApiKey) => {
+    console.log('🔑 Seleccionando API Key:', apiKey.api_key_name);
     setFlowState(prev => ({
       ...prev,
       selectedApiKey: apiKey,
@@ -72,6 +90,7 @@ export const useVideoCreationFlow = () => {
   }, []);
 
   const selectAvatar = useCallback((avatar: Avatar) => {
+    console.log('👤 Seleccionando Avatar:', avatar.avatar_name);
     setFlowState(prev => ({
       ...prev,
       selectedAvatar: avatar,
@@ -80,6 +99,7 @@ export const useVideoCreationFlow = () => {
   }, []);
 
   const selectVoice = useCallback((voice: Voice) => {
+    console.log('🎤 Seleccionando Voz:', voice.voice_name);
     setFlowState(prev => ({
       ...prev,
       selectedVoice: voice,
@@ -88,6 +108,7 @@ export const useVideoCreationFlow = () => {
   }, []);
 
   const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization) => {
+    console.log('🎨 Seleccionando Estilo:', style.name);
     setFlowState(prev => ({
       ...prev,
       selectedStyle: style,
@@ -98,6 +119,7 @@ export const useVideoCreationFlow = () => {
   }, []);
 
   const selectGeneratedScript = useCallback((script: string) => {
+    console.log('📝 Seleccionando Script generado, longitud:', script.length);
     setFlowState(prev => ({
       ...prev,
       generatedScript: script,
@@ -106,10 +128,12 @@ export const useVideoCreationFlow = () => {
   }, []);
 
   const goToStep = useCallback((step: FlowState['step']) => {
+    console.log('🔄 Navegando a paso:', step);
     setFlowState(prev => ({ ...prev, step }));
   }, []);
 
-  const resetFlow = useCallback(() => {
+  const resetFlow = useCallback(async () => {
+    console.log('🔄 Reseteando flujo de creación');
     setFlowState({
       step: 'api-key',
       selectedApiKey: null,
@@ -120,13 +144,16 @@ export const useVideoCreationFlow = () => {
       cardCustomization: null,
       presenterCustomization: null
     });
-    clearFlowState();
-  }, []);
+    
+    if (user) {
+      await clearFlowState(user);
+    }
+  }, [user]);
 
   return {
     flowState,
     apiKeys,
-    loading: apiKeysLoading || !isInitialized,
+    loading: apiKeysLoading || !isInitialized || !user,
     loadApiKeys,
     selectApiKey,
     selectAvatar,
