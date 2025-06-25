@@ -7,20 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, CheckCircle2, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 interface Props {
   hasExistingKeys: boolean;
   onSuccess: () => void;
   onCancel?: () => void;
-}
-
-interface ValidationResult {
-  isValid: boolean;
-  error?: string;
-  errorType?: string;
-  retryable?: boolean;
-  avatarCount?: number;
 }
 
 const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) => {
@@ -31,102 +22,35 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
     apiKey: ''
   });
   const [loading, setLoading] = useState(false);
-  const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'success' | 'error'>('idle');
-  const [validationError, setValidationError] = useState<string>('');
-  const [retryable, setRetryable] = useState<boolean>(false);
-
-  const validateApiKey = async (apiKey: string): Promise<ValidationResult> => {
-    console.log('🔍 Iniciando validación directa de API key:', apiKey.substring(0, 10) + '...');
-    
-    try {
-      const response = await supabase.functions.invoke('validate-heygen-key', {
-        body: { apiKey }
-      });
-
-      console.log('📋 Respuesta de validación:', {
-        error: response.error,
-        data: response.data
-      });
-
-      if (response.error) {
-        console.error('❌ Error en Edge Function:', response.error);
-        return { 
-          isValid: false, 
-          error: 'Error de conexión al validar la clave API. Por favor intenta de nuevo.',
-          retryable: true
-        };
-      }
-
-      // La respuesta viene directamente en response.data
-      const result = response.data;
-      
-      if (result?.isValid) {
-        console.log('✅ Validación exitosa, avatares disponibles:', result.avatarCount || 'desconocido');
-        return result;
-      } else {
-        console.log('❌ Validación falló:', result?.error);
-        return result || { 
-          isValid: false, 
-          error: 'Error desconocido al validar la clave API.',
-          retryable: true
-        };
-      }
-
-    } catch (error) {
-      console.error('💥 Error crítico en validación:', error);
-      return { 
-        isValid: false, 
-        error: 'Error de conexión. Verifica tu conexión a internet e intenta de nuevo.',
-        retryable: true
-      };
-    }
-  };
 
   const handleSaveApiKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !formData.name.trim() || !formData.apiKey.trim()) return;
 
     setLoading(true);
-    setValidationStatus('validating');
-    setValidationError('');
-    setRetryable(false);
-
     try {
-      console.log('🔐 Iniciando validación de API key...');
-      
-      // Validar la clave API usando la nueva Edge Function
-      const validation = await validateApiKey(formData.apiKey);
-      
-      if (!validation.isValid) {
-        setValidationStatus('error');
-        setValidationError(validation.error || 'Error desconocido');
-        setRetryable(validation.retryable || false);
-        
+      // Simple encriptación básica (en producción usar una librería más robusta)
+      const encryptedKey = btoa(formData.apiKey);
+
+      // Primero validar la clave API llamando a HeyGen
+      const response = await supabase.functions.invoke('heygen-avatars', {
+        body: { 
+          apiKey: formData.apiKey,
+          offset: 0,
+          limit: 1
+        }
+      });
+
+      if (response.error) {
         toast({
-          title: validation.retryable ? "Error temporal" : "Clave API inválida",
-          description: validation.error,
-          variant: "destructive",
-          action: validation.retryable ? (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleSaveApiKey(e)}
-            >
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Reintentar
-            </Button>
-          ) : undefined
+          title: "Clave API inválida",
+          description: "La clave API proporcionada no es válida o no tiene acceso a HeyGen.",
+          variant: "destructive"
         });
         return;
       }
 
-      setValidationStatus('success');
-      console.log('✅ API key válida, guardando en base de datos...');
-
-      // Simple encriptación básica (en producción usar una librería más robusta)
-      const encryptedKey = btoa(formData.apiKey);
-
-      // Guardar en la base de datos
+      // Si la validación es exitosa, guardar en la base de datos
       const { error } = await supabase
         .from('heygen_api_keys')
         .insert({
@@ -138,53 +62,21 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
       if (error) throw error;
 
       toast({
-        title: "¡Clave API guardada exitosamente!",
-        description: `${formData.name} ha sido configurada y validada correctamente.${validation.avatarCount ? ` Se encontraron ${validation.avatarCount} avatares disponibles.` : ''}`,
-        action: <CheckCircle2 className="w-4 h-4 text-green-500" />
+        title: "Clave API guardada",
+        description: "Tu clave API de HeyGen ha sido guardada exitosamente."
       });
 
       setFormData({ name: '', apiKey: '' });
       onSuccess();
-
     } catch (error) {
-      console.error('💥 Error guardando API key:', error);
-      setValidationStatus('error');
-      setValidationError('Error interno al guardar la clave API');
-      setRetryable(true);
-      
+      console.error('Error saving API key:', error);
       toast({
-        title: "Error al guardar",
+        title: "Error",
         description: "No se pudo guardar la clave API. Inténtalo de nuevo.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getValidationIcon = () => {
-    switch (validationStatus) {
-      case 'validating':
-        return <Wifi className="w-4 h-4 animate-pulse text-blue-500" />;
-      case 'success':
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case 'error':
-        return <WifiOff className="w-4 h-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getValidationMessage = () => {
-    switch (validationStatus) {
-      case 'validating':
-        return 'Validando clave API con HeyGen...';
-      case 'success':
-        return '¡Clave API validada correctamente! Tienes acceso a los recursos de HeyGen.';
-      case 'error':
-        return validationError;
-      default:
-        return '';
     }
   };
 
@@ -195,7 +87,7 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
           {!hasExistingKeys ? "Configurar tu primera clave API" : "Agregar nueva clave API"}
         </CardTitle>
         <CardDescription className="text-sm sm:text-base leading-relaxed">
-          Ingresa los datos de tu clave API de HeyGen. La validaremos directamente con el servicio de HeyGen para asegurar que funcione correctamente.
+          Ingresa los datos de tu clave API de HeyGen. Puedes obtener tu clave en tu dashboard de HeyGen.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -212,10 +104,7 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="apiKey" className="text-sm sm:text-base flex items-center gap-2">
-              Clave API de HeyGen
-              {getValidationIcon()}
-            </Label>
+            <Label htmlFor="apiKey" className="text-sm sm:text-base">Clave API de HeyGen</Label>
             <Input
               id="apiKey"
               type="password"
@@ -225,24 +114,6 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
               required
               className="h-10 sm:h-11"
             />
-            {validationStatus !== 'idle' && (
-              <div className={`flex items-start gap-2 p-3 rounded-md text-sm ${
-                validationStatus === 'success' 
-                  ? 'bg-green-50 border border-green-200 text-green-700' 
-                  : validationStatus === 'error'
-                  ? 'bg-red-50 border border-red-200 text-red-700'
-                  : 'bg-blue-50 border border-blue-200 text-blue-700'
-              }`}>
-                {validationStatus === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                ) : validationStatus === 'error' ? (
-                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                ) : (
-                  <Wifi className="w-4 h-4 mt-0.5 flex-shrink-0 animate-pulse" />
-                )}
-                <span>{getValidationMessage()}</span>
-              </div>
-            )}
           </div>
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
@@ -250,21 +121,13 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
               disabled={loading}
               className="flex-1 cyber-glow h-10 sm:h-11 text-sm sm:text-base"
             >
-              {loading ? (
-                <>
-                  <Wifi className="w-4 h-4 mr-2 animate-pulse" />
-                  {validationStatus === 'validating' ? 'Validando...' : 'Guardando...'}
-                </>
-              ) : (
-                'Validar y Guardar'
-              )}
+              {loading ? 'Validando...' : 'Guardar y Continuar'}
             </Button>
             {hasExistingKeys && onCancel && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
-                disabled={loading}
                 className="h-10 sm:h-11 text-sm sm:text-base"
               >
                 Cancelar

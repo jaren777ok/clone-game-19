@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Voice, HeyGenApiKey } from '@/types/videoFlow';
@@ -25,11 +25,8 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [previouslySelectedVoice, setPreviouslySelectedVoice] = useState<Voice | null>(null);
-  const [error, setError] = useState<{ message: string; isRetryable: boolean } | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
 
   const VOICES_PER_PAGE = 12;
-  const MAX_RETRIES = 3;
 
   useEffect(() => {
     // Cargar selección previa del localStorage
@@ -52,8 +49,7 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
   const loadVoices = async (offset: number = 0, isInitial: boolean = false) => {
     if (isInitial) {
       setLoading(true);
-      setVoices([]);
-      setError(null);
+      setVoices([]); // Limpiar voces existentes
     } else {
       setLoadingMore(true);
     }
@@ -62,9 +58,9 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
       // Desencriptar la clave API
       const decryptedKey = atob(selectedApiKey.api_key_encrypted);
 
-      console.log(`🔍 Cargando voces: offset=${offset}, limit=${VOICES_PER_PAGE}, intento=${retryCount + 1}`);
+      console.log(`Loading voices: offset=${offset}, limit=${VOICES_PER_PAGE}`);
 
-      const { data, error: invokeError } = await supabase.functions.invoke('heygen-voices', {
+      const { data, error } = await supabase.functions.invoke('heygen-voices', {
         body: {
           apiKey: decryptedKey,
           offset,
@@ -72,37 +68,9 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
         }
       });
 
-      if (invokeError) {
-        console.error('❌ Error invocando función:', invokeError);
-        throw new Error('Error de conexión con el servicio. Intenta de nuevo.');
-      }
+      if (error) throw error;
 
-      // Verificar si hay error en la respuesta
-      if (data?.error) {
-        console.error('❌ Error en respuesta:', data);
-        
-        const isRetryable = data.retryable || data.error.includes('temporarily unavailable') || data.error.includes('Failed to connect');
-        
-        setError({
-          message: data.details || data.error || 'Error desconocido',
-          isRetryable
-        });
-
-        if (isRetryable && retryCount < MAX_RETRIES) {
-          console.log(`🔄 Reintentando automáticamente (${retryCount + 1}/${MAX_RETRIES})...`);
-          setRetryCount(prev => prev + 1);
-          
-          // Esperar antes de reintentar
-          setTimeout(() => {
-            loadVoices(offset, isInitial);
-          }, Math.min(1000 * Math.pow(2, retryCount), 5000));
-          return;
-        }
-
-        throw new Error(data.details || data.error);
-      }
-
-      console.log(`✅ Recibidas ${data.voices?.length || 0} voces de la API`);
+      console.log(`Received ${data.voices?.length || 0} voices from API`);
 
       if (isInitial) {
         setVoices(data.voices || []);
@@ -112,49 +80,20 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
       } else {
         setVoices(prev => {
           const newVoices = [...prev, ...(data.voices || [])];
-          console.log(`📊 Total voces después de cargar más: ${newVoices.length}`);
+          console.log(`Total voices after adding more: ${newVoices.length}`);
           return newVoices;
         });
         setCurrentPage(data.currentPage || currentPage + 1);
       }
 
       setHasMore(data.hasMore || false);
-      setError(null);
-      setRetryCount(0); // Reset retry count on success
-      
-      // Mostrar información sobre cache si está disponible
-      if (data.cached) {
-        console.log('💾 Datos cargados desde cache');
-      }
       
     } catch (error) {
-      console.error('💥 Error cargando voces:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar voces';
-      const isRetryable = errorMessage.includes('conexión') || errorMessage.includes('temporalmente') || errorMessage.includes('temporarily');
-      
-      setError({
-        message: errorMessage,
-        isRetryable
-      });
-
+      console.error('Error loading voices:', error);
       toast({
-        title: "Error al cargar voces",
-        description: errorMessage,
-        variant: "destructive",
-        action: isRetryable ? (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => {
-              setRetryCount(0);
-              loadVoices(offset, isInitial);
-            }}
-          >
-            <RefreshCw className="w-4 h-4 mr-1" />
-            Reintentar
-          </Button>
-        ) : undefined
+        title: "Error",
+        description: "No se pudieron cargar las voces. Verifica tu clave API.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -163,16 +102,11 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
   };
 
   const handleLoadMore = () => {
-    if (!loadingMore && hasMore && !error) {
+    if (!loadingMore && hasMore) {
       const nextOffset = voices.length;
-      console.log(`📥 Cargando más voces desde offset: ${nextOffset}`);
+      console.log(`Loading more voices from offset: ${nextOffset}`);
       loadVoices(nextOffset, false);
     }
-  };
-
-  const handleRetry = () => {
-    setRetryCount(0);
-    loadVoices(0, true);
   };
 
   const handleSelectVoice = (voice: Voice) => {
@@ -194,9 +128,6 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Cargando voces...</p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {retryCount > 0 && `Reintento ${retryCount}/${MAX_RETRIES}`}
-          </p>
         </div>
       </div>
     );
@@ -220,30 +151,6 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
             Usando: {selectedApiKey.api_key_name}
           </div>
         </div>
-
-        {/* Error banner */}
-        {error && (
-          <div className="max-w-6xl mx-auto mb-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-red-800 mb-1">Error al cargar voces</h3>
-                <p className="text-red-700 text-sm mb-3">{error.message}</p>
-                {error.isRetryable && (
-                  <Button
-                    onClick={handleRetry}
-                    size="sm"
-                    variant="outline"
-                    className="border-red-300 text-red-700 hover:bg-red-100"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Reintentar
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Mostrar selección previa si existe */}
         {previouslySelectedVoice && (
@@ -296,7 +203,7 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
           />
 
           <VoiceLoadMoreButton
-            hasMore={hasMore && !error}
+            hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={handleLoadMore}
           />

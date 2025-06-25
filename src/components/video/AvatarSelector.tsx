@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, HeyGenApiKey } from '@/types/videoFlow';
@@ -25,11 +26,8 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   const [totalPages, setTotalPages] = useState<number>(0);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
   const [previouslySelectedAvatar, setPreviouslySelectedAvatar] = useState<Avatar | null>(null);
-  const [error, setError] = useState<{ message: string; isRetryable: boolean } | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
 
   const AVATARS_PER_PAGE = 12;
-  const MAX_RETRIES = 3;
 
   useEffect(() => {
     // Cargar selección previa del localStorage
@@ -52,8 +50,7 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   const loadAvatars = async (offset: number = 0, isInitial: boolean = false) => {
     if (isInitial) {
       setLoading(true);
-      setAvatars([]);
-      setError(null);
+      setAvatars([]); // Limpiar avatares existentes
     } else {
       setLoadingMore(true);
     }
@@ -62,9 +59,9 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
       // Desencriptar la clave API
       const decryptedKey = atob(selectedApiKey.api_key_encrypted);
 
-      console.log(`🔍 Cargando avatares: offset=${offset}, limit=${AVATARS_PER_PAGE}, intento=${retryCount + 1}`);
+      console.log(`Loading avatars: offset=${offset}, limit=${AVATARS_PER_PAGE}`);
 
-      const { data, error: invokeError } = await supabase.functions.invoke('heygen-avatars', {
+      const { data, error } = await supabase.functions.invoke('heygen-avatars', {
         body: {
           apiKey: decryptedKey,
           offset,
@@ -72,37 +69,9 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
         }
       });
 
-      if (invokeError) {
-        console.error('❌ Error invocando función:', invokeError);
-        throw new Error('Error de conexión con el servicio. Intenta de nuevo.');
-      }
+      if (error) throw error;
 
-      // Verificar si hay error en la respuesta
-      if (data?.error) {
-        console.error('❌ Error en respuesta:', data);
-        
-        const isRetryable = data.retryable || data.error.includes('temporarily unavailable') || data.error.includes('Failed to connect');
-        
-        setError({
-          message: data.details || data.error || 'Error desconocido',
-          isRetryable
-        });
-
-        if (isRetryable && retryCount < MAX_RETRIES) {
-          console.log(`🔄 Reintentando automáticamente (${retryCount + 1}/${MAX_RETRIES})...`);
-          setRetryCount(prev => prev + 1);
-          
-          // Esperar antes de reintentar
-          setTimeout(() => {
-            loadAvatars(offset, isInitial);
-          }, Math.min(1000 * Math.pow(2, retryCount), 5000));
-          return;
-        }
-
-        throw new Error(data.details || data.error);
-      }
-
-      console.log(`✅ Recibidos ${data.avatars?.length || 0} avatares de la API`);
+      console.log(`Received ${data.avatars?.length || 0} avatars from API`);
 
       if (isInitial) {
         setAvatars(data.avatars || []);
@@ -112,49 +81,20 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
       } else {
         setAvatars(prev => {
           const newAvatars = [...prev, ...(data.avatars || [])];
-          console.log(`📊 Total avatares después de cargar más: ${newAvatars.length}`);
+          console.log(`Total avatars after adding more: ${newAvatars.length}`);
           return newAvatars;
         });
         setCurrentPage(data.currentPage || currentPage + 1);
       }
 
       setHasMore(data.hasMore || false);
-      setError(null);
-      setRetryCount(0); // Reset retry count on success
-      
-      // Mostrar información sobre cache si está disponible
-      if (data.cached) {
-        console.log('💾 Datos cargados desde cache');
-      }
       
     } catch (error) {
-      console.error('💥 Error cargando avatares:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar avatares';
-      const isRetryable = errorMessage.includes('conexión') || errorMessage.includes('temporalmente') || errorMessage.includes('temporarily');
-      
-      setError({
-        message: errorMessage,
-        isRetryable
-      });
-
+      console.error('Error loading avatars:', error);
       toast({
-        title: "Error al cargar avatares",
-        description: errorMessage,
-        variant: "destructive",
-        action: isRetryable ? (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => {
-              setRetryCount(0);
-              loadAvatars(offset, isInitial);
-            }}
-          >
-            <RefreshCw className="w-4 h-4 mr-1" />
-            Reintentar
-          </Button>
-        ) : undefined
+        title: "Error",
+        description: "No se pudieron cargar los avatares. Verifica tu clave API.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -163,16 +103,11 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   };
 
   const handleLoadMore = () => {
-    if (!loadingMore && hasMore && !error) {
+    if (!loadingMore && hasMore) {
       const nextOffset = avatars.length;
-      console.log(`📥 Cargando más avatares desde offset: ${nextOffset}`);
+      console.log(`Loading more avatars from offset: ${nextOffset}`);
       loadAvatars(nextOffset, false);
     }
-  };
-
-  const handleRetry = () => {
-    setRetryCount(0);
-    loadAvatars(0, true);
   };
 
   const handleSelectAvatar = (avatar: Avatar) => {
@@ -186,9 +121,6 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Cargando avatares...</p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {retryCount > 0 && `Reintento ${retryCount}/${MAX_RETRIES}`}
-          </p>
         </div>
       </div>
     );
@@ -212,30 +144,6 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
             Usando: {selectedApiKey.api_key_name}
           </div>
         </div>
-
-        {/* Error banner */}
-        {error && (
-          <div className="max-w-6xl mx-auto mb-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-red-800 mb-1">Error al cargar avatares</h3>
-                <p className="text-red-700 text-sm mb-3">{error.message}</p>
-                {error.isRetryable && (
-                  <Button
-                    onClick={handleRetry}
-                    size="sm"
-                    variant="outline"
-                    className="border-red-300 text-red-700 hover:bg-red-100"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Reintentar
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Mostrar selección previa si existe */}
         {previouslySelectedAvatar && (
@@ -271,7 +179,7 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
           />
 
           <LoadMoreButton
-            hasMore={hasMore && !error}
+            hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={handleLoadMore}
           />

@@ -128,59 +128,6 @@ export type Database = {
           },
         ]
       }
-      user_video_configs: {
-        Row: {
-          api_key_id: string | null
-          avatar_data: Json | null
-          card_customization: Json | null
-          created_at: string
-          current_step: string
-          generated_script: string | null
-          id: string
-          presenter_customization: Json | null
-          style_data: Json | null
-          updated_at: string
-          user_id: string
-          voice_data: Json | null
-        }
-        Insert: {
-          api_key_id?: string | null
-          avatar_data?: Json | null
-          card_customization?: Json | null
-          created_at?: string
-          current_step?: string
-          generated_script?: string | null
-          id?: string
-          presenter_customization?: Json | null
-          style_data?: Json | null
-          updated_at?: string
-          user_id: string
-          voice_data?: Json | null
-        }
-        Update: {
-          api_key_id?: string | null
-          avatar_data?: Json | null
-          card_customization?: Json | null
-          created_at?: string
-          current_step?: string
-          generated_script?: string | null
-          id?: string
-          presenter_customization?: Json | null
-          style_data?: Json | null
-          updated_at?: string
-          user_id?: string
-          voice_data?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_video_configs_api_key_id_fkey"
-            columns: ["api_key_id"]
-            isOneToOne: false
-            referencedRelation: "heygen_api_keys"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
