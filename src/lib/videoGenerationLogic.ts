@@ -39,7 +39,9 @@ export const initiateVideoGeneration = async (
     selectedApiKey: flowState.selectedApiKey?.api_key_name,
     selectedAvatar: flowState.selectedAvatar?.avatar_name,
     selectedVoice: flowState.selectedVoice?.voice_name,
-    selectedStyle: flowState.selectedStyle?.name
+    selectedStyle: flowState.selectedStyle?.name,
+    presenterName: flowState.presenterCustomization?.nombrePresentador,
+    cardCustomization: flowState.cardCustomization
   });
 
   // Guardar estado de generación
@@ -61,33 +63,38 @@ export const initiateVideoGeneration = async (
     AvatarID: flowState.selectedAvatar!.avatar_id,
     VoiceID: flowState.selectedVoice!.voice_id,
     Estilo: flowState.selectedStyle!.id,
-    nombrePresentador: flowState.presenterName || flowState.selectedAvatar!.avatar_name
+    nombrePresentador: flowState.presenterCustomization?.nombrePresentador || flowState.selectedAvatar!.avatar_name
   };
 
   console.log('📤 Enviando payload al webhook:', {
     requestId: requestId,
     webhook: flowState.selectedStyle!.id === 'estilo-noticia' ? 'Estilo1' : 'veroia',
-    payloadSize: JSON.stringify(basePayload).length
+    payloadSize: JSON.stringify(basePayload).length,
+    presenterName: basePayload.nombrePresentador
   });
 
   try {
     if (flowState.selectedStyle!.id === 'estilo-noticia') {
       const noticiaPayload = {
         ...basePayload,
-        fecha: flowState.newsDate || new Date().toLocaleDateString('es-ES'),
-        titulo: flowState.newsTitle || 'Noticia importante',
-        subtitulo: flowState.newsSubtitle || 'Información relevante'
+        fecha: flowState.cardCustomization?.fecha || new Date().toLocaleDateString('es-ES'),
+        titulo: flowState.cardCustomization?.titulo || 'Noticia importante',
+        subtitulo: flowState.cardCustomization?.subtitulo || 'Información relevante'
       };
       
       console.log('📰 Enviando a webhook Estilo Noticia con datos adicionales:', {
         requestId: requestId,
         fecha: noticiaPayload.fecha,
-        titulo: noticiaPayload.titulo
+        titulo: noticiaPayload.titulo,
+        subtitulo: noticiaPayload.subtitulo
       });
       
       await sendToEstiloNoticiaWebhook(noticiaPayload);
     } else {
-      console.log('🎥 Enviando a webhook estándar');
+      console.log('🎥 Enviando a webhook estándar:', {
+        requestId: requestId,
+        presenterName: basePayload.nombrePresentador
+      });
       await sendToWebhook(basePayload);
     }
 
