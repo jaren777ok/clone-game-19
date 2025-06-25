@@ -38,11 +38,11 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
     const configData = {
       user_id: user.id,
       api_key_id: flowState.selectedApiKey?.id || null,
-      avatar_data: flowState.selectedAvatar || null,
-      voice_data: flowState.selectedVoice || null,
-      style_data: flowState.selectedStyle || null,
-      presenter_customization: flowState.presenterCustomization || null,
-      card_customization: flowState.cardCustomization || null,
+      avatar_data: flowState.selectedAvatar ? JSON.parse(JSON.stringify(flowState.selectedAvatar)) : null,
+      voice_data: flowState.selectedVoice ? JSON.parse(JSON.stringify(flowState.selectedVoice)) : null,
+      style_data: flowState.selectedStyle ? JSON.parse(JSON.stringify(flowState.selectedStyle)) : null,
+      presenter_customization: flowState.presenterCustomization ? JSON.parse(JSON.stringify(flowState.presenterCustomization)) : null,
+      card_customization: flowState.cardCustomization ? JSON.parse(JSON.stringify(flowState.cardCustomization)) : null,
       generated_script: flowState.generatedScript || null,
       current_step: flowState.step,
       updated_at: new Date().toISOString()
@@ -119,12 +119,12 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
         api_key_encrypted: data.heygen_api_keys.api_key_encrypted,
         created_at: data.heygen_api_keys.created_at
       } : null,
-      selectedAvatar: data.avatar_data as Avatar | null,
-      selectedVoice: data.voice_data as Voice | null,
-      selectedStyle: data.style_data as VideoStyle | null,
+      selectedAvatar: data.avatar_data ? data.avatar_data as unknown as Avatar : null,
+      selectedVoice: data.voice_data ? data.voice_data as unknown as Voice : null,
+      selectedStyle: data.style_data ? data.style_data as unknown as VideoStyle : null,
       generatedScript: data.generated_script,
-      cardCustomization: data.card_customization as CardCustomization | null,
-      presenterCustomization: data.presenter_customization as PresenterCustomization | null
+      cardCustomization: data.card_customization ? data.card_customization as unknown as CardCustomization : null,
+      presenterCustomization: data.presenter_customization ? data.presenter_customization as unknown as PresenterCustomization : null
     };
 
     return flowState;
