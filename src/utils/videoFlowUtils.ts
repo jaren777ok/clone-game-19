@@ -1,5 +1,7 @@
 
 import { FlowState, HeyGenApiKey } from '@/types/videoFlow';
+import { saveVideoConfig, loadVideoConfig, clearVideoConfig } from '@/lib/videoConfigDatabase';
+import { User } from '@supabase/supabase-js';
 
 export const determineInitialStep = (
   savedState: FlowState | null, 
@@ -14,7 +16,8 @@ export const determineInitialStep = (
       selectedVoice: null,
       selectedStyle: null,
       generatedScript: null,
-      cardCustomization: null
+      cardCustomization: null,
+      presenterCustomization: null
     };
   }
 
@@ -45,7 +48,8 @@ export const determineInitialStep = (
           step: 'style',
           selectedStyle: null,
           generatedScript: null,
-          cardCustomization: null
+          cardCustomization: null,
+          presenterCustomization: null
         };
       }
       // If has key and avatar, go to voice
@@ -56,7 +60,8 @@ export const determineInitialStep = (
           selectedVoice: null,
           selectedStyle: null,
           generatedScript: null,
-          cardCustomization: null
+          cardCustomization: null,
+          presenterCustomization: null
         };
       }
       // If only has key, go to avatar
@@ -68,7 +73,8 @@ export const determineInitialStep = (
           selectedVoice: null,
           selectedStyle: null,
           generatedScript: null,
-          cardCustomization: null
+          cardCustomization: null,
+          presenterCustomization: null
         };
       }
     }
@@ -82,27 +88,38 @@ export const determineInitialStep = (
     selectedVoice: null,
     selectedStyle: null,
     generatedScript: null,
-    cardCustomization: null
+    cardCustomization: null,
+    presenterCustomization: null
   };
 };
 
-export const loadSavedFlowState = (): FlowState | null => {
-  const savedState = localStorage.getItem('video_creation_flow');
-  if (!savedState) return null;
-  
-  try {
-    return JSON.parse(savedState);
-  } catch (error) {
-    console.error('Error parsing saved flow state:', error);
-    localStorage.removeItem('video_creation_flow');
-    return null;
+// Funciones actualizadas para usar Supabase
+export const loadSavedFlowState = async (user: User | null): Promise<FlowState | null> => {
+  return await loadVideoConfig(user);
+};
+
+export const saveFlowState = async (user: User | null, state: FlowState): Promise<void> => {
+  if (user) {
+    await saveVideoConfig(user, state);
   }
 };
 
-export const saveFlowState = (state: FlowState): void => {
-  localStorage.setItem('video_creation_flow', JSON.stringify(state));
+export const clearFlowState = async (user: User | null): Promise<void> => {
+  if (user) {
+    await clearVideoConfig(user);
+  }
 };
 
-export const clearFlowState = (): void => {
-  localStorage.removeItem('video_creation_flow');
+// Funciones legacy mantenidas para compatibilidad (ahora vacías)
+export const loadSavedFlowStateLocal = (): FlowState | null => {
+  console.warn('loadSavedFlowStateLocal is deprecated, use loadSavedFlowState with user instead');
+  return null;
+};
+
+export const saveFlowStateLocal = (state: FlowState): void => {
+  console.warn('saveFlowStateLocal is deprecated, use saveFlowState with user instead');
+};
+
+export const clearFlowStateLocal = (): void => {
+  console.warn('clearFlowStateLocal is deprecated, use clearFlowState with user instead');
 };
