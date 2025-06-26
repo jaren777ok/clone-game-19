@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Play, Pause, CheckCircle2 } from 'lucide-react';
 import { VideoStyle, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
 import CustomizeCardsModal from './CustomizeCardsModal';
 import PresenterNameModal from './PresenterNameModal';
+import StyleSelectorHeader from './StyleSelectorHeader';
+import PreviousStyleSelectionBanner from './PreviousStyleSelectionBanner';
+import StyleGrid from './StyleGrid';
 
 interface Props {
   onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization) => void;
@@ -143,140 +144,31 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     }
   };
 
-  const getStyleRequirements = (styleId: string) => {
-    if (styleId === 'style-4') {
-      // Estilo Educativo 2 - solo avatar horizontal
-      return (
-        <div className="space-y-1">
-          <p className="font-medium text-yellow-400">Requisitos:</p>
-          <p className="text-muted-foreground">Se requiere Avatar Horizontal</p>
-        </div>
-      );
-    } else {
-      // Otros estilos - requisitos completos
-      return (
-        <div className="space-y-1">
-          <p className="font-medium text-yellow-400">Requisitos:</p>
-          <p className="text-muted-foreground">1. Se requiere Avatar en Fondo Total Negro</p>
-          <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
-        </div>
-      );
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
       <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="cyber-border hover:cyber-glow text-sm"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Cambiar avatar
-          </Button>
-        </div>
+        <StyleSelectorHeader onBack={onBack} />
 
         {/* Mostrar selección previa si existe */}
         {previouslySelectedStyle && (
-          <div className="max-w-6xl mx-auto mb-6 sm:mb-8">
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 sm:p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
-                <h3 className="text-base sm:text-lg font-semibold">Selección anterior</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Tienes <strong>{previouslySelectedStyle.name}</strong> seleccionado previamente. 
-                Puedes continuar con esta selección o elegir un estilo diferente.
-              </p>
-              <Button
-                onClick={() => handleSelectStyle(previouslySelectedStyle)}
-                className="cyber-glow text-sm"
-                size="sm"
-              >
-                Continuar con {previouslySelectedStyle.name}
-              </Button>
-            </div>
-          </div>
+          <PreviousStyleSelectionBanner
+            previouslySelectedStyle={previouslySelectedStyle}
+            onContinueWithPrevious={handleSelectStyle}
+          />
         )}
 
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12 space-y-4 sm:space-y-6">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gradient-safe leading-normal py-3 px-4">
-              Elige el Estilo de Edición
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4 leading-relaxed">
-              Selecciona el estilo de edición que quieres que tenga tu video
-            </p>
-          </div>
-
-          {/* Grid de estilos */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto px-2">
-            {videoStyles.map((style) => (
-              <Card 
-                key={style.id}
-                className={`cyber-border hover:cyber-glow transition-all cursor-pointer transform hover:scale-[1.02] ${
-                  selectedStyleId === style.id ? 'cyber-glow-intense' : ''
-                }`}
-              >
-                <CardContent className="p-4 sm:p-6">
-                  {/* Video preview */}
-                  <div className="aspect-[9/16] mb-4 sm:mb-6 rounded-xl overflow-hidden bg-black relative group">
-                    {selectedStyleId === style.id && (
-                      <div className="absolute top-2 right-2 z-10">
-                        <CheckCircle2 className="w-5 h-5 text-primary bg-black/50 rounded-full" />
-                      </div>
-                    )}
-                    <video
-                      ref={handleVideoRef(style.id)}
-                      src={style.video_url}
-                      className="w-full h-full object-cover"
-                      muted
-                      loop
-                      playsInline
-                      onEnded={() => handleVideoEnded(style.id)}
-                      preload="metadata"
-                    />
-                    
-                    {/* Play/Pause overlay */}
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => toggleVideoPlayback(style.id, e)}
-                        className="w-12 sm:w-16 h-12 sm:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors"
-                      >
-                        {playingVideo === style.id ? (
-                          <Pause className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
-                        ) : (
-                          <Play className="w-6 sm:w-8 h-6 sm:h-8 text-white ml-1" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Style info */}
-                  <div className="text-center mb-4 sm:mb-6 space-y-3 sm:space-y-4 py-2">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold leading-normal py-1">
-                      {style.name}
-                    </h3>
-                    <div className="text-xs sm:text-sm leading-relaxed px-2">
-                      {getStyleRequirements(style.id)}
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => handleSelectStyle(style)}
-                    className="w-full cyber-glow h-10 sm:h-12 text-sm sm:text-base font-medium"
-                    variant={selectedStyleId === style.id ? "default" : "outline"}
-                  >
-                    {selectedStyleId === style.id ? "Continuar al Generador" : "Elegir Estilo"}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <StyleGrid
+            videoStyles={videoStyles}
+            selectedStyleId={selectedStyleId}
+            playingVideo={playingVideo}
+            onSelectStyle={handleSelectStyle}
+            onToggleVideoPlayback={toggleVideoPlayback}
+            onVideoEnded={handleVideoEnded}
+            onVideoRef={handleVideoRef}
+          />
         </div>
       </div>
 
