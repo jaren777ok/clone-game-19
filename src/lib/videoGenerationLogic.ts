@@ -30,6 +30,26 @@ export const initiateVideoGeneration = async (
   const random = Math.random().toString(36).substring(2, 8);
   const requestId = `${timestamp}-${random}`;
   
+  // Desencriptar la clave API
+  let decryptedApiKey: string;
+  try {
+    decryptedApiKey = atob(flowState.selectedApiKey!.api_key_encrypted);
+    console.log('🔓 Clave API desencriptada correctamente:', {
+      requestId: requestId,
+      encryptedKeyPreview: flowState.selectedApiKey!.api_key_encrypted.substring(0, 20) + '...',
+      decryptedKeyPreview: decryptedApiKey.substring(0, 8) + '...',
+      decryptedKeyLength: decryptedApiKey.length
+    });
+  } catch (error) {
+    console.error('❌ Error desencriptando la clave API:', error);
+    throw new Error('Error al procesar la clave API');
+  }
+
+  if (!decryptedApiKey || decryptedApiKey.length === 0) {
+    console.error('❌ Clave API desencriptada está vacía');
+    throw new Error('Clave API inválida después de desencriptar');
+  }
+  
   console.log('🎬 Iniciando generación de video:', {
     requestId: requestId,
     timestamp: timestamp,
@@ -41,7 +61,8 @@ export const initiateVideoGeneration = async (
     selectedVoice: flowState.selectedVoice?.voice_name,
     selectedStyle: flowState.selectedStyle?.name,
     presenterName: flowState.presenterCustomization?.nombrePresentador,
-    cardCustomization: flowState.cardCustomization
+    cardCustomization: flowState.cardCustomization,
+    apiKeyDecrypted: true
   });
 
   // Guardar estado de generación
@@ -52,14 +73,14 @@ export const initiateVideoGeneration = async (
     status: 'pending'
   });
 
-  // Preparar payload base
+  // Preparar payload base con clave API desencriptada
   const basePayload = {
     script: script.trim(),
     userId: user.id,
     requestId: requestId,
     timestamp: new Date(timestamp).toISOString(),
     appMode: "produccion",
-    ClaveAPI: flowState.selectedApiKey!.api_key_encrypted,
+    ClaveAPI: decryptedApiKey, // Usando la clave desencriptada
     AvatarID: flowState.selectedAvatar!.avatar_id,
     VoiceID: flowState.selectedVoice!.voice_id,
     Estilo: flowState.selectedStyle!.id,
@@ -70,7 +91,8 @@ export const initiateVideoGeneration = async (
     requestId: requestId,
     webhook: flowState.selectedStyle!.id === 'estilo-noticia' ? 'Estilo1' : 'veroia',
     payloadSize: JSON.stringify(basePayload).length,
-    presenterName: basePayload.nombrePresentador
+    presenterName: basePayload.nombrePresentador,
+    apiKeyUsed: decryptedApiKey.substring(0, 8) + '...' // Solo mostrar los primeros 8 caracteres por seguridad
   });
 
   try {
@@ -86,21 +108,24 @@ export const initiateVideoGeneration = async (
         requestId: requestId,
         fecha: noticiaPayload.fecha,
         titulo: noticiaPayload.titulo,
-        subtitulo: noticiaPayload.subtitulo
+        subtitulo: noticiaPayload.subtitulo,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
       
       await sendToEstiloNoticiaWebhook(noticiaPayload);
     } else {
       console.log('🎥 Enviando a webhook estándar:', {
         requestId: requestId,
-        presenterName: basePayload.nombrePresentador
+        presenterName: basePayload.nombrePresentador,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
       await sendToWebhook(basePayload);
     }
 
     console.log('✅ Payload enviado exitosamente al webhook:', {
       requestId: requestId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      apiKeyDecryptedAndSent: true
     });
 
     toast({
@@ -114,7 +139,8 @@ export const initiateVideoGeneration = async (
     console.error('❌ Error enviando al webhook:', {
       requestId: requestId,
       error: error,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      apiKeyWasDecrypted: !!decryptedApiKey
     });
     throw error;
   }
