@@ -2,7 +2,7 @@
 import { User } from '@supabase/supabase-js';
 import { FlowState } from '@/types/videoFlow';
 import { saveGenerationState } from '@/lib/videoGeneration';
-import { sendToWebhook, sendToEstiloNoticiaWebhook } from '@/lib/webhookUtils';
+import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook } from '@/lib/webhookUtils';
 
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
@@ -87,16 +87,25 @@ export const initiateVideoGeneration = async (
     nombrePresentador: flowState.presenterCustomization?.nombrePresentador || flowState.selectedAvatar!.avatar_name
   };
 
+  // Determinar webhook según el estilo
+  let webhookType = 'veroia'; // default
+  if (flowState.selectedStyle!.id === 'style-1') {
+    webhookType = 'Estilo1';
+  } else if (flowState.selectedStyle!.id === 'style-3') {
+    webhookType = 'ESTILO_EDUCATIVO1';
+  }
+
   console.log('📤 Enviando payload al webhook:', {
     requestId: requestId,
-    webhook: flowState.selectedStyle!.id === 'estilo-noticia' ? 'Estilo1' : 'veroia',
+    webhook: webhookType,
     payloadSize: JSON.stringify(basePayload).length,
     presenterName: basePayload.nombrePresentador,
     apiKeyUsed: decryptedApiKey.substring(0, 8) + '...' // Solo mostrar los primeros 8 caracteres por seguridad
   });
 
   try {
-    if (flowState.selectedStyle!.id === 'estilo-noticia') {
+    if (flowState.selectedStyle!.id === 'style-1') {
+      // Estilo Noticia
       const noticiaPayload = {
         ...basePayload,
         fecha: flowState.cardCustomization?.fecha || new Date().toLocaleDateString('es-ES'),
@@ -113,7 +122,16 @@ export const initiateVideoGeneration = async (
       });
       
       await sendToEstiloNoticiaWebhook(noticiaPayload);
+    } else if (flowState.selectedStyle!.id === 'style-3') {
+      // Estilo Educativo 1
+      console.log('🎓 Enviando a webhook Estilo Educativo 1:', {
+        requestId: requestId,
+        presenterName: basePayload.nombrePresentador,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
+      });
+      await sendToEstiloEducativoWebhook(basePayload);
     } else {
+      // Webhook estándar (Estilo Noticiero y otros)
       console.log('🎥 Enviando a webhook estándar:', {
         requestId: requestId,
         presenterName: basePayload.nombrePresentador,

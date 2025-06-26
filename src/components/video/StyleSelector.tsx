@@ -30,6 +30,11 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       id: 'style-2',
       name: 'Estilo Noticiero',
       video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%202.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyAyLm1wNCIsImlhdCI6MTc1MDU3NDI2NiwiZXhwIjoxNzgyMTEwMjY2fQ.DnoUX_dchVZkgiprnWvBeElxmn_k183nU8H5W1E0IiE'
+    },
+    {
+      id: 'style-3',
+      name: 'Estilo Educativo 1',
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%202.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyAyLm1wNCIsImlhdCI6MTc1MDkwNDg2NiwiZXhwIjoxNzUzNDk2ODY2fQ.CHq5ecIHAUmRHhIfTkOKQpTK_u92DVsRfhzilcBJaYY'
     }
   ];
 
@@ -58,6 +63,10 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       // Estilo Noticiero requiere nombre del presentador
       setPendingStyle(style);
       setShowPresenterModal(true);
+    } else if (style.id === 'style-3') {
+      // Estilo Educativo 1 - selección directa sin modals
+      setSelectedStyleId(style.id);
+      onSelectStyle(style);
     } else {
       // Fallback para otros estilos
       setSelectedStyleId(style.id);
@@ -179,7 +188,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
           </div>
 
           {/* Grid de estilos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto px-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto px-2">
             {videoStyles.map((style) => (
               <Card 
                 key={style.id}

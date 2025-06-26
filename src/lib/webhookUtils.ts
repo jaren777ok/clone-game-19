@@ -71,3 +71,30 @@ export const sendToEstiloNoticiaWebhook = async (payload: EstiloNoticiaPayload) 
     throw err;
   }
 };
+
+export const sendToEstiloEducativoWebhook = async (payload: WebhookPayload) => {
+  try {
+    console.log('Enviando datos a webhook Estilo Educativo 1...');
+    console.log('Payload completo Estilo Educativo 1:', payload);
+    
+    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/ESTILO_EDUCATIVO1', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error del servidor: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Respuesta inmediata recibida Estilo Educativo 1:', data);
+    
+    return true;
+  } catch (err) {
+    console.error('Error enviando a webhook Estilo Educativo 1:', err);
+    throw err;
+  }
+};

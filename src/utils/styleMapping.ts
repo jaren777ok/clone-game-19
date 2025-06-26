@@ -5,6 +5,7 @@ import { VideoStyle } from '@/types/videoFlow';
 export const STYLE_ID_MAPPING: Record<string, string> = {
   'style-1': '4a3e5937-129b-4201-ae8d-6d7ab019dd61', // Estilo Noticia
   'style-2': 'bde14447-d0cf-45cf-8143-c8ebaaab4163', // Estilo Noticiero
+  'style-3': 'c8f2b947-a5e8-4d92-b1c4-9f3e8d7a6b2c', // Estilo Educativo 1
 };
 
 // Función para obtener el ID interno del estilo
