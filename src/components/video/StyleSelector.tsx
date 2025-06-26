@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,7 +35,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     {
       id: 'style-3',
       name: 'Estilo Educativo 1',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%202.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyAyLm1wNCIsImlhdCI6MTc1MDkwNDg2NiwiZXhwIjoxNzUzNDk2ODY2fQ.CHq5ecIHAUmRHhIfTkOKQpTK_u92DVsRfhzilcBJaYY'
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%201%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAxIE1PREVMTy5tcDQiLCJpYXQiOjE3NTA5MTEwMDUsImV4cCI6MTc4MjQ0NzAwNX0.MaSLRN9cAZKjSiJLS2wJfJLVANAZ9c_1JPIEBe-O42A'
     }
   ];
 
