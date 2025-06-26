@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,6 +35,11 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       id: 'style-3',
       name: 'Estilo Educativo 1',
       video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%201%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAxIE1PREVMTy5tcDQiLCJpYXQiOjE3NTA5MTEwMDUsImV4cCI6MTc4MjQ0NzAwNX0.MaSLRN9cAZKjSiJLS2wJfJLVANAZ9c_1JPIEBe-O42A'
+    },
+    {
+      id: 'style-4',
+      name: 'Estilo Educativo 2',
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%201%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAxIE1PREVMTy5tcDQiLCJpYXQiOjE3NTA5MTEwMDUsImV4cCI6MTc4MjQ0NzAwNX0.MaSLRN9cAZKjSiJLS2wJfJLVANAZ9c_1JPIEBe-O42A'
     }
   ];
 
@@ -64,8 +68,8 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       // Estilo Noticiero requiere nombre del presentador
       setPendingStyle(style);
       setShowPresenterModal(true);
-    } else if (style.id === 'style-3') {
-      // Estilo Educativo 1 - selección directa sin modals
+    } else if (style.id === 'style-3' || style.id === 'style-4') {
+      // Estilo Educativo 1 y 2 - selección directa sin modals
       setSelectedStyleId(style.id);
       onSelectStyle(style);
     } else {
@@ -136,6 +140,27 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     const video = videoRefs.current[styleId];
     if (video) {
       video.currentTime = 0;
+    }
+  };
+
+  const getStyleRequirements = (styleId: string) => {
+    if (styleId === 'style-4') {
+      // Estilo Educativo 2 - solo avatar horizontal
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-yellow-400">Requisitos:</p>
+          <p className="text-muted-foreground">Se requiere Avatar Horizontal</p>
+        </div>
+      );
+    } else {
+      // Otros estilos - requisitos completos
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-yellow-400">Requisitos:</p>
+          <p className="text-muted-foreground">1. Se requiere Avatar en Fondo Total Negro</p>
+          <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
+        </div>
+      );
     }
   };
 
@@ -237,11 +262,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
                       {style.name}
                     </h3>
                     <div className="text-xs sm:text-sm leading-relaxed px-2">
-                      <div className="space-y-1">
-                        <p className="font-medium text-yellow-400">Requisitos:</p>
-                        <p className="text-muted-foreground">1. Se requiere Avatar en Fondo Total Negro</p>
-                        <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
-                      </div>
+                      {getStyleRequirements(style.id)}
                     </div>
                   </div>
 

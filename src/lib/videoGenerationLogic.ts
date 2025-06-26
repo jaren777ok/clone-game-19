@@ -1,8 +1,7 @@
-
 import { User } from '@supabase/supabase-js';
 import { FlowState } from '@/types/videoFlow';
 import { saveGenerationState } from '@/lib/videoGeneration';
-import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook } from '@/lib/webhookUtils';
+import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook } from '@/lib/webhookUtils';
 
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
@@ -93,6 +92,8 @@ export const initiateVideoGeneration = async (
     webhookType = 'Estilo1';
   } else if (flowState.selectedStyle!.id === 'style-3') {
     webhookType = 'ESTILO_EDUCATIVO1';
+  } else if (flowState.selectedStyle!.id === 'style-4') {
+    webhookType = 'EDUCATIVO_2';
   }
 
   console.log('📤 Enviando payload al webhook:', {
@@ -130,6 +131,14 @@ export const initiateVideoGeneration = async (
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
       await sendToEstiloEducativoWebhook(basePayload);
+    } else if (flowState.selectedStyle!.id === 'style-4') {
+      // Estilo Educativo 2
+      console.log('🎓 Enviando a webhook Estilo Educativo 2:', {
+        requestId: requestId,
+        presenterName: basePayload.nombrePresentador,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
+      });
+      await sendToEducativo2Webhook(basePayload);
     } else {
       // Webhook estándar (Estilo Noticiero y otros)
       console.log('🎥 Enviando a webhook estándar:', {
