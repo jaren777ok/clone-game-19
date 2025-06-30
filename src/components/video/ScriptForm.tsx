@@ -44,7 +44,7 @@ const ScriptForm = ({ script, setScript, onSubmit, isGenerating, error }: Script
               </p>
               <p className="text-muted-foreground text-sm">
                 Tu solicitud se procesa al instante y el sistema verifica automáticamente 
-                cuando tu video esté listo (máximo 57 minutos).
+                cuando tu video esté listo (máximo 39 minutos).
               </p>
             </div>
           </div>
@@ -58,7 +58,7 @@ const ScriptForm = ({ script, setScript, onSubmit, isGenerating, error }: Script
                 Monitoreo inteligente continuo
               </p>
               <p className="text-muted-foreground text-sm">
-                Verificación automática cada 30 segundos. Tu video puede estar listo 
+                Verificación automática cada 3 minutos. Tu video puede estar listo 
                 mucho antes del tiempo máximo estimado.
               </p>
             </div>

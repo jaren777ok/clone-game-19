@@ -84,7 +84,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
                     🕒 Las verificaciones iniciarán automáticamente a los 30 minutos
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    💻 Puedes navegar a otras páginas, pero mantén esta pestaña abierta
+                    💻 Puedes cerrar la app y volver luego
                   </p>
                 </>
               )}
