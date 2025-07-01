@@ -1,182 +1,117 @@
 
 import React, { useState } from 'react';
-import { Copy, ExternalLink, Trash2, Calendar, FileText, CheckCircle, Video } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Play, Download, Share2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import SocialPublishModal from '@/components/social/SocialPublishModal';
+import { useSocialPublish } from '@/hooks/useSocialPublish';
 
 interface VideoCardProps {
   id: string;
-  title?: string;
-  script: string;
+  title: string;
   videoUrl: string;
+  script: string;
   createdAt: string;
-  onDelete: (id: string) => void;
 }
 
-const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCardProps) => {
-  const [copied, setCopied] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
+const VideoCard: React.FC<VideoCardProps> = ({ 
+  id, 
+  title, 
+  videoUrl, 
+  script, 
+  createdAt 
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { openModal } = useSocialPublish();
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = videoUrl;
+    link.download = `${title || 'video'}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const truncateScript = (text: string, maxLength: number = 120) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  };
-
-  const getDisplayTitle = () => {
-    if (title) return title;
-    return `Video Generado - ${formatDate(createdAt)}`;
-  };
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(videoUrl);
-      setCopied(true);
-      toast({
-        title: "¡Enlace copiado!",
-        description: "El enlace del video ha sido copiado al portapapeles.",
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      toast({
-        title: "Error al copiar",
-        description: "No se pudo copiar el enlace.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleOpenVideo = () => {
-    window.open(videoUrl, '_blank');
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este video? Esta acción no se puede deshacer.')) {
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const { error } = await supabase
-        .from('generated_videos')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      onDelete(id);
-      toast({
-        title: "Video eliminado",
-        description: "El video ha sido eliminado de tu biblioteca.",
-      });
-    } catch (error) {
-      console.error('Error eliminando video:', error);
-      toast({
-        title: "Error al eliminar",
-        description: "No se pudo eliminar el video. Intenta de nuevo.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleSocialShare = async () => {
+    setIsModalOpen(true);
+    await openModal(videoUrl, script);
   };
 
   return (
-    <div className="bg-card cyber-border rounded-xl hover:cyber-glow transition-all duration-300 group overflow-hidden">
-      {/* Header con título, fecha y solo botón de basura */}
-      <div className="p-6 pb-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 pr-4">
-            <div className="flex items-center mb-2">
-              <Video className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-              <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight break-words">
-                {getDisplayTitle()}
-              </h3>
-            </div>
-            <div className="flex items-center text-muted-foreground text-sm">
-              <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-              {formatDate(createdAt)}
+    <>
+      <Card className="cyber-border hover:cyber-glow transition-all duration-300 group">
+        <CardHeader className="p-0">
+          <div className="relative aspect-video bg-black rounded-t-lg overflow-hidden">
+            <video
+              src={videoUrl}
+              className="w-full h-full object-cover"
+              controls={false}
+              preload="metadata"
+            />
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                size="lg"
+                className="rounded-full w-16 h-16 cyber-glow"
+                onClick={() => {
+                  const video = document.querySelector(`video[src="${videoUrl}"]`) as HTMLVideoElement;
+                  if (video) {
+                    video.controls = true;
+                    video.play();
+                  }
+                }}
+              >
+                <Play className="w-6 h-6" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+        </CardHeader>
+        
+        <CardContent className="p-4 space-y-4">
+          <div>
+            <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+              {title || 'Video sin título'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Creado {formatDistanceToNow(new Date(createdAt), { 
+                addSuffix: true, 
+                locale: es 
+              })}
+            </p>
+          </div>
+
+          <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-muted-foreground hover:text-destructive"
+              onClick={handleDownload}
+              className="flex-1 cyber-border hover:cyber-glow"
             >
-              <Trash2 className="w-4 h-4" />
+              <Download className="w-4 h-4 mr-2" />
+              Descargar
+            </Button>
+            
+            <Button
+              size="sm"
+              onClick={handleSocialShare}
+              className="flex-1 cyber-glow"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Publicar en Redes
             </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Divider */}
-      <div className="border-t border-border/30 mx-6"></div>
-
-      {/* Script preview */}
-      <div className="p-6 py-4">
-        <div className="flex items-center mb-3">
-          <FileText className="w-4 h-4 mr-2 text-primary" />
-          <span className="text-sm font-medium text-foreground">Guion</span>
-        </div>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {truncateScript(script)}
-        </p>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-border/30 mx-6"></div>
-
-      {/* Footer con URL y botones principales */}
-      <div className="p-6 pt-4">
-        <div className="bg-muted/20 cyber-border rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0 mr-3">
-              <span className="text-xs text-muted-foreground block mb-1">URL del video:</span>
-              <span className="text-foreground font-mono text-xs break-all">
-                {videoUrl}
-              </span>
-            </div>
-            <div className="flex space-x-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLink}
-                className="cyber-border hover:cyber-glow"
-                disabled={copied}
-              >
-                {copied ? (
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                ) : (
-                  <Copy className="w-3 h-3" />
-                )}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleOpenVideo}
-                className="cyber-border hover:cyber-glow-intense"
-              >
-                <ExternalLink className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <SocialPublishModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        videoUrl={videoUrl}
+        script={script}
+      />
+    </>
   );
 };
 
