@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -70,7 +69,40 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     return cleanup;
   }, [cleanup]);
 
+  // Nueva función para cancelar la generación actual
+  const handleCancelGeneration = () => {
+    console.log('🛑 Cancelando generación de video por solicitud del usuario');
+    
+    // Limpiar todos los estados
+    setIsGenerating(false);
+    setVideoResult(null);
+    setError(null);
+    setCurrentRequestId(null);
+    
+    // Limpiar el almacenamiento local
+    clearGenerationState();
+    
+    // Limpiar timers y monitoring
+    cleanup();
+    
+    toast({
+      title: "Generación cancelada",
+      description: "La generación del video ha sido cancelada exitosamente.",
+      variant: "default"
+    });
+  };
+
   const handleGenerateVideo = async () => {
+    // Validación: si ya está generando, mostrar alerta
+    if (isGenerating) {
+      toast({
+        title: "Video en proceso",
+        description: "Ya tienes un video siendo generado. Espera a que termine o cancela la generación actual.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!script.trim()) {
       toast({ 
         title: "Guion requerido", 
@@ -141,6 +173,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       isRecovering,
       timeRemaining,
       totalTime: COUNTDOWN_TIME,
+      currentRequestId,
     },
     handlers: {
       setScript,
@@ -148,6 +181,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       handleRecoverGeneration,
       handleCancelRecovery,
       handleNewVideo,
+      handleCancelGeneration, // Nueva función
     },
   };
 };

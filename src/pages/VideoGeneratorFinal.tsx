@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
@@ -168,8 +167,11 @@ const VideoGeneratorFinal = () => {
             script={state.script}
             setScript={handlers.setScript}
             onSubmit={handlers.handleGenerateVideo}
+            onCancel={handlers.handleCancelGeneration}
             isGenerating={state.isGenerating}
             error={state.error}
+            timeRemaining={state.timeRemaining}
+            currentRequestId={state.currentRequestId}
           />
         </div>
       </div>

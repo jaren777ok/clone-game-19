@@ -58,8 +58,11 @@ const VideoGenerator = () => {
             script={state.script}
             setScript={handlers.setScript}
             onSubmit={handlers.handleGenerateVideo}
+            onCancel={handlers.handleCancelGeneration}
             isGenerating={state.isGenerating}
             error={state.error}
+            timeRemaining={state.timeRemaining}
+            currentRequestId={state.currentRequestId}
           />
 
           <TipsSection />
