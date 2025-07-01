@@ -1,13 +1,9 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useSocialPublish } from '@/hooks/useSocialPublish';
-import BlotatomApiKeyForm from './BlotatomApiKeyForm';
-import CaptionGenerator from './CaptionGenerator';
-import SocialNetworkSelector from './SocialNetworkSelector';
-import PublishStatus from './PublishStatus';
+import ModalHeader from './ModalHeader';
+import StepRenderer from './StepRenderer';
 
 interface Props {
   isOpen: boolean;
@@ -26,8 +22,7 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     publishToNetwork,
     updateCaption,
     navigateToSelectNetwork,
-    retryFromError,
-    openModal
+    retryFromError
   } = useSocialPublish();
 
   const handleClose = () => {
@@ -35,115 +30,23 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     onClose();
   };
 
-  const renderStep = () => {
-    switch (state.step) {
-      case 'api-key-input':
-        return (
-          <BlotatomApiKeyForm
-            onSave={handleApiKeySaved}
-            isLoading={state.isLoading}
-            error={state.error}
-            hasExistingKeys={false}
-          />
-        );
-
-      case 'generate-caption':
-        return (
-          <CaptionGenerator
-            script={state.script}
-            generatedCaption={state.generatedCaption}
-            editedCaption={state.editedCaption}
-            onGenerate={generateCaption}
-            onCaptionChange={updateCaption}
-            onNext={navigateToSelectNetwork}
-            isLoading={state.isLoading}
-            error={state.error}
-          />
-        );
-
-      case 'select-network':
-        return (
-          <SocialNetworkSelector
-            selectedNetwork={state.selectedNetwork}
-            onSelectNetwork={selectNetwork}
-            onPublish={publishToNetwork}
-            isLoading={state.isLoading}
-          />
-        );
-
-      case 'publishing':
-        return (
-          <div className="text-center py-12 space-y-4">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary" />
-            <h3 className="text-xl font-semibold">Publicando en {state.selectedNetwork}...</h3>
-            <p className="text-muted-foreground">
-              Esto puede tardar hasta 7 minutos. Por favor, no cierres esta ventana.
-            </p>
-          </div>
-        );
-
-      case 'success':
-        return (
-          <PublishStatus
-            isSuccess={true}
-            onRetry={retryFromError}
-            onClose={handleClose}
-          />
-        );
-
-      case 'error':
-        return (
-          <PublishStatus
-            isSuccess={false}
-            error={state.error}
-            onRetry={retryFromError}
-            onClose={handleClose}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const getTitle = () => {
-    switch (state.step) {
-      case 'api-key-input':
-        return 'Configurar Blotato';
-      case 'generate-caption':
-        return 'Generar Caption';
-      case 'select-network':
-        return 'Seleccionar Red Social';
-      case 'publishing':
-        return 'Publicando...';
-      case 'success':
-        return '¡Éxito!';
-      case 'error':
-        return 'Error';
-      default:
-        return 'Publicar en Redes';
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-xl font-bold">
-            {getTitle()}
-          </DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            className="h-6 w-6"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </DialogHeader>
+        <ModalHeader step={state.step} onClose={handleClose} />
         
         <div className="py-4">
-          {renderStep()}
+          <StepRenderer
+            state={state}
+            onApiKeySaved={handleApiKeySaved}
+            onGenerateCaption={generateCaption}
+            onCaptionChange={updateCaption}
+            onNavigateToSelectNetwork={navigateToSelectNetwork}
+            onSelectNetwork={selectNetwork}
+            onPublish={publishToNetwork}
+            onRetry={retryFromError}
+            onClose={handleClose}
+          />
         </div>
       </DialogContent>
     </Dialog>
