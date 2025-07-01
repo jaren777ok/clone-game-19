@@ -107,21 +107,30 @@ export const useSocialPublish = () => {
     } catch (error) {
       console.error('💥 Error during API key verification:', error);
       
-      // En caso de error, mostrar directamente el formulario de API key
+      // En caso de error, mantener en api-key-check pero mostrar error
       setState(prev => ({
         ...prev,
-        step: 'api-key-input',
         error: error instanceof Error ? error.message : 'Error verificando las claves API',
         isLoading: false
       }));
       
       toast({
         title: "Problema de conexión",
-        description: "No se pudieron verificar las claves API. Puedes ingresar una nueva clave.",
+        description: "No se pudieron verificar las claves API. Puedes continuar de todas formas.",
         variant: "destructive"
       });
     }
   }, [loadApiKeys, user, toast]);
+
+  const skipToApiKeyInput = useCallback(() => {
+    console.log('⏭️ Skipping to API key input');
+    setState(prev => ({
+      ...prev,
+      step: 'api-key-input',
+      error: null,
+      isLoading: false
+    }));
+  }, []);
 
   const closeModal = useCallback(() => {
     console.log('🔒 Closing social publish modal');
@@ -328,6 +337,7 @@ export const useSocialPublish = () => {
     publishToNetwork,
     updateCaption,
     navigateToSelectNetwork,
-    retryFromError
+    retryFromError,
+    skipToApiKeyInput
   };
 };

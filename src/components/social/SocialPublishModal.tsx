@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, X, AlertCircle, RefreshCw } from 'lucide-react';
@@ -27,7 +26,8 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     updateCaption,
     navigateToSelectNetwork,
     retryFromError,
-    openModal
+    openModal,
+    skipToApiKeyInput
   } = useSocialPublish();
 
   const handleClose = () => {
@@ -68,7 +68,7 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
                       Reintentar
                     </Button>
                     <Button
-                      onClick={() => setState(prev => ({ ...prev, step: 'api-key-input', error: null }))}
+                      onClick={skipToApiKeyInput}
                       className="cyber-glow"
                     >
                       Continuar de todas formas
