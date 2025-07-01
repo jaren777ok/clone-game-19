@@ -46,8 +46,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
     <>
       <Card className="cyber-border hover:cyber-glow transition-all duration-300 group">
         <CardHeader className="p-0">
-          <div className="relative aspect-video bg-gradient-to-br from-muted to-muted/50 rounded-t-lg overflow-hidden flex items-center justify-center">
-            <Video className="w-12 h-12 text-muted-foreground" />
+          <div className="relative aspect-video bg-black rounded-t-lg overflow-hidden flex items-center justify-center cyber-border group-hover:cyber-glow-intense transition-all duration-300">
+            <Video className="w-16 h-16 text-primary cyber-glow animate-pulse" />
           </div>
         </CardHeader>
         
