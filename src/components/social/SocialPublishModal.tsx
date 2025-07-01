@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useBlotatoAccounts } from '@/hooks/useBlotatoAccounts';
@@ -9,9 +8,7 @@ import SocialAccountsStep from './SocialAccountsStep';
 import CaptionGeneratorStep from './CaptionGeneratorStep';
 import SocialNetworkSelector from './SocialNetworkSelector';
 import YouTubeTitleStep from './YouTubeTitleStep';
-import StepIndicator from './StepIndicator';
 import ModalHeader from './ModalHeader';
-import VideoPreview from './VideoPreview';
 import StepNavigation from './StepNavigation';
 import LoadingState from './LoadingState';
 import ModalCloseButton from './ModalCloseButton';
@@ -179,9 +176,6 @@ const SocialPublishModal = ({
             stepLabels={stepLabels}
           />
 
-          {/* Video Preview */}
-          <VideoPreview videoTitle={videoTitle} videoUrl={videoUrl} />
-
           {/* Pasos del proceso */}
           {currentStep === 1 && (
             <BlotatoApiKeyStep
@@ -249,7 +243,7 @@ const SocialPublishModal = ({
           {/* Botones de navegación para pasos 1, 2 y 3 */}
           <StepNavigation
             currentStep={currentStep}
-            totalSteps={stepLabels.length}
+            totalSteps={5}
             onPrevious={handlePrevious}
             onClose={handleClose}
             showNavigation={currentStep < 4}

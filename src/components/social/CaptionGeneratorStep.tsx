@@ -50,14 +50,6 @@ const CaptionGeneratorStep = ({
         </p>
       </div>
 
-      {/* Información del script */}
-      <div className="bg-muted/20 rounded-lg p-4">
-        <h4 className="font-medium text-foreground mb-2">Script del video:</h4>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {videoScript.length > 200 ? `${videoScript.substring(0, 200)}...` : videoScript}
-        </p>
-      </div>
-
       {/* Botón de generar o área de caption */}
       {!generatedCaption && !isGenerating && (
         <div className="text-center">
@@ -68,7 +60,7 @@ const CaptionGeneratorStep = ({
             size="lg"
           >
             <Wand2 className="w-5 h-5 mr-2" />
-            Generar
+            Generar Caption
           </Button>
         </div>
       )}
