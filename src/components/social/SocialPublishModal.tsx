@@ -24,42 +24,88 @@ const SocialPublishModal = ({
   videoScript 
 }: SocialPublishModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [initialStepDetermined, setInitialStepDetermined] = useState(false);
   const { blotatoAccount, loading, saveBlotatoApiKey, updateSocialAccounts } = useBlotatoAccounts();
 
   const stepLabels = ['API Key', 'Cuentas Sociales'];
 
   // Determinar el paso inicial basado en la configuración existente
   useEffect(() => {
-    if (!loading && blotatoAccount) {
-      // Si ya tiene API key pero no tiene cuentas configuradas
-      if (blotatoAccount.api_key_encrypted && 
-          !blotatoAccount.instagram_account_id && 
-          !blotatoAccount.tiktok_account_id) {
+    if (!isOpen) return;
+    
+    console.log('🔄 Modal opened, determining initial step...');
+    console.log('📊 Current state:', { loading, blotatoAccount, initialStepDetermined });
+    
+    if (!loading && !initialStepDetermined) {
+      console.log('🎯 Determining initial step...');
+      
+      if (!blotatoAccount) {
+        console.log('➡️ No Blotato account found, starting at step 1 (API Key)');
+        setCurrentStep(1);
+      } else if (blotatoAccount.api_key_encrypted && 
+                 !blotatoAccount.instagram_account_id && 
+                 !blotatoAccount.tiktok_account_id) {
+        console.log('➡️ API key exists but no social accounts, going to step 2 (Social Accounts)');
         setCurrentStep(2);
+      } else if (blotatoAccount.api_key_encrypted && 
+                 (blotatoAccount.instagram_account_id || blotatoAccount.tiktok_account_id)) {
+        console.log('➡️ Full configuration exists, going to step 3 (Complete)');
+        setCurrentStep(3);
+      } else {
+        console.log('➡️ Partial configuration found, starting at step 1');
+        setCurrentStep(1);
       }
-      // Si ya tiene todo configurado, ir directo al paso final
-      else if (blotatoAccount.api_key_encrypted && 
-               (blotatoAccount.instagram_account_id || blotatoAccount.tiktok_account_id)) {
-        setCurrentStep(3); // Paso final (que implementaremos después)
-      }
+      
+      setInitialStepDetermined(true);
     }
-  }, [blotatoAccount, loading]);
+  }, [isOpen, loading, blotatoAccount, initialStepDetermined]);
+
+  // Reset cuando se cierra el modal
+  useEffect(() => {
+    if (!isOpen) {
+      console.log('🔄 Modal closed, resetting state...');
+      setInitialStepDetermined(false);
+      // No reseteamos currentStep aquí - se determinará cuando se abra de nuevo
+    }
+  }, [isOpen]);
 
   const handleApiKeySaved = () => {
+    console.log('✅ API key saved, moving to step 2');
     setCurrentStep(2);
   };
 
   const handleAccountsSaved = () => {
-    // Próximo paso: lógica de publicación
+    console.log('✅ Accounts saved, moving to step 3');
     setCurrentStep(3);
   };
 
   const handleClose = () => {
-    setCurrentStep(1);
+    console.log('🚪 Closing modal...');
     onClose();
   };
 
   if (!isOpen) return null;
+
+  // Mostrar loading mientras se determina el paso inicial
+  if (loading || !initialStepDetermined) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-2xl cyber-border">
+          <CardContent className="p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
+                <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              </div>
+              <h3 className="text-lg font-medium mb-2">Verificando configuración...</h3>
+              <p className="text-muted-foreground text-sm">
+                Revisando tu configuración de Blotato existente
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -118,6 +164,18 @@ const SocialPublishModal = ({
                 Tu cuenta de Blotato está configurada correctamente.<br/>
                 Próximamente podrás publicar directamente desde aquí.
               </p>
+              <div className="bg-muted/20 rounded-lg p-4 mb-6">
+                <h4 className="font-medium text-foreground mb-2">Configuración actual:</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>✅ API Key de Blotato configurada</div>
+                  {blotatoAccount?.instagram_account_id && (
+                    <div>✅ Instagram: {blotatoAccount.instagram_account_id}</div>
+                  )}
+                  {blotatoAccount?.tiktok_account_id && (
+                    <div>✅ TikTok: {blotatoAccount.tiktok_account_id}</div>
+                  )}
+                </div>
+              </div>
               <Button
                 onClick={handleClose}
                 className="cyber-border hover:cyber-glow-intense"

@@ -21,15 +21,31 @@ export const useBlotatoAccounts = () => {
   const fetchBlotatoAccount = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching Blotato account...');
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('❌ Error getting user:', userError);
+        throw userError;
+      }
+      
+      console.log('👤 Current user:', user?.id);
+
       const { data, error } = await supabase
         .from('blotato_accounts')
         .select('*')
+        .eq('user_id', user?.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching Blotato account:', error);
+        throw error;
+      }
+      
+      console.log('📦 Blotato account data:', data);
       setBlotatoAccount(data);
     } catch (error) {
-      console.error('Error fetching Blotato account:', error);
+      console.error('❌ Error in fetchBlotatoAccount:', error);
       toast({
         title: "Error",
         description: "No se pudo cargar la configuración de Blotato.",
@@ -42,16 +58,23 @@ export const useBlotatoAccounts = () => {
 
   const saveBlotatoApiKey = async (apiKey: string) => {
     try {
+      console.log('💾 Saving Blotato API key...');
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
       const { data, error } = await supabase
         .from('blotato_accounts')
         .upsert({
           api_key_encrypted: apiKey, // En producción esto debería estar encriptado
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: user?.id
         })
         .select()
         .single();
 
       if (error) throw error;
+      
+      console.log('✅ API key saved successfully:', data);
       setBlotatoAccount(data);
       
       toast({
@@ -61,7 +84,7 @@ export const useBlotatoAccounts = () => {
       
       return { success: true };
     } catch (error) {
-      console.error('Error saving Blotato API key:', error);
+      console.error('❌ Error saving Blotato API key:', error);
       toast({
         title: "Error",
         description: "No se pudo guardar la clave API de Blotato.",
@@ -73,17 +96,24 @@ export const useBlotatoAccounts = () => {
 
   const updateSocialAccounts = async (instagramId?: string, tiktokId?: string) => {
     try {
+      console.log('🔄 Updating social accounts...', { instagramId, tiktokId });
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
       const { data, error } = await supabase
         .from('blotato_accounts')
         .update({
           instagram_account_id: instagramId || null,
           tiktok_account_id: tiktokId || null
         })
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('user_id', user?.id)
         .select()
         .single();
 
       if (error) throw error;
+      
+      console.log('✅ Social accounts updated successfully:', data);
       setBlotatoAccount(data);
       
       toast({
@@ -93,7 +123,7 @@ export const useBlotatoAccounts = () => {
       
       return { success: true };
     } catch (error) {
-      console.error('Error updating social accounts:', error);
+      console.error('❌ Error updating social accounts:', error);
       toast({
         title: "Error",
         description: "No se pudieron actualizar las cuentas sociales.",
