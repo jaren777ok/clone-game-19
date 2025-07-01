@@ -10,10 +10,11 @@ import { useSocialPublish } from '@/hooks/useSocialPublish';
 
 interface VideoCardProps {
   id: string;
-  title: string;
+  title?: string;
   videoUrl: string;
   script: string;
   createdAt: string;
+  onDelete?: (videoId: string) => void;
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({ 
@@ -21,7 +22,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
   title, 
   videoUrl, 
   script, 
-  createdAt 
+  createdAt,
+  onDelete 
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { openModal } = useSocialPublish();

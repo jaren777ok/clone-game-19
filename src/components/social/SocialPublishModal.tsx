@@ -25,6 +25,7 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     selectNetwork,
     publishToNetwork,
     updateCaption,
+    navigateToSelectNetwork,
     retryFromError
   } = useSocialPublish();
 
@@ -66,7 +67,7 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
             editedCaption={state.editedCaption}
             onGenerate={generateCaption}
             onCaptionChange={updateCaption}
-            onNext={() => setState(prev => ({ ...prev, step: 'select-network' }))}
+            onNext={navigateToSelectNetwork}
             isLoading={state.isLoading}
             error={state.error}
           />

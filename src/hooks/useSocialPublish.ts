@@ -162,7 +162,6 @@ export const useSocialPublish = () => {
           ...prev,
           generatedCaption: caption,
           editedCaption: caption,
-          step: 'select-network',
           isLoading: false
         }));
       } else {
@@ -258,6 +257,13 @@ export const useSocialPublish = () => {
     }));
   }, []);
 
+  const navigateToSelectNetwork = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      step: 'select-network'
+    }));
+  }, []);
+
   const retryFromError = useCallback(() => {
     setState(prev => ({
       ...prev,
@@ -275,6 +281,7 @@ export const useSocialPublish = () => {
     selectNetwork,
     publishToNetwork,
     updateCaption,
+    navigateToSelectNetwork,
     retryFromError
   };
 };
