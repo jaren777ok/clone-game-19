@@ -7,7 +7,7 @@ import { useSocialPublishState, SocialNetwork } from '@/hooks/useSocialPublishSt
 import { useCaptionGeneration } from '@/hooks/useCaptionGeneration';
 import { useSocialNetworkPublish } from '@/hooks/useSocialNetworkPublish';
 
-export { SocialNetwork } from '@/hooks/useSocialPublishState';
+export type { SocialNetwork } from '@/hooks/useSocialPublishState';
 export type { SocialStep, SocialPublishState } from '@/hooks/useSocialPublishState';
 
 export const useSocialPublish = () => {
