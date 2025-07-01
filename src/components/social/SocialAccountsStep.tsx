@@ -59,8 +59,8 @@ const SocialAccountsStep = ({
     }
   };
 
-  const hasAtLeastOneAccount = instagramId.trim() || tiktokId.trim() || youtubeId.trim() || (facebookId.trim() && facebookPageId.trim());
-  const facebookIncomplete = (facebookId.trim() && !facebookPageId.trim()) || (!facebookId.trim() && facebookPageId.trim());
+  const hasAtLeastOneAccount = Boolean(instagramId.trim() || tiktokId.trim() || youtubeId.trim() || (facebookId.trim() && facebookPageId.trim()));
+  const facebookIncomplete = Boolean((facebookId.trim() && !facebookPageId.trim()) || (!facebookId.trim() && facebookPageId.trim()));
 
   return (
     <div className="space-y-6">
