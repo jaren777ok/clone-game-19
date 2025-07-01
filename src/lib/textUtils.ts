@@ -9,11 +9,11 @@ export const transformQuotes = (text: string): string => {
   
   return text
     // Reemplazar comillas dobles con comillas curvas
-    .replace(/"/g, '"')
-    .replace(/"/g, '"')
+    .replace(/"/g, '\u201C')  // " (comilla doble izquierda)
+    .replace(/"/g, '\u201D')  // " (comilla doble derecha)
     // Reemplazar comillas simples con comillas curvas
-    .replace(/'/g, ''')
-    .replace(/'/g, ''');
+    .replace(/'/g, '\u2018')  // ' (comilla simple izquierda)
+    .replace(/'/g, '\u2019'); // ' (comilla simple derecha)
 };
 
 /**
