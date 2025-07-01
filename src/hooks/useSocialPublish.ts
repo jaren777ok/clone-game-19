@@ -1,12 +1,12 @@
+
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useBlotatomApiKeys, BlotatomApiKey } from '@/hooks/useBlotatomApiKeys';
 
 export type SocialStep = 
-  | 'api-key-check' 
-  | 'api-key-input' 
   | 'generate-caption' 
+  | 'api-key-input' 
   | 'select-network' 
   | 'publishing' 
   | 'success' 
@@ -34,7 +34,7 @@ export const useSocialPublish = () => {
 
   const [state, setState] = useState<SocialPublishState>({
     isOpen: false,
-    step: 'api-key-check',
+    step: 'api-key-input',
     videoUrl: '',
     script: '',
     selectedApiKey: null,
@@ -58,11 +58,11 @@ export const useSocialPublish = () => {
       return;
     }
 
-    // Abrir modal inmediatamente
+    // Abrir modal inmediatamente con loading
     setState(prev => ({
       ...prev,
       isOpen: true,
-      step: 'api-key-check',
+      step: 'api-key-input', // Empezar en input por defecto
       videoUrl,
       script,
       selectedApiKey: null,
@@ -73,20 +73,11 @@ export const useSocialPublish = () => {
       error: null
     }));
 
-    // Verificar API keys con timeout
     try {
-      console.log('🔍 Starting API key verification...');
+      console.log('🔍 Checking for existing API keys...');
+      const keys = await loadApiKeys();
       
-      // Crear timeout de 10 segundos
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout: La verificación tardó más de 10 segundos')), 10000);
-      });
-
-      // Cargar API keys con timeout
-      const loadKeysPromise = loadApiKeys();
-      const keys = await Promise.race([loadKeysPromise, timeoutPromise]) as BlotatomApiKey[];
-      
-      console.log('📋 API keys verification completed. Keys found:', keys.length);
+      console.log('📋 API keys found:', keys.length);
       
       if (keys.length > 0) {
         console.log('✅ API keys found, proceeding to caption generation');
@@ -105,39 +96,26 @@ export const useSocialPublish = () => {
         }));
       }
     } catch (error) {
-      console.error('💥 Error during API key verification:', error);
+      console.error('💥 Error loading API keys:', error);
       
-      // En caso de error, mantener en api-key-check pero mostrar error
+      // En caso de error, mostrar formulario de API key
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Error verificando las claves API',
-        isLoading: false
+        step: 'api-key-input',
+        isLoading: false,
+        error: null // No mostrar error, solo ir al formulario
       }));
       
-      toast({
-        title: "Problema de conexión",
-        description: "No se pudieron verificar las claves API. Puedes continuar de todas formas.",
-        variant: "destructive"
-      });
+      console.log('⚠️ Error loading keys, showing API key form as fallback');
     }
   }, [loadApiKeys, user, toast]);
-
-  const skipToApiKeyInput = useCallback(() => {
-    console.log('⏭️ Skipping to API key input');
-    setState(prev => ({
-      ...prev,
-      step: 'api-key-input',
-      error: null,
-      isLoading: false
-    }));
-  }, []);
 
   const closeModal = useCallback(() => {
     console.log('🔒 Closing social publish modal');
     setState(prev => ({
       ...prev,
       isOpen: false,
-      step: 'api-key-check',
+      step: 'api-key-input',
       videoUrl: '',
       script: '',
       selectedApiKey: null,
@@ -201,13 +179,7 @@ export const useSocialPublish = () => {
         throw new Error(`Error del servidor: ${response.status}`);
       }
 
-      // Set timeout for 5 minutes
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout: La generación de caption tardó más de 5 minutos')), 5 * 60 * 1000);
-      });
-
-      const responsePromise = response.json();
-      const data = await Promise.race([responsePromise, timeoutPromise]);
+      const data = await response.json();
       
       console.log('Caption response:', data);
       
@@ -266,13 +238,7 @@ export const useSocialPublish = () => {
         throw new Error(`Error del servidor: ${response.status}`);
       }
 
-      // Set timeout for 7 minutes
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout: La publicación tardó más de 7 minutos')), 7 * 60 * 1000);
-      });
-
-      const responsePromise = response.json();
-      const data = await Promise.race([responsePromise, timeoutPromise]);
+      const data = await response.json();
       
       console.log('Publish response:', data);
       
@@ -337,7 +303,6 @@ export const useSocialPublish = () => {
     publishToNetwork,
     updateCaption,
     navigateToSelectNetwork,
-    retryFromError,
-    skipToApiKeyInput
+    retryFromError
   };
 };
