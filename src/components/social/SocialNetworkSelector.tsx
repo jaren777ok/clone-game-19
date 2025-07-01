@@ -4,7 +4,7 @@ import { Share2, CheckCircle, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface SocialNetworkSelectorProps {
-  onPublish: (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string) => Promise<{ success: boolean; error?: string }>;
+  onPublish: (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string, pageId?: string) => Promise<{ success: boolean; error?: string }>;
   onYouTubeSelected: () => void;
   videoUrl: string;
   caption: string;
@@ -13,6 +13,7 @@ interface SocialNetworkSelectorProps {
   tiktokAccountId?: string;
   youtubeAccountId?: string;
   facebookAccountId?: string;
+  facebookPageId?: string;
   publishingToInstagram: boolean;
   publishingToTikTok: boolean;
   publishingToYouTube: boolean;
@@ -32,6 +33,7 @@ const SocialNetworkSelector = ({
   tiktokAccountId,
   youtubeAccountId,
   facebookAccountId,
+  facebookPageId,
   publishingToInstagram,
   publishingToTikTok,
   publishingToYouTube,
@@ -64,9 +66,11 @@ const SocialNetworkSelector = ({
   };
 
   const handlePublishToFacebook = async () => {
-    if (!facebookAccountId) return;
-    await onPublish('Facebook', videoUrl, blotatoApiKey, facebookAccountId, caption);
+    if (!facebookAccountId || !facebookPageId) return;
+    await onPublish('Facebook', videoUrl, blotatoApiKey, facebookAccountId, caption, facebookPageId);
   };
+
+  const facebookConfigured = facebookAccountId && facebookPageId;
 
   return (
     <div className="space-y-6">
@@ -256,7 +260,7 @@ const SocialNetworkSelector = ({
           
           <Button
             onClick={handlePublishToFacebook}
-            disabled={!facebookAccountId || publishingToFacebook || publishSuccess?.platform === 'Facebook'}
+            disabled={!facebookConfigured || publishingToFacebook || publishSuccess?.platform === 'Facebook'}
             className="w-full cyber-border hover:cyber-glow-intense text-xs"
             size="sm"
           >
@@ -275,9 +279,9 @@ const SocialNetworkSelector = ({
             )}
           </Button>
           
-          {!facebookAccountId && (
+          {!facebookConfigured && (
             <p className="text-xs text-muted-foreground">
-              No configurada
+              {!facebookAccountId && !facebookPageId ? 'No configurada' : 'Configuración incompleta'}
             </p>
           )}
         </div>

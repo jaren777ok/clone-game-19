@@ -14,6 +14,7 @@ export type Database = {
           api_key_encrypted: string
           created_at: string
           facebook_account_id: string | null
+          facebook_page_id: string | null
           id: string
           instagram_account_id: string | null
           tiktok_account_id: string | null
@@ -25,6 +26,7 @@ export type Database = {
           api_key_encrypted: string
           created_at?: string
           facebook_account_id?: string | null
+          facebook_page_id?: string | null
           id?: string
           instagram_account_id?: string | null
           tiktok_account_id?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           api_key_encrypted?: string
           created_at?: string
           facebook_account_id?: string | null
+          facebook_page_id?: string | null
           id?: string
           instagram_account_id?: string | null
           tiktok_account_id?: string | null

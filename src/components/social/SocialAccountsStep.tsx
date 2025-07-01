@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 
 interface SocialAccountsStepProps {
   onAccountsSaved: () => void;
-  onSaveAccounts: (instagramId?: string, tiktokId?: string, youtubeId?: string, facebookId?: string) => Promise<{ success: boolean; error?: any }>;
+  onSaveAccounts: (instagramId?: string, tiktokId?: string, youtubeId?: string, facebookId?: string, facebookPageId?: string) => Promise<{ success: boolean; error?: any }>;
   existingInstagramId?: string;
   existingTiktokId?: string;
   existingYoutubeId?: string;
   existingFacebookId?: string;
+  existingFacebookPageId?: string;
   isLoading: boolean;
 }
 
@@ -22,12 +23,14 @@ const SocialAccountsStep = ({
   existingTiktokId,
   existingYoutubeId,
   existingFacebookId,
+  existingFacebookPageId,
   isLoading 
 }: SocialAccountsStepProps) => {
   const [instagramId, setInstagramId] = useState(existingInstagramId || '');
   const [tiktokId, setTiktokId] = useState(existingTiktokId || '');
   const [youtubeId, setYoutubeId] = useState(existingYoutubeId || '');
   const [facebookId, setFacebookId] = useState(existingFacebookId || '');
+  const [facebookPageId, setFacebookPageId] = useState(existingFacebookPageId || '');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -35,17 +38,19 @@ const SocialAccountsStep = ({
     setTiktokId(existingTiktokId || '');
     setYoutubeId(existingYoutubeId || '');
     setFacebookId(existingFacebookId || '');
-  }, [existingInstagramId, existingTiktokId, existingYoutubeId, existingFacebookId]);
+    setFacebookPageId(existingFacebookPageId || '');
+  }, [existingInstagramId, existingTiktokId, existingYoutubeId, existingFacebookId, existingFacebookPageId]);
 
   const handleSave = async () => {
-    if (!instagramId.trim() && !tiktokId.trim() && !youtubeId.trim() && !facebookId.trim()) return;
+    if (!instagramId.trim() && !tiktokId.trim() && !youtubeId.trim() && !facebookId.trim() && !facebookPageId.trim()) return;
     
     setSaving(true);
     const result = await onSaveAccounts(
       instagramId.trim() || undefined,
       tiktokId.trim() || undefined,
       youtubeId.trim() || undefined,
-      facebookId.trim() || undefined
+      facebookId.trim() || undefined,
+      facebookPageId.trim() || undefined
     );
     setSaving(false);
     
@@ -54,7 +59,8 @@ const SocialAccountsStep = ({
     }
   };
 
-  const hasAtLeastOneAccount = instagramId.trim() || tiktokId.trim() || youtubeId.trim() || facebookId.trim();
+  const hasAtLeastOneAccount = instagramId.trim() || tiktokId.trim() || youtubeId.trim() || (facebookId.trim() && facebookPageId.trim());
+  const facebookIncomplete = (facebookId.trim() && !facebookPageId.trim()) || (!facebookId.trim() && facebookPageId.trim());
 
   return (
     <div className="space-y-6">
@@ -93,38 +99,42 @@ const SocialAccountsStep = ({
         </Button>
       </div>
 
-      {/* Formulario - Grid 2x2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="instagramId" className="flex items-center">
-            <Instagram className="w-4 h-4 mr-2 text-pink-500" />
-            ID de Cuenta de Instagram
-          </Label>
-          <Input
-            id="instagramId"
-            type="text"
-            placeholder="Ej: instagram_account_123"
-            value={instagramId}
-            onChange={(e) => setInstagramId(e.target.value)}
-            className="cyber-border focus:cyber-glow"
-          />
+      {/* Formulario - Grid responsivo */}
+      <div className="space-y-4">
+        {/* Instagram y TikTok */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="instagramId" className="flex items-center">
+              <Instagram className="w-4 h-4 mr-2 text-pink-500" />
+              ID de Cuenta de Instagram
+            </Label>
+            <Input
+              id="instagramId"
+              type="text"
+              placeholder="Ej: instagram_account_123"
+              value={instagramId}
+              onChange={(e) => setInstagramId(e.target.value)}
+              className="cyber-border focus:cyber-glow"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="tiktokId" className="flex items-center">
+              <Music className="w-4 h-4 mr-2 text-black" />
+              ID de Cuenta de TikTok
+            </Label>
+            <Input
+              id="tiktokId"
+              type="text"
+              placeholder="Ej: tiktok_account_456"
+              value={tiktokId}
+              onChange={(e) => setTiktokId(e.target.value)}
+              className="cyber-border focus:cyber-glow"
+            />
+          </div>
         </div>
 
-        <div>
-          <Label htmlFor="tiktokId" className="flex items-center">
-            <Music className="w-4 h-4 mr-2 text-black" />
-            ID de Cuenta de TikTok
-          </Label>
-          <Input
-            id="tiktokId"
-            type="text"
-            placeholder="Ej: tiktok_account_456"
-            value={tiktokId}
-            onChange={(e) => setTiktokId(e.target.value)}
-            className="cyber-border focus:cyber-glow"
-          />
-        </div>
-
+        {/* YouTube */}
         <div>
           <Label htmlFor="youtubeId" className="flex items-center">
             <Youtube className="w-4 h-4 mr-2 text-red-500" />
@@ -140,19 +150,51 @@ const SocialAccountsStep = ({
           />
         </div>
 
-        <div>
-          <Label htmlFor="facebookId" className="flex items-center">
+        {/* Facebook - Sección especial con 2 campos */}
+        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
+          <div className="flex items-center mb-3">
             <Facebook className="w-4 h-4 mr-2 text-blue-600" />
-            ID de Cuenta de Facebook
-          </Label>
-          <Input
-            id="facebookId"
-            type="text"
-            placeholder="Ej: facebook_account_101"
-            value={facebookId}
-            onChange={(e) => setFacebookId(e.target.value)}
-            className="cyber-border focus:cyber-glow"
-          />
+            <h4 className="font-medium text-foreground">Configuración de Facebook</h4>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Para Facebook necesitas tanto el ID de tu cuenta como el ID de la página donde quieres publicar.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="facebookId" className="flex items-center">
+                ID de Cuenta de Facebook
+              </Label>
+              <Input
+                id="facebookId"
+                type="text"
+                placeholder="Ej: facebook_account_101"
+                value={facebookId}
+                onChange={(e) => setFacebookId(e.target.value)}
+                className={`cyber-border focus:cyber-glow ${facebookIncomplete ? 'border-yellow-500' : ''}`}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="facebookPageId" className="flex items-center">
+                ID de Página de Facebook
+              </Label>
+              <Input
+                id="facebookPageId"
+                type="text"
+                placeholder="Ej: facebook_page_202"
+                value={facebookPageId}
+                onChange={(e) => setFacebookPageId(e.target.value)}
+                className={`cyber-border focus:cyber-glow ${facebookIncomplete ? 'border-yellow-500' : ''}`}
+              />
+            </div>
+          </div>
+
+          {facebookIncomplete && (
+            <div className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+              ⚠️ Para Facebook necesitas completar ambos campos: cuenta y página
+            </div>
+          )}
         </div>
       </div>
 
@@ -162,7 +204,7 @@ const SocialAccountsStep = ({
 
       <Button
         onClick={handleSave}
-        disabled={!hasAtLeastOneAccount || saving || isLoading}
+        disabled={!hasAtLeastOneAccount || facebookIncomplete || saving || isLoading}
         className="w-full cyber-border hover:cyber-glow-intense"
       >
         {saving ? (

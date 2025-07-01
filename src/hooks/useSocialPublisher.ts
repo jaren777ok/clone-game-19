@@ -10,6 +10,7 @@ interface PublishPayload {
   accountId: string;
   caption: string;
   titulo?: string; // Título opcional para YouTube
+  pageId?: string; // ID de página opcional para Facebook
 }
 
 export const useSocialPublisher = () => {
@@ -52,6 +53,11 @@ export const useSocialPublisher = () => {
       // Para YouTube, incluir título sanitizado si está presente
       if (platform === 'YouTube' && payload.titulo) {
         sanitizedPayload.titulo = sanitizeCaption(payload.titulo);
+      }
+
+      // Para Facebook, incluir pageId si está presente
+      if (platform === 'Facebook' && payload.pageId) {
+        sanitizedPayload.pageId = payload.pageId;
       }
       
       console.log(`📱 Publicando en ${platform}...`, sanitizedPayload);

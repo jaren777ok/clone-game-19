@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +11,7 @@ interface BlotatoAccount {
   tiktok_account_id?: string;
   youtube_account_id?: string;
   facebook_account_id?: string;
+  facebook_page_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -99,10 +101,11 @@ export const useBlotatoAccounts = () => {
     instagramId?: string, 
     tiktokId?: string, 
     youtubeId?: string, 
-    facebookId?: string
+    facebookId?: string,
+    facebookPageId?: string
   ) => {
     try {
-      console.log('🔄 Updating social accounts...', { instagramId, tiktokId, youtubeId, facebookId });
+      console.log('🔄 Updating social accounts...', { instagramId, tiktokId, youtubeId, facebookId, facebookPageId });
       
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
@@ -113,7 +116,8 @@ export const useBlotatoAccounts = () => {
           instagram_account_id: instagramId || null,
           tiktok_account_id: tiktokId || null,
           youtube_account_id: youtubeId || null,
-          facebook_account_id: facebookId || null
+          facebook_account_id: facebookId || null,
+          facebook_page_id: facebookPageId || null
         })
         .eq('user_id', user?.id)
         .select()

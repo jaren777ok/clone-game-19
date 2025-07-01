@@ -129,7 +129,7 @@ const SocialPublishModal = ({
     setCurrentStep(5);
   };
 
-  const handlePublish = async (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string) => {
+  const handlePublish = async (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string, pageId?: string) => {
     // Para YouTube, incluir el título si está disponible
     const payload: any = {
       videoUrl,
@@ -141,6 +141,10 @@ const SocialPublishModal = ({
 
     if (platform === 'YouTube' && youtubeTitle) {
       payload.titulo = youtubeTitle;
+    }
+
+    if (platform === 'Facebook' && pageId) {
+      payload.pageId = pageId;
     }
 
     return await publishToSocialNetwork(payload);
@@ -195,6 +199,7 @@ const SocialPublishModal = ({
               existingTiktokId={blotatoAccount?.tiktok_account_id}
               existingYoutubeId={blotatoAccount?.youtube_account_id}
               existingFacebookId={blotatoAccount?.facebook_account_id}
+              existingFacebookPageId={blotatoAccount?.facebook_page_id}
               isLoading={loading}
             />
           )}
@@ -230,6 +235,7 @@ const SocialPublishModal = ({
               tiktokAccountId={blotatoAccount.tiktok_account_id}
               youtubeAccountId={blotatoAccount.youtube_account_id}
               facebookAccountId={blotatoAccount.facebook_account_id}
+              facebookPageId={blotatoAccount.facebook_page_id}
               publishingToInstagram={publishingToInstagram}
               publishingToTikTok={publishingToTikTok}
               publishingToYouTube={publishingToYouTube}
