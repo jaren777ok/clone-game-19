@@ -1,49 +1,22 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useBlotatomApiKeys, BlotatomApiKey } from '@/hooks/useBlotatomApiKeys';
+import { useBlotatomApiKeys } from '@/hooks/useBlotatomApiKeys';
+import { useSocialPublishState, SocialNetwork } from '@/hooks/useSocialPublishState';
+import { useCaptionGeneration } from '@/hooks/useCaptionGeneration';
+import { useSocialNetworkPublish } from '@/hooks/useSocialNetworkPublish';
 
-export type SocialStep = 
-  | 'generate-caption' 
-  | 'api-key-input' 
-  | 'select-network' 
-  | 'publishing' 
-  | 'success' 
-  | 'error';
-
-export type SocialNetwork = 'instagram' | 'tiktok';
-
-export interface SocialPublishState {
-  isOpen: boolean;
-  step: SocialStep;
-  videoUrl: string;
-  script: string;
-  selectedApiKey: BlotatomApiKey | null;
-  generatedCaption: string;
-  editedCaption: string;
-  selectedNetwork: SocialNetwork | null;
-  isLoading: boolean;
-  error: string | null;
-}
+export { SocialNetwork } from '@/hooks/useSocialPublishState';
+export type { SocialStep, SocialPublishState } from '@/hooks/useSocialPublishState';
 
 export const useSocialPublish = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { apiKeys, loadApiKeys, saveApiKey } = useBlotatomApiKeys();
-
-  const [state, setState] = useState<SocialPublishState>({
-    isOpen: false,
-    step: 'api-key-input',
-    videoUrl: '',
-    script: '',
-    selectedApiKey: null,
-    generatedCaption: '',
-    editedCaption: '',
-    selectedNetwork: null,
-    isLoading: false,
-    error: null
-  });
+  const { loadApiKeys, saveApiKey } = useBlotatomApiKeys();
+  const { state, updateState, openModal: openModalState, closeModal } = useSocialPublishState();
+  const { generateCaption: generateCaptionApi } = useCaptionGeneration();
+  const { publishToNetwork: publishToNetworkApi } = useSocialNetworkPublish();
 
   const openModal = useCallback(async (videoUrl: string, script: string) => {
     console.log('🚀 Opening social publish modal:', { videoUrl, script });
@@ -58,20 +31,8 @@ export const useSocialPublish = () => {
       return;
     }
 
-    // Abrir modal inmediatamente con loading
-    setState(prev => ({
-      ...prev,
-      isOpen: true,
-      step: 'api-key-input', // Empezar en input por defecto
-      videoUrl,
-      script,
-      selectedApiKey: null,
-      generatedCaption: '',
-      editedCaption: '',
-      selectedNetwork: null,
-      isLoading: true,
-      error: null
-    }));
+    // Abrir modal inmediatamente
+    openModalState(videoUrl, script);
 
     try {
       console.log('🔍 Checking for existing API keys...');
@@ -81,68 +42,41 @@ export const useSocialPublish = () => {
       
       if (keys.length > 0) {
         console.log('✅ API keys found, proceeding to caption generation');
-        setState(prev => ({
-          ...prev,
+        updateState({
           selectedApiKey: keys[0],
-          step: 'generate-caption',
-          isLoading: false
-        }));
+          step: 'generate-caption'
+        });
       } else {
         console.log('❌ No API keys found, showing input form');
-        setState(prev => ({
-          ...prev,
-          step: 'api-key-input',
-          isLoading: false
-        }));
+        updateState({
+          step: 'api-key-input'
+        });
       }
     } catch (error) {
       console.error('💥 Error loading API keys:', error);
-      
-      // En caso de error, mostrar formulario de API key
-      setState(prev => ({
-        ...prev,
+      updateState({
         step: 'api-key-input',
-        isLoading: false,
-        error: null // No mostrar error, solo ir al formulario
-      }));
-      
+        error: null
+      });
       console.log('⚠️ Error loading keys, showing API key form as fallback');
     }
-  }, [loadApiKeys, user, toast]);
-
-  const closeModal = useCallback(() => {
-    console.log('🔒 Closing social publish modal');
-    setState(prev => ({
-      ...prev,
-      isOpen: false,
-      step: 'api-key-input',
-      videoUrl: '',
-      script: '',
-      selectedApiKey: null,
-      generatedCaption: '',
-      editedCaption: '',
-      selectedNetwork: null,
-      isLoading: false,
-      error: null
-    }));
-  }, []);
+  }, [loadApiKeys, user, toast, openModalState, updateState]);
 
   const handleApiKeySaved = useCallback(async (name: string, apiKey: string) => {
     try {
       console.log('💾 Saving API key:', name);
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      updateState({ isLoading: true, error: null });
       
       await saveApiKey(name, apiKey);
       const keys = await loadApiKeys();
       
       if (keys.length > 0) {
         console.log('✅ API key saved, proceeding to caption generation');
-        setState(prev => ({
-          ...prev,
+        updateState({
           selectedApiKey: keys[0],
           step: 'generate-caption',
           isLoading: false
-        }));
+        });
         
         toast({
           title: "Clave API guardada",
@@ -153,145 +87,80 @@ export const useSocialPublish = () => {
       }
     } catch (error) {
       console.error('💥 Error saving API key:', error);
-      setState(prev => ({ 
-        ...prev, 
+      updateState({ 
         error: error instanceof Error ? error.message : 'Error al guardar la clave API',
         isLoading: false 
-      }));
+      });
     }
-  }, [saveApiKey, loadApiKeys, toast]);
+  }, [saveApiKey, loadApiKeys, toast, updateState]);
 
   const generateCaption = useCallback(async () => {
     if (!state.script) return;
 
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      updateState({ isLoading: true, error: null });
       
-      console.log('Generating caption for script:', state.script);
+      const caption = await generateCaptionApi(state.script);
       
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/caption', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ script: state.script })
+      updateState({
+        generatedCaption: caption,
+        editedCaption: caption,
+        isLoading: false
       });
-
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      console.log('Caption response:', data);
-      
-      if (Array.isArray(data) && data[0]?.caption) {
-        const caption = data[0].caption;
-        setState(prev => ({
-          ...prev,
-          generatedCaption: caption,
-          editedCaption: caption,
-          isLoading: false
-        }));
-      } else {
-        throw new Error('Respuesta inválida del servidor');
-      }
     } catch (error) {
       console.error('Error generating caption:', error);
-      setState(prev => ({ 
-        ...prev, 
+      updateState({ 
         error: error instanceof Error ? error.message : 'Error generando caption',
         isLoading: false 
-      }));
+      });
     }
-  }, [state.script]);
+  }, [state.script, generateCaptionApi, updateState]);
 
   const selectNetwork = useCallback((network: SocialNetwork) => {
-    setState(prev => ({
-      ...prev,
-      selectedNetwork: network
-    }));
-  }, []);
+    updateState({ selectedNetwork: network });
+  }, [updateState]);
 
   const publishToNetwork = useCallback(async () => {
     if (!state.selectedApiKey || !state.selectedNetwork || !state.editedCaption) return;
 
     try {
-      setState(prev => ({ ...prev, step: 'publishing', isLoading: true, error: null }));
+      updateState({ step: 'publishing', isLoading: true, error: null });
       
-      const decryptedApiKey = atob(state.selectedApiKey.api_key_encrypted);
+      await publishToNetworkApi(
+        state.selectedApiKey,
+        state.selectedNetwork,
+        state.editedCaption,
+        state.videoUrl
+      );
       
-      const payload = {
-        caption: state.editedCaption,
-        network: state.selectedNetwork,
-        videoUrl: state.videoUrl,
-        apiKey: decryptedApiKey
-      };
-      
-      console.log('Publishing to network:', payload);
-      
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/REDES', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      updateState({
+        step: 'success',
+        isLoading: false
       });
-
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      console.log('Publish response:', data);
-      
-      if (Array.isArray(data) && data[0]?.Estado) {
-        if (data[0].Estado === 'Exito') {
-          setState(prev => ({
-            ...prev,
-            step: 'success',
-            isLoading: false
-          }));
-        } else {
-          setState(prev => ({
-            ...prev,
-            step: 'error',
-            error: 'Error en la publicación. Intenta nuevamente en 5 minutos.',
-            isLoading: false
-          }));
-        }
-      } else {
-        throw new Error('Respuesta inválida del servidor');
-      }
     } catch (error) {
       console.error('Error publishing:', error);
-      setState(prev => ({ 
-        ...prev, 
+      updateState({ 
         step: 'error',
         error: error instanceof Error ? error.message : 'Error publicando en red social',
         isLoading: false 
-      }));
+      });
     }
-  }, [state.selectedApiKey, state.selectedNetwork, state.editedCaption, state.videoUrl]);
+  }, [state.selectedApiKey, state.selectedNetwork, state.editedCaption, state.videoUrl, publishToNetworkApi, updateState]);
 
   const updateCaption = useCallback((caption: string) => {
-    setState(prev => ({
-      ...prev,
-      editedCaption: caption
-    }));
-  }, []);
+    updateState({ editedCaption: caption });
+  }, [updateState]);
 
   const navigateToSelectNetwork = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      step: 'select-network'
-    }));
-  }, []);
+    updateState({ step: 'select-network' });
+  }, [updateState]);
 
   const retryFromError = useCallback(() => {
-    setState(prev => ({
-      ...prev,
+    updateState({
       step: 'select-network',
       error: null
-    }));
-  }, []);
+    });
+  }, [updateState]);
 
   return {
     state,
