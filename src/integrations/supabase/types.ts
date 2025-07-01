@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      blotato_accounts: {
+        Row: {
+          api_key_encrypted: string
+          created_at: string
+          id: string
+          instagram_account_id: string | null
+          tiktok_account_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_encrypted: string
+          created_at?: string
+          id?: string
+          instagram_account_id?: string | null
+          tiktok_account_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_encrypted?: string
+          created_at?: string
+          id?: string
+          instagram_account_id?: string | null
+          tiktok_account_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chats: {
         Row: {
           created_at: string
