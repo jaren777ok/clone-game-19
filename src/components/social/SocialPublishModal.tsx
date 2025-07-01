@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocialPublish } from '@/hooks/useSocialPublish';
 import BlotatomApiKeyForm from './BlotatomApiKeyForm';
@@ -26,7 +26,8 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     publishToNetwork,
     updateCaption,
     navigateToSelectNetwork,
-    retryFromError
+    retryFromError,
+    openModal
   } = useSocialPublish();
 
   const handleClose = () => {
@@ -34,13 +35,57 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     onClose();
   };
 
+  const handleRetryApiKeyCheck = () => {
+    openModal(videoUrl, script);
+  };
+
   const renderStep = () => {
     switch (state.step) {
       case 'api-key-check':
         return (
-          <div className="text-center py-8">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Verificando configuración...</p>
+          <div className="text-center py-8 space-y-4">
+            {state.error ? (
+              // Error durante la verificación
+              <div className="space-y-4">
+                <div className="w-16 h-16 bg-destructive/20 rounded-full flex items-center justify-center mx-auto">
+                  <AlertCircle className="w-8 h-8 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Error de conexión</h3>
+                  <p className="text-muted-foreground mb-4">
+                    No se pudo verificar la configuración de API keys
+                  </p>
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-destructive">{state.error}</p>
+                  </div>
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleRetryApiKeyCheck}
+                      disabled={state.isLoading}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reintentar
+                    </Button>
+                    <Button
+                      onClick={() => setState(prev => ({ ...prev, step: 'api-key-input', error: null }))}
+                      className="cyber-glow"
+                    >
+                      Continuar de todas formas
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Loading normal
+              <div>
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                <p className="text-muted-foreground">Verificando configuración...</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Esto puede tardar unos segundos
+                </p>
+              </div>
+            )}
           </div>
         );
 
@@ -115,6 +160,8 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
 
   const getTitle = () => {
     switch (state.step) {
+      case 'api-key-check':
+        return state.error ? 'Error de Conexión' : 'Verificando Configuración';
       case 'api-key-input':
         return 'Configurar Blotato';
       case 'generate-caption':

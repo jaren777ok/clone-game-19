@@ -50,9 +50,15 @@ export const useSocialPublish = () => {
     
     if (!user) {
       console.error('❌ No user authenticated');
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para publicar en redes sociales",
+        variant: "destructive"
+      });
       return;
     }
 
+    // Abrir modal inmediatamente
     setState(prev => ({
       ...prev,
       isOpen: true,
@@ -67,10 +73,20 @@ export const useSocialPublish = () => {
       error: null
     }));
 
+    // Verificar API keys con timeout
     try {
-      console.log('🔍 Loading API keys...');
-      const keys = await loadApiKeys();
-      console.log('📋 API keys loaded:', keys.length);
+      console.log('🔍 Starting API key verification...');
+      
+      // Crear timeout de 10 segundos
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout: La verificación tardó más de 10 segundos')), 10000);
+      });
+
+      // Cargar API keys con timeout
+      const loadKeysPromise = loadApiKeys();
+      const keys = await Promise.race([loadKeysPromise, timeoutPromise]) as BlotatomApiKey[];
+      
+      console.log('📋 API keys verification completed. Keys found:', keys.length);
       
       if (keys.length > 0) {
         console.log('✅ API keys found, proceeding to caption generation');
@@ -89,15 +105,23 @@ export const useSocialPublish = () => {
         }));
       }
     } catch (error) {
-      console.error('💥 Error loading API keys:', error);
+      console.error('💥 Error during API key verification:', error);
+      
+      // En caso de error, mostrar directamente el formulario de API key
       setState(prev => ({
         ...prev,
         step: 'api-key-input',
-        error: 'Error verificando las claves API',
+        error: error instanceof Error ? error.message : 'Error verificando las claves API',
         isLoading: false
       }));
+      
+      toast({
+        title: "Problema de conexión",
+        description: "No se pudieron verificar las claves API. Puedes ingresar una nueva clave.",
+        variant: "destructive"
+      });
     }
-  }, [loadApiKeys, user]);
+  }, [loadApiKeys, user, toast]);
 
   const closeModal = useCallback(() => {
     console.log('🔒 Closing social publish modal');
@@ -137,12 +161,14 @@ export const useSocialPublish = () => {
           title: "Clave API guardada",
           description: "Tu clave API de Blotato ha sido guardada exitosamente."
         });
+      } else {
+        throw new Error('No se pudo cargar la clave API guardada');
       }
     } catch (error) {
       console.error('💥 Error saving API key:', error);
       setState(prev => ({ 
         ...prev, 
-        error: 'Error al guardar la clave API',
+        error: error instanceof Error ? error.message : 'Error al guardar la clave API',
         isLoading: false 
       }));
     }
