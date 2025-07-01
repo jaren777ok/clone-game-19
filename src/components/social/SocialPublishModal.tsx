@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useBlotatoAccounts } from '@/hooks/useBlotatoAccounts';
@@ -169,13 +170,6 @@ const SocialPublishModal = ({
         <ModalHeader onClose={handleClose} />
         
         <CardContent className="space-y-6">
-          {/* Indicador de pasos */}
-          <StepIndicator 
-            currentStep={currentStep} 
-            totalSteps={5} 
-            stepLabels={stepLabels}
-          />
-
           {/* Pasos del proceso */}
           {currentStep === 1 && (
             <BlotatoApiKeyStep
