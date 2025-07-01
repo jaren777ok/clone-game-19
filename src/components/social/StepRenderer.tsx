@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SocialPublishState } from '@/hooks/useSocialPublish';
+import { SocialPublishState } from '@/contexts/SocialPublishContext';
 import ApiKeyInputStep from './steps/ApiKeyInputStep';
 import CaptionGenerationStep from './steps/CaptionGenerationStep';
 import NetworkSelectionStep from './steps/NetworkSelectionStep';

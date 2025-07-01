@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-import { SocialNetwork } from '@/hooks/useSocialPublish';
+import { SocialNetwork } from '@/contexts/SocialPublishContext';
 
 interface Props {
   selectedNetwork: SocialNetwork | null;

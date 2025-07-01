@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Share, Loader2 } from 'lucide-react';
-import { SocialNetwork } from '@/hooks/useSocialPublish';
+import { SocialNetwork } from '@/contexts/SocialPublishContext';
 
 interface Props {
   selectedNetwork: SocialNetwork | null;

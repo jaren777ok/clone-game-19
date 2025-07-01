@@ -3,7 +3,7 @@ import React from 'react';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { SocialStep } from '@/hooks/useSocialPublish';
+import { SocialStep } from '@/contexts/SocialPublishContext';
 
 interface Props {
   step: SocialStep;

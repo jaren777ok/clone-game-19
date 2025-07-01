@@ -6,7 +6,7 @@ import { Download, RotateCcw, Share2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { saveVideoToDatabase, clearGenerationState } from '@/lib/videoGeneration';
 import SocialPublishModal from '@/components/social/SocialPublishModal';
-import { useSocialPublish } from '@/hooks/useSocialPublish';
+import { useSocialPublish } from '@/contexts/SocialPublishContext';
 
 interface VideoResultProps {
   videoUrl: string;
