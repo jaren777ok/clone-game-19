@@ -87,7 +87,7 @@ export const useVideoMonitoring = () => {
       
       try {
         const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-        console.log('🔍 Verificando video (minuto ' + minutesElapsed + '):', {
+        console.log('🔍 Verificando video específico (minuto ' + minutesElapsed + '):', {
           requestId: requestId,
           userId: user?.id,
           scriptPreview: scriptToCheck.substring(0, 50) + '...'
@@ -96,7 +96,7 @@ export const useVideoMonitoring = () => {
         const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
         
         if (videoData?.video_url) {
-          console.log('🎉 ¡VIDEO ENCONTRADO!:', {
+          console.log('🎉 ¡VIDEO ESPECÍFICO ENCONTRADO!:', {
             videoUrl: videoData.video_url,
             title: videoData.title,
             requestId: videoData.request_id,
@@ -115,14 +115,14 @@ export const useVideoMonitoring = () => {
             description: videoData.title || "Tu video ha sido generado exitosamente.",
           });
         } else {
-          console.log('⏳ Video no encontrado aún:', {
+          console.log('⏳ Video específico no encontrado aún:', {
             requestId: requestId,
             minutesElapsed: minutesElapsed,
             nextCheckIn: '1 minuto'
           });
         }
       } catch (e) {
-        console.error('❌ Error durante verificación retrasada:', {
+        console.error('❌ Error durante verificación específica:', {
           requestId: requestId,
           error: e,
           minutesElapsed: Math.floor((Date.now() - startTime) / 60000)
@@ -160,7 +160,7 @@ export const useVideoMonitoring = () => {
       const videoData = await checkFinalVideoResult(user, scriptToCheck);
       
       if (videoData?.video_url) {
-        console.log('✅ Video encontrado en verificación final:', {
+        console.log('✅ Video específico encontrado en verificación final:', {
           videoUrl: videoData.video_url,
           title: videoData.title
         });
@@ -170,18 +170,18 @@ export const useVideoMonitoring = () => {
           description: videoData.title || "Tu video ha sido generado exitosamente.",
         });
       } else {
-        console.log('❌ Video NO encontrado después de 39 minutos');
+        console.log('⏰ Video específico NO encontrado después de 39 minutos');
         toast({
-          title: "Tiempo agotado",
-          description: "El video está tomando más tiempo del esperado. Revisa la sección 'Videos Guardados' en unos minutos.",
-          variant: "destructive"
+          title: "Video en proceso",
+          description: "Tu video está tardando un poco más de lo normal. Por favor, revisa la sección 'Videos Guardados' en 10-15 minutos.",
+          variant: "default"
         });
       }
     } catch (e) {
       console.error('❌ Error en verificación final:', e);
       toast({
         title: "Error en verificación",
-        description: "Hubo un error al verificar el video. Revisa la sección 'Videos Guardados'.",
+        description: "Hubo un problema al verificar el video. Por favor, revisa la sección 'Videos Guardados' en unos minutos.",
         variant: "destructive"
       });
     }
