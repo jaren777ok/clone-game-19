@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { sanitizeCaption } from '@/lib/textUtils';
 
 interface CaptionResponse {
   caption: string;
@@ -43,7 +44,8 @@ export const useCaptionGenerator = () => {
       if (data && data.length > 0 && data[0].caption) {
         const caption = data[0].caption;
         setGeneratedCaption(caption);
-        setEditedCaption(caption);
+        // Aplicar sanitización automática al caption generado
+        setEditedCaption(sanitizeCaption(caption));
         
         toast({
           title: "¡Caption generado!",
@@ -79,7 +81,10 @@ export const useCaptionGenerator = () => {
   };
 
   const updateCaption = (newCaption: string) => {
-    setEditedCaption(newCaption);
+    // Aplicar sanitización automática cuando el usuario edita el caption
+    const sanitizedCaption = sanitizeCaption(newCaption);
+    console.log('🔧 Caption sanitizado:', { original: newCaption, sanitized: sanitizedCaption });
+    setEditedCaption(sanitizedCaption);
   };
 
   const resetCaption = () => {

@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { sanitizeCaption } from '@/lib/textUtils';
 
 interface PublishPayload {
   videoUrl: string;
@@ -29,14 +30,21 @@ export const useSocialPublisher = () => {
       }
       
       setPublishError(null);
-      console.log(`📱 Publicando en ${platform}...`, payload);
+      
+      // Aplicar sanitización final al caption antes del envío
+      const sanitizedPayload = {
+        ...payload,
+        caption: sanitizeCaption(payload.caption)
+      };
+      
+      console.log(`📱 Publicando en ${platform}...`, sanitizedPayload);
       
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/REDES', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(sanitizedPayload)
       });
 
       if (!response.ok) {
