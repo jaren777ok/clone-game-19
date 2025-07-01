@@ -46,6 +46,8 @@ const SocialPublishModal = ({
   const {
     publishingToInstagram,
     publishingToTikTok,
+    publishingToYouTube,
+    publishingToFacebook,
     publishSuccess,
     publishError,
     publishToSocialNetwork,
@@ -67,7 +69,7 @@ const SocialPublishModal = ({
       if (!blotatoAccount?.api_key_encrypted) {
         console.log('➡️ No API key found, starting at step 1');
         setCurrentStep(1);
-      } else if (!blotatoAccount.instagram_account_id && !blotatoAccount.tiktok_account_id) {
+      } else if (!blotatoAccount.instagram_account_id && !blotatoAccount.tiktok_account_id && !blotatoAccount.youtube_account_id && !blotatoAccount.facebook_account_id) {
         console.log('➡️ API key exists but no social accounts, going to step 2');
         setCurrentStep(2);
       } else if (!generatedCaption && !editedCaption) {
@@ -107,7 +109,7 @@ const SocialPublishModal = ({
     setCurrentStep(4);
   };
 
-  const handlePublish = async (platform: 'Instagram' | 'TikTok', videoUrl: string, apiKey: string, accountId: string, caption: string) => {
+  const handlePublish = async (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string) => {
     return await publishToSocialNetwork({
       videoUrl,
       platform,
@@ -188,6 +190,8 @@ const SocialPublishModal = ({
               onSaveAccounts={updateSocialAccounts}
               existingInstagramId={blotatoAccount?.instagram_account_id}
               existingTiktokId={blotatoAccount?.tiktok_account_id}
+              existingYoutubeId={blotatoAccount?.youtube_account_id}
+              existingFacebookId={blotatoAccount?.facebook_account_id}
               isLoading={loading}
             />
           )}
@@ -210,11 +214,15 @@ const SocialPublishModal = ({
               onPublish={handlePublish}
               videoUrl={videoUrl}
               caption={editedCaption || generatedCaption}
-              blotatoApiKey={blotatoAccount.api_key_encrypted} // Nota: En producción esto debería estar desencriptado
+              blotatoApiKey={blotatoAccount.api_key_encrypted}
               instagramAccountId={blotatoAccount.instagram_account_id}
               tiktokAccountId={blotatoAccount.tiktok_account_id}
+              youtubeAccountId={blotatoAccount.youtube_account_id}
+              facebookAccountId={blotatoAccount.facebook_account_id}
               publishingToInstagram={publishingToInstagram}
               publishingToTikTok={publishingToTikTok}
+              publishingToYouTube={publishingToYouTube}
+              publishingToFacebook={publishingToFacebook}
               publishSuccess={publishSuccess}
               publishError={publishError}
             />

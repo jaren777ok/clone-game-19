@@ -5,7 +5,7 @@ import { sanitizeCaption } from '@/lib/textUtils';
 
 interface PublishPayload {
   videoUrl: string;
-  platform: 'Instagram' | 'TikTok';
+  platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook';
   apiKey: string;
   accountId: string;
   caption: string;
@@ -14,19 +14,30 @@ interface PublishPayload {
 export const useSocialPublisher = () => {
   const [publishingToInstagram, setPublishingToInstagram] = useState(false);
   const [publishingToTikTok, setPublishingToTikTok] = useState(false);
+  const [publishingToYouTube, setPublishingToYouTube] = useState(false);
+  const [publishingToFacebook, setPublishingToFacebook] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState<{ platform: string } | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const publishToSocialNetwork = async (payload: PublishPayload) => {
     const { platform } = payload;
-    const isInstagram = platform === 'Instagram';
     
     try {
-      if (isInstagram) {
-        setPublishingToInstagram(true);
-      } else {
-        setPublishingToTikTok(true);
+      // Set loading state based on platform
+      switch (platform) {
+        case 'Instagram':
+          setPublishingToInstagram(true);
+          break;
+        case 'TikTok':
+          setPublishingToTikTok(true);
+          break;
+        case 'YouTube':
+          setPublishingToYouTube(true);
+          break;
+        case 'Facebook':
+          setPublishingToFacebook(true);
+          break;
       }
       
       setPublishError(null);
@@ -76,10 +87,20 @@ export const useSocialPublisher = () => {
       
       return { success: false, error: errorMessage };
     } finally {
-      if (isInstagram) {
-        setPublishingToInstagram(false);
-      } else {
-        setPublishingToTikTok(false);
+      // Reset loading state based on platform
+      switch (platform) {
+        case 'Instagram':
+          setPublishingToInstagram(false);
+          break;
+        case 'TikTok':
+          setPublishingToTikTok(false);
+          break;
+        case 'YouTube':
+          setPublishingToYouTube(false);
+          break;
+        case 'Facebook':
+          setPublishingToFacebook(false);
+          break;
       }
     }
   };
@@ -92,6 +113,8 @@ export const useSocialPublisher = () => {
   return {
     publishingToInstagram,
     publishingToTikTok,
+    publishingToYouTube,
+    publishingToFacebook,
     publishSuccess,
     publishError,
     publishToSocialNetwork,

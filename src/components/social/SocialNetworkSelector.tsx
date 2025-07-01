@@ -4,14 +4,18 @@ import { Share2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface SocialNetworkSelectorProps {
-  onPublish: (platform: 'Instagram' | 'TikTok', videoUrl: string, apiKey: string, accountId: string, caption: string) => Promise<{ success: boolean; error?: string }>;
+  onPublish: (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string) => Promise<{ success: boolean; error?: string }>;
   videoUrl: string;
   caption: string;
   blotatoApiKey: string;
   instagramAccountId?: string;
   tiktokAccountId?: string;
+  youtubeAccountId?: string;
+  facebookAccountId?: string;
   publishingToInstagram: boolean;
   publishingToTikTok: boolean;
+  publishingToYouTube: boolean;
+  publishingToFacebook: boolean;
   publishSuccess: { platform: string } | null;
   publishError: string | null;
 }
@@ -23,8 +27,12 @@ const SocialNetworkSelector = ({
   blotatoApiKey,
   instagramAccountId,
   tiktokAccountId,
+  youtubeAccountId,
+  facebookAccountId,
   publishingToInstagram,
   publishingToTikTok,
+  publishingToYouTube,
+  publishingToFacebook,
   publishSuccess,
   publishError
 }: SocialNetworkSelectorProps) => {
@@ -36,6 +44,16 @@ const SocialNetworkSelector = ({
   const handlePublishToTikTok = async () => {
     if (!tiktokAccountId) return;
     await onPublish('TikTok', videoUrl, blotatoApiKey, tiktokAccountId, caption);
+  };
+
+  const handlePublishToYouTube = async () => {
+    if (!youtubeAccountId) return;
+    await onPublish('YouTube', videoUrl, blotatoApiKey, youtubeAccountId, caption);
+  };
+
+  const handlePublishToFacebook = async () => {
+    if (!facebookAccountId) return;
+    await onPublish('Facebook', videoUrl, blotatoApiKey, facebookAccountId, caption);
   };
 
   return (
@@ -59,44 +77,45 @@ const SocialNetworkSelector = ({
         </p>
       </div>
 
-      {/* Social Networks Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Social Networks Grid - 2x2 layout */}
+      <div className="grid grid-cols-2 gap-4">
         {/* Instagram */}
         <div className="text-center space-y-4">
           <div className="relative">
             <img
-              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20ig.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gaWcucG5nIiwiaWF0IjoxNzUxMzkzMTQ2LCJleHAiOjE3ODI5MjkxNDZ9.8mclgvFVZ2fcXkgsGBmn1Xj5oFocfW4biuEI7EOeOBs"
+              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20instgram.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gaW5zdGdyYW0ucG5nIiwiaWF0IjoxNzUxMzk4MTUwLCJleHAiOjE3ODI5MzQxNTB9.Zc9zwKjj7-jrHDdK4LaOW0j4nacsBwm5hIXUP0LzsD0"
               alt="Instagram"
-              className="w-20 h-20 mx-auto rounded-2xl cyber-border"
+              className="w-16 h-16 mx-auto rounded-2xl cyber-border"
             />
             {publishSuccess?.platform === 'Instagram' && (
-              <CheckCircle className="w-6 h-6 text-green-500 absolute -top-1 -right-1 bg-background rounded-full" />
+              <CheckCircle className="w-5 h-5 text-green-500 absolute -top-1 -right-1 bg-background rounded-full" />
             )}
           </div>
           
           <Button
             onClick={handlePublishToInstagram}
             disabled={!instagramAccountId || publishingToInstagram || publishSuccess?.platform === 'Instagram'}
-            className="w-full cyber-border hover:cyber-glow-intense"
+            className="w-full cyber-border hover:cyber-glow-intense text-xs"
+            size="sm"
           >
             {publishingToInstagram ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                 Publicando...
               </>
             ) : publishSuccess?.platform === 'Instagram' ? (
               <>
-                <CheckCircle className="w-4 h-4 mr-2" />
+                <CheckCircle className="w-3 h-3 mr-2" />
                 Publicado
               </>
             ) : (
-              'Publicar en Instagram'
+              'Instagram'
             )}
           </Button>
           
           {!instagramAccountId && (
             <p className="text-xs text-muted-foreground">
-              Cuenta no configurada
+              No configurada
             </p>
           )}
         </div>
@@ -107,36 +126,119 @@ const SocialNetworkSelector = ({
             <img
               src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20tik%20tok%20(2).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gdGlrIHRvayAoMikucG5nIiwiaWF0IjoxNzUxMzkzMTcxLCJleHAiOjE3ODI5MjkxNzF9.-gDibqoF1aR9pGRlgqoEKm4-1-r0GW_Xq73EyS1MCeQ"
               alt="TikTok"
-              className="w-20 h-20 mx-auto rounded-2xl cyber-border"
+              className="w-16 h-16 mx-auto rounded-2xl cyber-border"
             />
             {publishSuccess?.platform === 'TikTok' && (
-              <CheckCircle className="w-6 h-6 text-green-500 absolute -top-1 -right-1 bg-background rounded-full" />
+              <CheckCircle className="w-5 h-5 text-green-500 absolute -top-1 -right-1 bg-background rounded-full" />
             )}
           </div>
           
           <Button
             onClick={handlePublishToTikTok}
             disabled={!tiktokAccountId || publishingToTikTok || publishSuccess?.platform === 'TikTok'}
-            className="w-full cyber-border hover:cyber-glow-intense"
+            className="w-full cyber-border hover:cyber-glow-intense text-xs"
+            size="sm"
           >
             {publishingToTikTok ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                 Publicando...
               </>
             ) : publishSuccess?.platform === 'TikTok' ? (
               <>
-                <CheckCircle className="w-4 h-4 mr-2" />
+                <CheckCircle className="w-3 h-3 mr-2" />
                 Publicado
               </>
             ) : (
-              'Publicar en TikTok'
+              'TikTok'
             )}
           </Button>
           
           {!tiktokAccountId && (
             <p className="text-xs text-muted-foreground">
-              Cuenta no configurada
+              No configurada
+            </p>
+          )}
+        </div>
+
+        {/* YouTube */}
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <img
+              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20yt.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28geXQucG5nIiwiaWF0IjoxNzUxMzk4MjIzLCJleHAiOjE3ODI5MzQyMjN9.wxVt3uunbNNLkN4ZTjzUVshpwMOdpf6U9ea58ZlsXKY"
+              alt="YouTube"
+              className="w-16 h-16 mx-auto rounded-2xl cyber-border"
+            />
+            {publishSuccess?.platform === 'YouTube' && (
+              <CheckCircle className="w-5 h-5 text-green-500 absolute -top-1 -right-1 bg-background rounded-full" />
+            )}
+          </div>
+          
+          <Button
+            onClick={handlePublishToYouTube}
+            disabled={!youtubeAccountId || publishingToYouTube || publishSuccess?.platform === 'YouTube'}
+            className="w-full cyber-border hover:cyber-glow-intense text-xs"
+            size="sm"
+          >
+            {publishingToYouTube ? (
+              <>
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                Publicando...
+              </>
+            ) : publishSuccess?.platform === 'YouTube' ? (
+              <>
+                <CheckCircle className="w-3 h-3 mr-2" />
+                Publicado
+              </>
+            ) : (
+              'YouTube'
+            )}
+          </Button>
+          
+          {!youtubeAccountId && (
+            <p className="text-xs text-muted-foreground">
+              No configurada
+            </p>
+          )}
+        </div>
+
+        {/* Facebook */}
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <img
+              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20facebook.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gZmFjZWJvb2sucG5nIiwiaWF0IjoxNzUxMzk4MjQyLCJleHAiOjE3ODI5MzQyNDJ9.-4ih8q6TBcFURk9TFfHmF5yBYqNjMQO5wTtUIuU-3rI"
+              alt="Facebook"
+              className="w-16 h-16 mx-auto rounded-2xl cyber-border"
+            />
+            {publishSuccess?.platform === 'Facebook' && (
+              <CheckCircle className="w-5 h-5 text-green-500 absolute -top-1 -right-1 bg-background rounded-full" />
+            )}
+          </div>
+          
+          <Button
+            onClick={handlePublishToFacebook}
+            disabled={!facebookAccountId || publishingToFacebook || publishSuccess?.platform === 'Facebook'}
+            className="w-full cyber-border hover:cyber-glow-intense text-xs"
+            size="sm"
+          >
+            {publishingToFacebook ? (
+              <>
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                Publicando...
+              </>
+            ) : publishSuccess?.platform === 'Facebook' ? (
+              <>
+                <CheckCircle className="w-3 h-3 mr-2" />
+                Publicado
+              </>
+            ) : (
+              'Facebook'
+            )}
+          </Button>
+          
+          {!facebookAccountId && (
+            <p className="text-xs text-muted-foreground">
+              No configurada
             </p>
           )}
         </div>

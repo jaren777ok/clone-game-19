@@ -13,29 +13,35 @@ export type Database = {
         Row: {
           api_key_encrypted: string
           created_at: string
+          facebook_account_id: string | null
           id: string
           instagram_account_id: string | null
           tiktok_account_id: string | null
           updated_at: string
           user_id: string
+          youtube_account_id: string | null
         }
         Insert: {
           api_key_encrypted: string
           created_at?: string
+          facebook_account_id?: string | null
           id?: string
           instagram_account_id?: string | null
           tiktok_account_id?: string | null
           updated_at?: string
           user_id: string
+          youtube_account_id?: string | null
         }
         Update: {
           api_key_encrypted?: string
           created_at?: string
+          facebook_account_id?: string | null
           id?: string
           instagram_account_id?: string | null
           tiktok_account_id?: string | null
           updated_at?: string
           user_id?: string
+          youtube_account_id?: string | null
         }
         Relationships: []
       }

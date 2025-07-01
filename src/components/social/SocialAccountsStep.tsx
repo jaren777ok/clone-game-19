@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Instagram, Music, ExternalLink } from 'lucide-react';
+import { Instagram, Music, Youtube, Facebook, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface SocialAccountsStepProps {
   onAccountsSaved: () => void;
-  onSaveAccounts: (instagramId?: string, tiktokId?: string) => Promise<{ success: boolean; error?: any }>;
+  onSaveAccounts: (instagramId?: string, tiktokId?: string, youtubeId?: string, facebookId?: string) => Promise<{ success: boolean; error?: any }>;
   existingInstagramId?: string;
   existingTiktokId?: string;
+  existingYoutubeId?: string;
+  existingFacebookId?: string;
   isLoading: boolean;
 }
 
@@ -18,24 +20,32 @@ const SocialAccountsStep = ({
   onSaveAccounts, 
   existingInstagramId,
   existingTiktokId,
+  existingYoutubeId,
+  existingFacebookId,
   isLoading 
 }: SocialAccountsStepProps) => {
   const [instagramId, setInstagramId] = useState(existingInstagramId || '');
   const [tiktokId, setTiktokId] = useState(existingTiktokId || '');
+  const [youtubeId, setYoutubeId] = useState(existingYoutubeId || '');
+  const [facebookId, setFacebookId] = useState(existingFacebookId || '');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setInstagramId(existingInstagramId || '');
     setTiktokId(existingTiktokId || '');
-  }, [existingInstagramId, existingTiktokId]);
+    setYoutubeId(existingYoutubeId || '');
+    setFacebookId(existingFacebookId || '');
+  }, [existingInstagramId, existingTiktokId, existingYoutubeId, existingFacebookId]);
 
   const handleSave = async () => {
-    if (!instagramId.trim() && !tiktokId.trim()) return;
+    if (!instagramId.trim() && !tiktokId.trim() && !youtubeId.trim() && !facebookId.trim()) return;
     
     setSaving(true);
     const result = await onSaveAccounts(
       instagramId.trim() || undefined,
-      tiktokId.trim() || undefined
+      tiktokId.trim() || undefined,
+      youtubeId.trim() || undefined,
+      facebookId.trim() || undefined
     );
     setSaving(false);
     
@@ -44,19 +54,23 @@ const SocialAccountsStep = ({
     }
   };
 
+  const hasAtLeastOneAccount = instagramId.trim() || tiktokId.trim() || youtubeId.trim() || facebookId.trim();
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
         <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
           <div className="flex space-x-1">
-            <Instagram className="w-4 h-4 text-background" />
-            <Music className="w-4 h-4 text-background" />
+            <Instagram className="w-3 h-3 text-background" />
+            <Music className="w-3 h-3 text-background" />
+            <Youtube className="w-3 h-3 text-background" />
+            <Facebook className="w-3 h-3 text-background" />
           </div>
         </div>
         <h3 className="text-xl font-semibold mb-2">Configurar Cuentas Sociales</h3>
         <p className="text-muted-foreground">
-          Ingresa los IDs de tus cuentas de Instagram y TikTok desde Blotato
+          Ingresa los IDs de tus cuentas sociales desde Blotato
         </p>
       </div>
 
@@ -79,8 +93,8 @@ const SocialAccountsStep = ({
         </Button>
       </div>
 
-      {/* Formulario */}
-      <div className="space-y-4">
+      {/* Formulario - Grid 2x2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="instagramId" className="flex items-center">
             <Instagram className="w-4 h-4 mr-2 text-pink-500" />
@@ -111,25 +125,55 @@ const SocialAccountsStep = ({
           />
         </div>
 
-        <div className="text-sm text-muted-foreground">
-          * Debes configurar al menos una cuenta para continuar
+        <div>
+          <Label htmlFor="youtubeId" className="flex items-center">
+            <Youtube className="w-4 h-4 mr-2 text-red-500" />
+            ID de Cuenta de YouTube
+          </Label>
+          <Input
+            id="youtubeId"
+            type="text"
+            placeholder="Ej: youtube_account_789"
+            value={youtubeId}
+            onChange={(e) => setYoutubeId(e.target.value)}
+            className="cyber-border focus:cyber-glow"
+          />
         </div>
 
-        <Button
-          onClick={handleSave}
-          disabled={(!instagramId.trim() && !tiktokId.trim()) || saving || isLoading}
-          className="w-full cyber-border hover:cyber-glow-intense"
-        >
-          {saving ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              Guardando...
-            </>
-          ) : (
-            'Guardar Cuentas'
-          )}
-        </Button>
+        <div>
+          <Label htmlFor="facebookId" className="flex items-center">
+            <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+            ID de Cuenta de Facebook
+          </Label>
+          <Input
+            id="facebookId"
+            type="text"
+            placeholder="Ej: facebook_account_101"
+            value={facebookId}
+            onChange={(e) => setFacebookId(e.target.value)}
+            className="cyber-border focus:cyber-glow"
+          />
+        </div>
       </div>
+
+      <div className="text-sm text-muted-foreground text-center">
+        * Debes configurar al menos una cuenta para continuar
+      </div>
+
+      <Button
+        onClick={handleSave}
+        disabled={!hasAtLeastOneAccount || saving || isLoading}
+        className="w-full cyber-border hover:cyber-glow-intense"
+      >
+        {saving ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+            Guardando...
+          </>
+        ) : (
+          'Guardar Cuentas'
+        )}
+      </Button>
     </div>
   );
 };
