@@ -29,12 +29,6 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     retryFromError
   } = useSocialPublish();
 
-  React.useEffect(() => {
-    if (isOpen && videoUrl && script) {
-      // This will be handled by the parent component calling openModal
-    }
-  }, [isOpen, videoUrl, script]);
-
   const handleClose = () => {
     closeModal();
     onClose();
@@ -56,6 +50,7 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
             onSave={handleApiKeySaved}
             isLoading={state.isLoading}
             error={state.error}
+            hasExistingKeys={false}
           />
         );
 
@@ -137,7 +132,6 @@ const SocialPublishModal: React.FC<Props> = ({ isOpen, onClose, videoUrl, script
     }
   };
 
-  // Don't use the state.isOpen, use the prop directly
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

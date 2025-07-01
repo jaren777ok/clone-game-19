@@ -4,15 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Key, Loader2 } from 'lucide-react';
+import { Key, Loader2, Plus } from 'lucide-react';
 
 interface Props {
   onSave: (name: string, apiKey: string) => void;
   isLoading?: boolean;
   error?: string | null;
+  hasExistingKeys?: boolean;
 }
 
-const BlotatomApiKeyForm: React.FC<Props> = ({ onSave, isLoading, error }) => {
+const BlotatomApiKeyForm: React.FC<Props> = ({ 
+  onSave, 
+  isLoading, 
+  error, 
+  hasExistingKeys = false 
+}) => {
   const [apiKeyName, setApiKeyName] = useState('Mi Clave Blotato');
   const [apiKey, setApiKey] = useState('');
 
@@ -26,17 +32,28 @@ const BlotatomApiKeyForm: React.FC<Props> = ({ onSave, isLoading, error }) => {
     <div className="space-y-6">
       <div className="text-center space-y-3">
         <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto">
-          <Key className="w-8 h-8 text-background" />
+          {hasExistingKeys ? (
+            <Plus className="w-8 h-8 text-background" />
+          ) : (
+            <Key className="w-8 h-8 text-background" />
+          )}
         </div>
-        <h2 className="text-2xl font-bold">Conectar Blotato</h2>
+        <h2 className="text-2xl font-bold">
+          {hasExistingKeys ? 'Agregar Nueva Cuenta' : 'Conectar Blotato'}
+        </h2>
         <p className="text-muted-foreground">
-          Ingresa tu clave API de Blotato para poder publicar en redes sociales
+          {hasExistingKeys 
+            ? 'Agrega otra clave API de Blotato para gestionar múltiples cuentas'
+            : 'Ingresa tu clave API de Blotato para poder publicar en redes sociales'
+          }
         </p>
       </div>
 
       <Card className="cyber-border">
         <CardHeader>
-          <CardTitle className="text-lg">Configuración de API</CardTitle>
+          <CardTitle className="text-lg">
+            {hasExistingKeys ? 'Nueva Clave API' : 'Configuración de API'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -47,7 +64,7 @@ const BlotatomApiKeyForm: React.FC<Props> = ({ onSave, isLoading, error }) => {
                 type="text"
                 value={apiKeyName}
                 onChange={(e) => setApiKeyName(e.target.value)}
-                placeholder="Ej: Mi Clave Blotato"
+                placeholder="Ej: Cuenta Personal, Cuenta Empresa"
                 className="cyber-border"
               />
             </div>
@@ -82,7 +99,16 @@ const BlotatomApiKeyForm: React.FC<Props> = ({ onSave, isLoading, error }) => {
                   Guardando...
                 </>
               ) : (
-                'Guardar Clave API'
+                <>
+                  {hasExistingKeys ? (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Agregar Clave API
+                    </>
+                  ) : (
+                    'Guardar Clave API'
+                  )}
+                </>
               )}
             </Button>
           </form>
@@ -93,6 +119,11 @@ const BlotatomApiKeyForm: React.FC<Props> = ({ onSave, isLoading, error }) => {
         <p className="text-xs text-muted-foreground">
           Tu clave API se almacena de forma segura y encriptada
         </p>
+        {hasExistingKeys && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Puedes gestionar todas tus claves desde la configuración
+          </p>
+        )}
       </div>
     </div>
   );

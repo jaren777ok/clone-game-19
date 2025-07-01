@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -47,8 +46,13 @@ export const useSocialPublish = () => {
   });
 
   const openModal = useCallback(async (videoUrl: string, script: string) => {
-    console.log('Opening social publish modal:', { videoUrl, script });
+    console.log('🚀 Opening social publish modal:', { videoUrl, script });
     
+    if (!user) {
+      console.error('❌ No user authenticated');
+      return;
+    }
+
     setState(prev => ({
       ...prev,
       isOpen: true,
@@ -63,26 +67,40 @@ export const useSocialPublish = () => {
       error: null
     }));
 
-    // Load API keys and check if user has any
-    const keys = await loadApiKeys();
-    
-    if (keys.length > 0) {
-      setState(prev => ({
-        ...prev,
-        selectedApiKey: keys[0],
-        step: 'generate-caption',
-        isLoading: false
-      }));
-    } else {
+    try {
+      console.log('🔍 Loading API keys...');
+      const keys = await loadApiKeys();
+      console.log('📋 API keys loaded:', keys.length);
+      
+      if (keys.length > 0) {
+        console.log('✅ API keys found, proceeding to caption generation');
+        setState(prev => ({
+          ...prev,
+          selectedApiKey: keys[0],
+          step: 'generate-caption',
+          isLoading: false
+        }));
+      } else {
+        console.log('❌ No API keys found, showing input form');
+        setState(prev => ({
+          ...prev,
+          step: 'api-key-input',
+          isLoading: false
+        }));
+      }
+    } catch (error) {
+      console.error('💥 Error loading API keys:', error);
       setState(prev => ({
         ...prev,
         step: 'api-key-input',
+        error: 'Error verificando las claves API',
         isLoading: false
       }));
     }
-  }, [loadApiKeys]);
+  }, [loadApiKeys, user]);
 
   const closeModal = useCallback(() => {
+    console.log('🔒 Closing social publish modal');
     setState(prev => ({
       ...prev,
       isOpen: false,
@@ -100,12 +118,14 @@ export const useSocialPublish = () => {
 
   const handleApiKeySaved = useCallback(async (name: string, apiKey: string) => {
     try {
+      console.log('💾 Saving API key:', name);
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       await saveApiKey(name, apiKey);
       const keys = await loadApiKeys();
       
       if (keys.length > 0) {
+        console.log('✅ API key saved, proceeding to caption generation');
         setState(prev => ({
           ...prev,
           selectedApiKey: keys[0],
@@ -119,7 +139,7 @@ export const useSocialPublish = () => {
         });
       }
     } catch (error) {
-      console.error('Error saving API key:', error);
+      console.error('💥 Error saving API key:', error);
       setState(prev => ({ 
         ...prev, 
         error: 'Error al guardar la clave API',

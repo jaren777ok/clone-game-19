@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Share2, Video } from 'lucide-react';
@@ -25,8 +25,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   createdAt,
   onDelete 
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const { openModal } = useSocialPublish();
+  const { state, openModal, closeModal } = useSocialPublish();
 
   const handleDownload = () => {
     const link = document.createElement('a');
@@ -38,7 +37,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   const handleSocialShare = async () => {
-    setIsModalOpen(true);
+    console.log('Opening social publish modal with:', { videoUrl, script });
     await openModal(videoUrl, script);
   };
 
@@ -88,8 +87,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
       </Card>
 
       <SocialPublishModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={state.isOpen}
+        onClose={closeModal}
         videoUrl={videoUrl}
         script={script}
       />
