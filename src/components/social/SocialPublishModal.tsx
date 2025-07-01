@@ -10,6 +10,7 @@ import BlotatoApiKeyStep from './BlotatoApiKeyStep';
 import SocialAccountsStep from './SocialAccountsStep';
 import CaptionGeneratorStep from './CaptionGeneratorStep';
 import SocialNetworkSelector from './SocialNetworkSelector';
+import YouTubeTitleStep from './YouTubeTitleStep';
 import StepIndicator from './StepIndicator';
 
 interface SocialPublishModalProps {
@@ -29,6 +30,8 @@ const SocialPublishModal = ({
 }: SocialPublishModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [initialStepDetermined, setInitialStepDetermined] = useState(false);
+  const [youtubeTitle, setYoutubeTitle] = useState<string>('');
+  const [needsYouTubeTitle, setNeedsYouTubeTitle] = useState(false);
   const { blotatoAccount, loading, saveBlotatoApiKey, updateSocialAccounts } = useBlotatoAccounts();
   
   // Caption generator hook
@@ -54,7 +57,7 @@ const SocialPublishModal = ({
     resetPublishState
   } = useSocialPublisher();
 
-  const stepLabels = ['API Key', 'Cuentas Sociales', 'Caption IA', 'Publicar'];
+  const stepLabels = ['API Key', 'Cuentas Sociales', 'Caption IA', 'Título YouTube', 'Publicar'];
 
   // Determinar el paso inicial basado en la configuración existente
   useEffect(() => {
@@ -76,8 +79,8 @@ const SocialPublishModal = ({
         console.log('➡️ Configuration exists but no caption, going to step 3');
         setCurrentStep(3);
       } else {
-        console.log('➡️ Full configuration exists, going to step 4');
-        setCurrentStep(4);
+        console.log('➡️ Full configuration exists, going to step 5 (skip YouTube title)');
+        setCurrentStep(5);
       }
       
       setInitialStepDetermined(true);
@@ -89,6 +92,8 @@ const SocialPublishModal = ({
     if (!isOpen) {
       console.log('🔄 Modal closed, resetting state...');
       setInitialStepDetermined(false);
+      setYoutubeTitle('');
+      setNeedsYouTubeTitle(false);
       resetCaption();
       resetPublishState();
     }
@@ -105,18 +110,37 @@ const SocialPublishModal = ({
   };
 
   const handleCaptionGenerated = () => {
-    console.log('✅ Caption generated, moving to step 4');
+    console.log('✅ Caption generated, moving to step 5');
+    setCurrentStep(5);
+  };
+
+  const handleYouTubeSelected = () => {
+    console.log('🎬 YouTube selected, moving to title step');
+    setNeedsYouTubeTitle(true);
     setCurrentStep(4);
   };
 
+  const handleYouTubeTitleConfirmed = (title: string) => {
+    console.log('✅ YouTube title confirmed:', title);
+    setYoutubeTitle(title);
+    setCurrentStep(5);
+  };
+
   const handlePublish = async (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string) => {
-    return await publishToSocialNetwork({
+    // Para YouTube, incluir el título si está disponible
+    const payload: any = {
       videoUrl,
       platform,
       apiKey,
       accountId,
       caption
-    });
+    };
+
+    if (platform === 'YouTube' && youtubeTitle) {
+      payload.titulo = youtubeTitle;
+    }
+
+    return await publishToSocialNetwork(payload);
   };
 
   const handleClose = () => {
@@ -164,7 +188,7 @@ const SocialPublishModal = ({
           {/* Indicador de pasos */}
           <StepIndicator 
             currentStep={currentStep} 
-            totalSteps={4} 
+            totalSteps={5} 
             stepLabels={stepLabels}
           />
 
@@ -209,9 +233,17 @@ const SocialPublishModal = ({
             />
           )}
 
-          {currentStep === 4 && blotatoAccount && (
+          {currentStep === 4 && (
+            <YouTubeTitleStep
+              onTitleConfirmed={handleYouTubeTitleConfirmed}
+              onBack={() => setCurrentStep(5)}
+            />
+          )}
+
+          {currentStep === 5 && blotatoAccount && (
             <SocialNetworkSelector
               onPublish={handlePublish}
+              onYouTubeSelected={handleYouTubeSelected}
               videoUrl={videoUrl}
               caption={editedCaption || generatedCaption}
               blotatoApiKey={blotatoAccount.api_key_encrypted}
@@ -225,6 +257,7 @@ const SocialPublishModal = ({
               publishingToFacebook={publishingToFacebook}
               publishSuccess={publishSuccess}
               publishError={publishError}
+              youtubeTitle={youtubeTitle}
             />
           )}
 
@@ -246,7 +279,7 @@ const SocialPublishModal = ({
           )}
 
           {/* Botón para cerrar en el paso final */}
-          {currentStep === 4 && (
+          {currentStep === 5 && (
             <div className="flex justify-center pt-4">
               <Button
                 onClick={handleClose}

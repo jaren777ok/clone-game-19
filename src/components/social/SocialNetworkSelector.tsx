@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Share2, CheckCircle } from 'lucide-react';
+import { Share2, CheckCircle, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface SocialNetworkSelectorProps {
   onPublish: (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string) => Promise<{ success: boolean; error?: string }>;
+  onYouTubeSelected: () => void;
   videoUrl: string;
   caption: string;
   blotatoApiKey: string;
@@ -18,10 +19,12 @@ interface SocialNetworkSelectorProps {
   publishingToFacebook: boolean;
   publishSuccess: { platform: string } | null;
   publishError: string | null;
+  youtubeTitle?: string;
 }
 
 const SocialNetworkSelector = ({
   onPublish,
+  onYouTubeSelected,
   videoUrl,
   caption,
   blotatoApiKey,
@@ -34,7 +37,8 @@ const SocialNetworkSelector = ({
   publishingToYouTube,
   publishingToFacebook,
   publishSuccess,
-  publishError
+  publishError,
+  youtubeTitle
 }: SocialNetworkSelectorProps) => {
   const handlePublishToInstagram = async () => {
     if (!instagramAccountId) return;
@@ -48,6 +52,14 @@ const SocialNetworkSelector = ({
 
   const handlePublishToYouTube = async () => {
     if (!youtubeAccountId) return;
+    
+    // Si no hay título configurado, ir al paso de configuración
+    if (!youtubeTitle) {
+      onYouTubeSelected();
+      return;
+    }
+    
+    // Si ya hay título, publicar directamente
     await onPublish('YouTube', videoUrl, blotatoApiKey, youtubeAccountId, caption);
   };
 
@@ -76,6 +88,27 @@ const SocialNetworkSelector = ({
           {caption.length > 150 ? `${caption.substring(0, 150)}...` : caption}
         </p>
       </div>
+
+      {/* YouTube Title preview (if set) */}
+      {youtubeTitle && (
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-medium text-foreground mb-1">Título de YouTube:</h4>
+              <p className="text-sm text-muted-foreground">"{youtubeTitle}"</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onYouTubeSelected}
+              className="text-red-600 hover:text-red-700"
+            >
+              <Edit className="w-4 h-4 mr-1" />
+              Editar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Social Networks Grid - 2x2 layout */}
       <div className="grid grid-cols-2 gap-4">
@@ -190,16 +223,22 @@ const SocialNetworkSelector = ({
                 <CheckCircle className="w-3 h-3 mr-2" />
                 Publicado
               </>
+            ) : youtubeTitle ? (
+              'Publicar YouTube'
             ) : (
-              'YouTube'
+              'Configurar Título'
             )}
           </Button>
           
-          {!youtubeAccountId && (
+          {!youtubeAccountId ? (
             <p className="text-xs text-muted-foreground">
               No configurada
             </p>
-          )}
+          ) : !youtubeTitle ? (
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">
+              Título requerido
+            </p>
+          ) : null}
         </div>
 
         {/* Facebook */}

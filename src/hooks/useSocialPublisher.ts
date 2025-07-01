@@ -9,6 +9,7 @@ interface PublishPayload {
   apiKey: string;
   accountId: string;
   caption: string;
+  titulo?: string; // Título opcional para YouTube
 }
 
 export const useSocialPublisher = () => {
@@ -47,6 +48,11 @@ export const useSocialPublisher = () => {
         ...payload,
         caption: sanitizeCaption(payload.caption)
       };
+
+      // Para YouTube, incluir título sanitizado si está presente
+      if (platform === 'YouTube' && payload.titulo) {
+        sanitizedPayload.titulo = sanitizeCaption(payload.titulo);
+      }
       
       console.log(`📱 Publicando en ${platform}...`, sanitizedPayload);
       
