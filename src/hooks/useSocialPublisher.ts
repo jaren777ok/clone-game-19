@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { sanitizeCaption } from '@/lib/textUtils';
+import { triggerConfetti } from '@/components/ui/confetti';
 
 interface PublishPayload {
   videoUrl: string;
@@ -62,13 +63,22 @@ export const useSocialPublisher = () => {
       
       console.log(`📱 Publicando en ${platform}...`, sanitizedPayload);
       
+      // Crear AbortController para timeout de 5 minutos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 5 * 60 * 1000); // 5 minutos
+
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/REDES', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(sanitizedPayload)
+        body: JSON.stringify(sanitizedPayload),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status}`);
@@ -77,23 +87,47 @@ export const useSocialPublisher = () => {
       const data = await response.json();
       console.log(`✅ Respuesta de publicación en ${platform}:`, data);
       
-      setPublishSuccess({ platform });
-      toast({
-        title: `¡Publicado en ${platform}!`,
-        description: `Tu video ha sido publicado exitosamente en ${platform}.`,
-      });
-      
-      return { success: true, data };
+      // Parsear la respuesta del webhook que viene como array
+      let isSuccess = false;
+      if (Array.isArray(data) && data.length > 0 && data[0].Estado) {
+        isSuccess = data[0].Estado === 'Exito';
+      }
+
+      if (isSuccess) {
+        setPublishSuccess({ platform });
+        
+        // Trigger confetti effect on success
+        setTimeout(() => {
+          triggerConfetti();
+        }, 500);
+        
+        toast({
+          title: `¡Publicado en ${platform}!`,
+          description: `Tu video ha sido publicado exitosamente en ${platform}.`,
+        });
+        
+        return { success: true, data };
+      } else {
+        // El webhook respondió pero con error
+        throw new Error('La publicación no se completó correctamente');
+      }
       
     } catch (err: any) {
       console.error(`❌ Error publicando en ${platform}:`, err);
       
-      const errorMessage = err.message || `No se pudo publicar en ${platform}.`;
+      let errorMessage = `No se pudo publicar en ${platform}.`;
+      
+      if (err.name === 'AbortError') {
+        errorMessage = `La publicación en ${platform} tardó demasiado. Por favor, intenta nuevamente en 2 minutos.`;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       setPublishError(errorMessage);
       
       toast({
         title: "Error de publicación",
-        description: `Error al publicar en ${platform}: ${errorMessage}`,
+        description: `${errorMessage} ${err.name !== 'AbortError' ? 'Intenta nuevamente en 2 minutos.' : ''}`,
         variant: "destructive"
       });
       
