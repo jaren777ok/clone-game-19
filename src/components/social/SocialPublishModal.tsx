@@ -1,8 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useBlotatoAccounts } from '@/hooks/useBlotatoAccounts';
 import { useCaptionGenerator } from '@/hooks/useCaptionGenerator';
 import { useSocialPublisher } from '@/hooks/useSocialPublisher';
@@ -12,6 +10,11 @@ import CaptionGeneratorStep from './CaptionGeneratorStep';
 import SocialNetworkSelector from './SocialNetworkSelector';
 import YouTubeTitleStep from './YouTubeTitleStep';
 import StepIndicator from './StepIndicator';
+import ModalHeader from './ModalHeader';
+import VideoPreview from './VideoPreview';
+import StepNavigation from './StepNavigation';
+import LoadingState from './LoadingState';
+import ModalCloseButton from './ModalCloseButton';
 
 interface SocialPublishModalProps {
   isOpen: boolean;
@@ -148,41 +151,21 @@ const SocialPublishModal = ({
     onClose();
   };
 
+  const handlePrevious = () => {
+    setCurrentStep(currentStep - 1);
+  };
+
   if (!isOpen) return null;
 
   // Mostrar loading mientras se determina el paso inicial
   if (loading || !initialStepDetermined) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-2xl cyber-border">
-          <CardContent className="p-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
-                <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              </div>
-              <h3 className="text-lg font-medium mb-2">Verificando configuración...</h3>
-              <p className="text-muted-foreground text-sm">
-                Revisando tu configuración de Blotato existente
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto cyber-border">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div className="flex items-center">
-            <Share2 className="w-6 h-6 mr-3 text-primary" />
-            <CardTitle className="text-xl">Publicar en Redes Sociales</CardTitle>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleClose}>
-            <X className="w-4 h-4" />
-          </Button>
-        </CardHeader>
+        <ModalHeader onClose={handleClose} />
         
         <CardContent className="space-y-6">
           {/* Indicador de pasos */}
@@ -193,11 +176,7 @@ const SocialPublishModal = ({
           />
 
           {/* Video Preview */}
-          <div className="bg-muted/20 rounded-lg p-4">
-            <h4 className="font-medium text-foreground mb-2">Video a compartir:</h4>
-            <p className="text-sm text-muted-foreground mb-2">{videoTitle}</p>
-            <p className="text-xs text-muted-foreground font-mono break-all">{videoUrl}</p>
-          </div>
+          <VideoPreview videoTitle={videoTitle} videoUrl={videoUrl} />
 
           {/* Pasos del proceso */}
           {currentStep === 1 && (
@@ -262,32 +241,17 @@ const SocialPublishModal = ({
           )}
 
           {/* Botones de navegación para pasos 1, 2 y 3 */}
-          {currentStep < 4 && (
-            <div className="flex justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={currentStep === 1 ? handleClose : () => setCurrentStep(currentStep - 1)}
-                className="cyber-border hover:cyber-glow"
-              >
-                {currentStep === 1 ? 'Cancelar' : 'Anterior'}
-              </Button>
-              
-              <div className="text-sm text-muted-foreground flex items-center">
-                Paso {currentStep} de {stepLabels.length}
-              </div>
-            </div>
-          )}
+          <StepNavigation
+            currentStep={currentStep}
+            totalSteps={stepLabels.length}
+            onPrevious={handlePrevious}
+            onClose={handleClose}
+            showNavigation={currentStep < 4}
+          />
 
           {/* Botón para cerrar en el paso final */}
           {currentStep === 5 && (
-            <div className="flex justify-center pt-4">
-              <Button
-                onClick={handleClose}
-                className="cyber-border hover:cyber-glow-intense"
-              >
-                Cerrar
-              </Button>
-            </div>
+            <ModalCloseButton onClose={handleClose} />
           )}
         </CardContent>
       </Card>
