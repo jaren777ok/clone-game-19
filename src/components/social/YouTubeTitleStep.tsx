@@ -82,17 +82,6 @@ const YouTubeTitleStep = ({ onTitleConfirmed, onBack }: YouTubeTitleStepProps) =
             <p className="text-destructive text-sm">{error}</p>
           </div>
         )}
-
-        {/* Tips */}
-        <div className="bg-muted/20 rounded-lg p-4">
-          <h4 className="font-medium text-sm mb-2">💡 Tips para un buen título:</h4>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Sé descriptivo y llamativo</li>
-            <li>• Incluye palabras clave relevantes</li>
-            <li>• Evita MAYÚSCULAS excesivas</li>
-            <li>• Máximo {maxCharacters} caracteres</li>
-          </ul>
-        </div>
       </div>
 
       {/* Action Buttons */}

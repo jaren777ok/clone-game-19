@@ -85,14 +85,6 @@ const SocialNetworkSelector = ({
         </p>
       </div>
 
-      {/* Caption preview */}
-      <div className="bg-muted/20 rounded-lg p-4">
-        <h4 className="font-medium text-foreground mb-2">Caption a usar:</h4>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {caption.length > 150 ? `${caption.substring(0, 150)}...` : caption}
-        </p>
-      </div>
-
       {/* YouTube Title preview (if set) */}
       {youtubeTitle && (
         <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-lg p-4">
