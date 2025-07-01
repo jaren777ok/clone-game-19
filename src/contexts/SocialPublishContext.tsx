@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import React, { createContext, useContext, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useBlotatomApiKeys } from '@/hooks/useBlotatomApiKeys';
@@ -10,7 +10,30 @@ import { useSocialNetworkPublish } from '@/hooks/useSocialNetworkPublish';
 export type { SocialNetwork } from '@/hooks/useSocialPublishState';
 export type { SocialStep, SocialPublishState } from '@/hooks/useSocialPublishState';
 
+interface SocialPublishContextType {
+  state: any;
+  openModal: (videoUrl: string, script: string) => Promise<void>;
+  closeModal: () => void;
+  handleApiKeySaved: (name: string, apiKey: string) => Promise<void>;
+  generateCaption: () => Promise<void>;
+  selectNetwork: (network: SocialNetwork) => void;
+  publishToNetwork: () => Promise<void>;
+  updateCaption: (caption: string) => void;
+  navigateToSelectNetwork: () => void;
+  retryFromError: () => void;
+}
+
+const SocialPublishContext = createContext<SocialPublishContextType | undefined>(undefined);
+
 export const useSocialPublish = () => {
+  const context = useContext(SocialPublishContext);
+  if (!context) {
+    throw new Error('useSocialPublish must be used within a SocialPublishProvider');
+  }
+  return context;
+};
+
+export const SocialPublishProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { loadApiKeys, saveApiKey } = useBlotatomApiKeys();
@@ -162,7 +185,7 @@ export const useSocialPublish = () => {
     });
   }, [updateState]);
 
-  return {
+  const value = {
     state,
     openModal,
     closeModal,
@@ -174,4 +197,10 @@ export const useSocialPublish = () => {
     navigateToSelectNetwork,
     retryFromError
   };
+
+  return (
+    <SocialPublishContext.Provider value={value}>
+      {children}
+    </SocialPublishContext.Provider>
+  );
 };

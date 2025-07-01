@@ -6,7 +6,7 @@ import { Download, Share2, Video } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import SocialPublishModal from '@/components/social/SocialPublishModal';
-import { useSocialPublish } from '@/hooks/useSocialPublish';
+import { useSocialPublish } from '@/contexts/SocialPublishContext';
 
 interface VideoCardProps {
   id: string;

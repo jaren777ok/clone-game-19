@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useSocialPublish } from '@/hooks/useSocialPublish';
+import { useSocialPublish } from '@/contexts/SocialPublishContext';
 import ModalHeader from './ModalHeader';
 import StepRenderer from './StepRenderer';
 
