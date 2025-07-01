@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Download, Share2 } from 'lucide-react';
+import { Download, Share2, Video } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import SocialPublishModal from '@/components/social/SocialPublishModal';
@@ -46,28 +46,8 @@ const VideoCard: React.FC<VideoCardProps> = ({
     <>
       <Card className="cyber-border hover:cyber-glow transition-all duration-300 group">
         <CardHeader className="p-0">
-          <div className="relative aspect-video bg-black rounded-t-lg overflow-hidden">
-            <video
-              src={videoUrl}
-              className="w-full h-full object-cover"
-              controls={false}
-              preload="metadata"
-            />
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                size="lg"
-                className="rounded-full w-16 h-16 cyber-glow"
-                onClick={() => {
-                  const video = document.querySelector(`video[src="${videoUrl}"]`) as HTMLVideoElement;
-                  if (video) {
-                    video.controls = true;
-                    video.play();
-                  }
-                }}
-              >
-                <Play className="w-6 h-6" />
-              </Button>
-            </div>
+          <div className="relative aspect-video bg-gradient-to-br from-muted to-muted/50 rounded-t-lg overflow-hidden flex items-center justify-center">
+            <Video className="w-12 h-12 text-muted-foreground" />
           </div>
         </CardHeader>
         
