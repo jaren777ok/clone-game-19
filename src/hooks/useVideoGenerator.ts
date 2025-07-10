@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { clearGenerationState } from '@/lib/videoGeneration';
+import { clearGenerationState, getGenerationState } from '@/lib/videoGeneration';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
 import { FlowState } from '@/types/videoFlow';
 import { useVideoRecovery } from '@/hooks/useVideoRecovery';
@@ -64,6 +64,27 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       checkFinalResult
     );
   };
+
+  // Verificar si hay una generación pendiente al montar el componente
+  useEffect(() => {
+    const savedState = getGenerationState();
+    if (savedState && savedState.status === 'pending') {
+      const timeElapsed = Date.now() - savedState.timestamp;
+      const MAX_GENERATION_TIME = COUNTDOWN_TIME * 1000; // COUNTDOWN_TIME en milisegundos
+      
+      // Si no ha expirado, bloquear el botón
+      if (timeElapsed < MAX_GENERATION_TIME) {
+        console.log('🔒 Detectada generación pendiente al cargar la app - bloqueando botón');
+        setIsGenerating(true);
+        setCurrentRequestId(savedState.requestId);
+        setScript(savedState.script);
+      } else {
+        // Si ya expiró, limpiar el estado
+        console.log('⏰ Generación pendiente expirada - limpiando estado');
+        clearGenerationState();
+      }
+    }
+  }, []);
 
   useEffect(() => {
     return cleanup;
