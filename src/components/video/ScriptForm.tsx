@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Send, Clock, Zap, X, AlertCircle } from 'lucide-react';
+import { Send, Clock, Zap, X, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ScriptFormProps {
   script: string;
@@ -155,15 +156,30 @@ const ScriptForm = ({
           </div>
         )}
 
-        <Button
-          onClick={onSubmit}
-          disabled={!script.trim() || isGenerating}
-          size="lg"
-          className="w-full cyber-border hover:cyber-glow-intense transition-all duration-300"
-        >
-          <Send className="w-5 h-5 mr-2" />
-          {isGenerating ? 'Generando Video...' : 'Generar Video'}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onSubmit}
+                disabled={!script.trim() || isGenerating}
+                size="lg"
+                className="w-full cyber-border hover:cyber-glow-intense transition-all duration-300"
+              >
+                {isGenerating ? (
+                  <Lock className="w-5 h-5 mr-2" />
+                ) : (
+                  <Send className="w-5 h-5 mr-2" />
+                )}
+                {isGenerating ? 'Video en Proceso...' : 'Generar Video'}
+              </Button>
+            </TooltipTrigger>
+            {isGenerating && (
+              <TooltipContent>
+                <p>Espera a que termine la generación actual o cancélala para empezar una nueva</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
