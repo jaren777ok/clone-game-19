@@ -5,9 +5,10 @@ import { Terminal, Cpu, Zap, Code, Activity, Brain, Wifi } from 'lucide-react';
 interface CountdownTimerProps {
   timeRemaining: number; // in seconds
   totalTime: number; // in seconds
+  startTime?: number; // Optional: timestamp when generation started
 }
 
-const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
+const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerProps) => {
   const [displayTime, setDisplayTime] = useState(timeRemaining);
   const [currentLogIndex, setCurrentLogIndex] = useState(0);
   const [aiLogs, setAiLogs] = useState<string[]>([]);

@@ -1,43 +1,46 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { clearGenerationState, getGenerationState } from '@/lib/videoGeneration';
-import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
+import { useAuth } from './useAuth';
+import { useToast } from './use-toast';
+import { useVideoGenerationDatabase } from './useVideoGenerationDatabase';
+import { useVideoMonitoring } from './useVideoMonitoring';
+import { initiateVideoGeneration } from '@/lib/videoGenerationLogic';
+import { validateFlowState } from '@/lib/videoGenerationLogic';
 import { FlowState } from '@/types/videoFlow';
-import { useVideoRecovery } from '@/hooks/useVideoRecovery';
-import { useVideoMonitoring } from '@/hooks/useVideoMonitoring';
-import { 
-  validateFlowState, 
-  initiateVideoGeneration 
-} from '@/lib/videoGenerationLogic';
+import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
+import { migrateLegacyData } from '@/lib/migrationUtils';
 
 interface UseVideoGeneratorProps {
   flowState?: FlowState;
 }
 
 export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
-  const [script, setScript] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [videoResult, setVideoResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
-  
   const { user } = useAuth();
   const { toast } = useToast();
+  const [script, setScript] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [videoResult, setVideoResult] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [currentRequestId, setCurrentRequestId] = useState<string>('');
   
-  const {
-    showRecoveryOption,
-    isRecovering,
-    handleRecoverGeneration: baseHandleRecoverGeneration,
-    handleCancelRecovery
-  } = useVideoRecovery();
-
-  const {
+  const { 
+    currentGeneration,
     timeRemaining,
-    startCountdown: baseStartCountdown,
-    startPeriodicChecking: baseStartPeriodicChecking,
-    checkFinalResult: baseCheckFinalResult,
-    cleanup
+    showRecoveryOption, 
+    isRecovering, 
+    isLoading,
+    handleStartGeneration,
+    handleRecoverGeneration: baseHandleRecoverGeneration, 
+    handleCancelRecovery,
+    handleVideoCompleted,
+    handleVideoExpired,
+    refreshCurrentGeneration
+  } = useVideoGenerationDatabase();
+  
+  const { 
+    startCountdown: baseStartCountdown, 
+    startPeriodicChecking: baseStartPeriodicChecking, 
+    checkFinalResult: baseCheckFinalResult, 
+    cleanup 
   } = useVideoMonitoring();
 
   // Wrapper functions to provide state setters to monitoring hooks
@@ -59,55 +62,51 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       setCurrentRequestId,
       setIsGenerating,
       setVideoResult,
-      startCountdown,
-      startPeriodicChecking,
-      checkFinalResult
+      startCountdown
     );
   };
 
-  // Verificar si hay una generación pendiente al montar el componente
+  // Check for existing generation on mount and migrate legacy data
   useEffect(() => {
-    const savedState = getGenerationState();
-    if (savedState && savedState.status === 'pending') {
-      const timeElapsed = Date.now() - savedState.timestamp;
-      const MAX_GENERATION_TIME = COUNTDOWN_TIME * 1000; // COUNTDOWN_TIME en milisegundos
+    // Clean up any legacy localStorage data
+    migrateLegacyData();
+    
+    if (currentGeneration && currentGeneration.status === 'processing') {
+      setScript(currentGeneration.script);
+      setCurrentRequestId(currentGeneration.request_id);
       
-      // Si no ha expirado, bloquear el botón y reiniciar monitoreo
-      if (timeElapsed < MAX_GENERATION_TIME) {
-        console.log('🔒 Detectada generación pendiente al cargar la app - bloqueando botón y reiniciando monitoreo');
+      if (timeRemaining > 0) {
         setIsGenerating(true);
-        setCurrentRequestId(savedState.requestId);
-        setScript(savedState.script);
-        
-        // Reiniciar el sistema de monitoreo con el tiempo ya transcurrido
-        startCountdown(savedState.requestId, savedState.script, setVideoResult, setIsGenerating, savedState.timestamp);
-        startPeriodicChecking(savedState.requestId, savedState.script);
-      } else {
-        // Si ya expiró, limpiar el estado
-        console.log('⏰ Generación pendiente expirada - limpiando estado');
-        clearGenerationState();
       }
     }
-  }, [startCountdown, startPeriodicChecking]);
+  }, [currentGeneration, timeRemaining]);
 
+  // Handle video completion
   useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+    if (videoResult && currentRequestId) {
+      handleVideoCompleted(currentRequestId);
+    }
+  }, [videoResult, currentRequestId, handleVideoCompleted]);
 
-  // Nueva función para cancelar la generación actual
+  // Handle video expiration
+  useEffect(() => {
+    if (timeRemaining <= 0 && currentRequestId && isGenerating) {
+      handleVideoExpired(currentRequestId);
+      setIsGenerating(false);
+    }
+  }, [timeRemaining, currentRequestId, isGenerating, handleVideoExpired]);
+
   const handleCancelGeneration = () => {
     console.log('🛑 Cancelando generación de video por solicitud del usuario');
     
-    // Limpiar todos los estados
+    if (currentRequestId) {
+      handleVideoExpired(currentRequestId);
+    }
+    
     setIsGenerating(false);
-    setVideoResult(null);
-    setError(null);
-    setCurrentRequestId(null);
-    
-    // Limpiar el almacenamiento local
-    clearGenerationState();
-    
-    // Limpiar timers y monitoring
+    setVideoResult('');
+    setError('');
+    setCurrentRequestId('');
     cleanup();
     
     toast({
@@ -118,8 +117,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   };
 
   const handleGenerateVideo = async () => {
-    // Validación: si ya está generando, mostrar alerta
-    if (isGenerating) {
+    // Check if there's already a generation in progress
+    if (currentGeneration && currentGeneration.status === 'processing') {
       toast({
         title: "Video en proceso",
         description: "Ya tienes un video siendo generado. Espera a que termine o cancela la generación actual.",
@@ -148,8 +147,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
 
     setIsGenerating(true);
-    setError(null);
-    setVideoResult(null);
+    setError('');
+    setVideoResult('');
 
     console.log('Iniciando nuevo proceso de generación de video');
     
@@ -162,13 +161,19 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       );
       
       setCurrentRequestId(requestId);
+      
+      // Save to database
+      const success = await handleStartGeneration(script.trim(), requestId);
+      if (!success) {
+        throw new Error('No se pudo guardar el estado de generación');
+      }
+      
       startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
       startPeriodicChecking(requestId, script.trim());
       
     } catch (err) {
       console.error('Error en generación:', err);
       setError(err instanceof Error ? err.message : 'Error de conexión');
-      clearGenerationState();
       setIsGenerating(false);
       
       toast({ 
@@ -181,10 +186,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
 
   const handleNewVideo = () => {
     setScript('');
-    setVideoResult(null);
-    setError(null);
-    setCurrentRequestId(null);
-    clearGenerationState();
+    setVideoResult('');
+    setError('');
+    setCurrentRequestId('');
     cleanup();
   };
 
@@ -199,6 +203,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       timeRemaining,
       totalTime: COUNTDOWN_TIME,
       currentRequestId,
+      isLoading,
     },
     handlers: {
       setScript,
@@ -206,7 +211,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       handleRecoverGeneration,
       handleCancelRecovery,
       handleNewVideo,
-      handleCancelGeneration, // Nueva función
+      handleCancelGeneration,
     },
   };
 };

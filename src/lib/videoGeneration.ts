@@ -1,6 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { 
+  createVideoGenerationTracking,
+  getCurrentProcessingVideo,
+  markVideoGenerationCompleted,
+  VideoGenerationTrackingData
+} from './videoGenerationDatabase';
 
 export interface GenerationState {
   script: string;
@@ -9,7 +15,7 @@ export interface GenerationState {
   status: 'pending' | 'completed' | 'failed';
 }
 
-// Funciones para manejar el estado persistente
+// Legacy localStorage functions (kept for UI preferences, not critical state)
 export const saveGenerationState = (state: GenerationState) => {
   localStorage.setItem('video_generation_state', JSON.stringify(state));
 };
@@ -29,6 +35,28 @@ export const getGenerationState = (): GenerationState | null => {
 
 export const clearGenerationState = () => {
   localStorage.removeItem('video_generation_state');
+};
+
+// New database-based state management
+export const saveVideoGenerationToDatabase = async (
+  script: string,
+  requestId: string,
+  user: User | null
+): Promise<VideoGenerationTrackingData | null> => {
+  return await createVideoGenerationTracking(script, requestId, user);
+};
+
+export const getCurrentVideoGeneration = async (
+  user: User | null
+): Promise<VideoGenerationTrackingData | null> => {
+  return await getCurrentProcessingVideo(user);
+};
+
+export const markVideoCompleted = async (
+  requestId: string,
+  user: User | null
+): Promise<boolean> => {
+  return await markVideoGenerationCompleted(requestId, user);
 };
 
 // Función para guardar el video en Supabase (actualizada para incluir request_id)

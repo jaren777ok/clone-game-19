@@ -225,6 +225,42 @@ export type Database = {
           },
         ]
       }
+      video_generation_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          last_check_time: string
+          request_id: string
+          script: string
+          start_time: string
+          status: Database["public"]["Enums"]["video_generation_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_check_time?: string
+          request_id: string
+          script: string
+          start_time?: string
+          status?: Database["public"]["Enums"]["video_generation_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_check_time?: string
+          request_id?: string
+          script?: string
+          start_time?: string
+          status?: Database["public"]["Enums"]["video_generation_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -233,7 +269,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      video_generation_status: "processing" | "completed" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -360,6 +396,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      video_generation_status: ["processing", "completed", "expired"],
+    },
   },
 } as const
