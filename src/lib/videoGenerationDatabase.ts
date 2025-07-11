@@ -175,15 +175,19 @@ export const cleanupExpiredGenerations = async (user: User | null): Promise<void
   if (!user) return;
 
   try {
-    // Mark generations older than 39 minutes as expired
-    const expiredTime = new Date(Date.now() - 39 * 60 * 1000).toISOString();
+    // Mark generations older than 41 minutes as expired (extended from 39 to give webhook time)
+    const expiredTime = new Date(Date.now() - 41 * 60 * 1000).toISOString();
+    
+    // Grace period: Don't clean videos created less than 3 minutes ago
+    const gracePeriodTime = new Date(Date.now() - 3 * 60 * 1000).toISOString();
     
     await supabase
       .from('video_generation_tracking')
       .update({ status: 'expired' })
       .eq('user_id', user.id)
       .eq('status', 'processing')
-      .lt('start_time', expiredTime);
+      .lt('start_time', expiredTime)
+      .lt('start_time', gracePeriodTime); // Only clean videos older than grace period
   } catch (error) {
     console.error('Error cleaning up expired generations:', error);
   }

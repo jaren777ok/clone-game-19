@@ -53,10 +53,7 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
     try {
       setIsLoading(true);
       
-      // Clean up expired generations first
-      await cleanupExpiredGenerations(user);
-      
-      // Get current processing video
+      // Get current processing video first
       const generation = await getCurrentProcessingVideo(user);
       setCurrentGeneration(generation);
 
@@ -64,6 +61,24 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
         // Calculate remaining time
         const remaining = calculateRemainingTime(generation.start_time);
         setTimeRemaining(remaining);
+        
+        // Only run cleanup if we don't have a recent generation
+        const createdTime = new Date(generation.created_at).getTime();
+        const now = Date.now();
+        const ageInMinutes = (now - createdTime) / (1000 * 60);
+        
+        // If generation is older than 5 minutes, run cleanup
+        if (ageInMinutes > 5) {
+          await cleanupExpiredGenerations(user);
+          // Re-check after cleanup
+          const updatedGeneration = await getCurrentProcessingVideo(user);
+          if (!updatedGeneration) {
+            setCurrentGeneration(null);
+            setTimeRemaining(0);
+            setShowRecoveryOption(false);
+            return;
+          }
+        }
         
         // Show recovery option if there's time remaining
         if (remaining > 0) {
@@ -77,6 +92,8 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
           setShowRecoveryOption(false);
         }
       } else {
+        // No current generation, safe to run cleanup
+        await cleanupExpiredGenerations(user);
         setTimeRemaining(0);
         setShowRecoveryOption(false);
       }
