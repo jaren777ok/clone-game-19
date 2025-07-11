@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Terminal, Cpu, Zap, Code } from 'lucide-react';
+import { Terminal, Cpu, Zap, Code, Activity, Brain, Wifi } from 'lucide-react';
 
 interface CountdownTimerProps {
   timeRemaining: number; // in seconds
@@ -9,11 +9,45 @@ interface CountdownTimerProps {
 
 const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
   const [displayTime, setDisplayTime] = useState(timeRemaining);
+  const [currentLogIndex, setCurrentLogIndex] = useState(0);
+  const [aiLogs, setAiLogs] = useState<string[]>([]);
+  
+  // AI Console simulation messages
+  const aiMessages = [
+    "Inicializando redes neuronales...",
+    "Analizando script: 47% completado",
+    "Cargando modelo de IA conversacional",
+    "Procesando emociones faciales...",
+    "Generando sincronización labial",
+    "Optimizando calidad de renderizado",
+    "Aplicando filtros de mejora de video",
+    "Calibrando expresiones del avatar",
+    "Sincronizando audio con movimientos",
+    "Renderizando frames: 1280x720p",
+    "Comprimiendo archivo de salida",
+    "Verificando integridad del video",
+    "Aplicando corrección de color",
+    "Finalizando proceso de rendering"
+  ];
   
   // Force re-render when timeRemaining changes
   useEffect(() => {
     setDisplayTime(timeRemaining);
   }, [timeRemaining]);
+  
+  // Simulate AI working logs
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentLogIndex(prev => (prev + 1) % aiMessages.length);
+      setAiLogs(prev => {
+        const newLog = aiMessages[currentLogIndex];
+        const updated = [...prev, newLog];
+        return updated.slice(-5); // Keep only last 5 logs
+      });
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, [currentLogIndex, aiMessages]);
 
   const minutes = Math.floor(displayTime / 60);
   const seconds = displayTime % 60;
@@ -66,13 +100,14 @@ const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
         {/* Main Timer Display */}
         <div className="relative mb-8">
           <div className="text-center">
-            {/* Giant Digital Timer */}
+            {/* Giant Digital Timer - FIXED LEGIBILITY */}
             <div className="relative inline-block">
               <div 
-                className="text-7xl md:text-8xl font-mono font-black text-primary tracking-wider"
+                className="text-7xl md:text-8xl font-mono font-black text-white tracking-wider"
                 style={{
-                  textShadow: '0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary)), 0 0 60px hsl(var(--primary))',
-                  filter: 'drop-shadow(0 0 10px hsl(var(--primary)))'
+                  textShadow: '0 0 4px hsl(var(--primary)), 0 2px 0 #000',
+                  filter: 'drop-shadow(0 0 2px hsl(var(--primary)))',
+                  WebkitTextStroke: '1px hsl(var(--primary))'
                 }}
                 key={displayTime}
               >
@@ -81,8 +116,8 @@ const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
                 {seconds.toString().padStart(2, '0')}
               </div>
               
-              {/* Glitch Effect */}
-              <div className="absolute inset-0 text-7xl md:text-8xl font-mono font-black text-red-500 opacity-20 animate-pulse">
+              {/* Subtle Glow Background */}
+              <div className="absolute inset-0 text-7xl md:text-8xl font-mono font-black text-primary/20 blur-sm -z-10">
                 {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
               </div>
             </div>
@@ -153,22 +188,81 @@ const CountdownTimer = ({ timeRemaining, totalTime }: CountdownTimerProps) => {
           ))}
         </div>
 
-        {/* System Status */}
-        <div className="bg-black/60 border border-primary/30 rounded-lg p-4">
-          <div className="font-mono text-primary text-sm mb-2">[ ESTADO DEL SISTEMA ]</div>
-          <div className="space-y-2 text-xs font-mono">
-            <div className="flex justify-between">
-              <span className="text-primary/70">CONEXIÓN:</span>
-              <span className="text-green-400">ESTABLE</span>
+        {/* Live AI Console */}
+        <div className="bg-black/80 border border-primary/40 rounded-lg p-4 mb-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <Brain className="w-4 h-4 text-primary animate-pulse" />
+            <div className="font-mono text-primary text-sm">[ CONSOLA IA EN VIVO ]</div>
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-accent rounded-full animate-pulse delay-100"></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-200"></div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-primary/70">VERIFICACIÓN:</span>
-              <span className="text-accent">CADA 3 MIN</span>
+          </div>
+          
+          <div className="bg-black/60 border border-primary/20 rounded p-3 h-24 overflow-hidden">
+            <div className="space-y-1 text-xs font-mono">
+              {aiLogs.map((log, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center space-x-2 animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+                  <span className="text-green-400">[IA]</span>
+                  <span className="text-primary/80">{log}</span>
+                  {index === aiLogs.length - 1 && (
+                    <span className="animate-pulse text-primary">|</span>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between">
-              <span className="text-primary/70">TIEMPO MAX:</span>
-              <span className="text-primary">39 MIN</span>
+          </div>
+        </div>
+
+        {/* Fake System Resources */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-black/60 border border-primary/30 rounded p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <Cpu className="w-4 h-4 text-accent" />
+              <span className="font-mono text-xs text-primary">CPU</span>
             </div>
+            <div className="bg-black/40 h-2 rounded overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-accent to-accent/60 animate-pulse"
+                style={{ width: `${60 + Math.sin(Date.now() / 1000) * 20}%` }}
+              />
+            </div>
+            <div className="text-xs text-accent font-mono mt-1">
+              {Math.round(60 + Math.sin(Date.now() / 1000) * 20)}%
+            </div>
+          </div>
+
+          <div className="bg-black/60 border border-primary/30 rounded p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <Activity className="w-4 h-4 text-green-400" />
+              <span className="font-mono text-xs text-primary">GPU</span>
+            </div>
+            <div className="bg-black/40 h-2 rounded overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-green-400 to-green-600 animate-pulse"
+                style={{ width: `${80 + Math.cos(Date.now() / 800) * 15}%` }}
+              />
+            </div>
+            <div className="text-xs text-green-400 font-mono mt-1">
+              {Math.round(80 + Math.cos(Date.now() / 800) * 15)}%
+            </div>
+          </div>
+
+          <div className="bg-black/60 border border-primary/30 rounded p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <Wifi className="w-4 h-4 text-primary" />
+              <span className="font-mono text-xs text-primary">NET</span>
+            </div>
+            <div className="bg-black/40 h-2 rounded overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-primary to-primary/60 w-full animate-pulse" />
+            </div>
+            <div className="text-xs text-primary font-mono mt-1">STABLE</div>
           </div>
         </div>
 
