@@ -8,35 +8,35 @@ interface CountdownTimerProps {
   startTime?: number; // Optional: timestamp when generation started
 }
 
+// Enhanced AI Console simulation messages - moved outside component to avoid re-creation
+const aiMessages = [
+  "IA Entendiendo Script...",
+  "Desencriptando Código Simbólico...",
+  "Añadiendo Neuroventas...",
+  "Implementando Viralidad...",
+  "Analizando Psicología del Espectador...",
+  "Optimizando Engagement Emocional...",
+  "Calibrando Persuasión Neural...",
+  "Generando Ganchos Virales...",
+  "Inyectando Dopamina Digital...",
+  "Sincronizando Ritmo Hipnótico...",
+  "Activando Neuromarketing Quantum...",
+  "Amplificando Resonancia Emocional...",
+  "Codificando Patrones de Adicción...",
+  "Optimizando Matriz de Conversión...",
+  "Instalando Triggers Psicológicos...",
+  "Maximizando Retención Cerebral...",
+  "Configurando Algoritmos de Impacto...",
+  "Generando Tensión Narrativa...",
+  "Implementando Seducción Visual...",
+  "Calibrando Frecuencias Mentales..."
+];
+
 const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerProps) => {
   const [displayTime, setDisplayTime] = useState(timeRemaining);
   const [currentLogIndex, setCurrentLogIndex] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  
-  // Enhanced AI Console simulation messages
-  const aiMessages = [
-    "IA Entendiendo Script...",
-    "Desencriptando Código Simbólico...",
-    "Añadiendo Neuroventas...",
-    "Implementando Viralidad...",
-    "Analizando Psicología del Espectador...",
-    "Optimizando Engagement Emocional...",
-    "Calibrando Persuasión Neural...",
-    "Generando Ganchos Virales...",
-    "Inyectando Dopamina Digital...",
-    "Sincronizando Ritmo Hipnótico...",
-    "Activando Neuromarketing Quantum...",
-    "Amplificando Resonancia Emocional...",
-    "Codificando Patrones de Adicción...",
-    "Optimizando Matriz de Conversión...",
-    "Instalando Triggers Psicológicos...",
-    "Maximizando Retención Cerebral...",
-    "Configurando Algoritmos de Impacto...",
-    "Generando Tensión Narrativa...",
-    "Implementando Seducción Visual...",
-    "Calibrando Frecuencias Mentales..."
-  ];
+  const [currentMessage, setCurrentMessage] = useState(aiMessages[0]); // Initialize with first message
+  const [isTyping, setIsTyping] = useState(true); // Start typing immediately
   
   // Force re-render when timeRemaining changes
   useEffect(() => {
@@ -66,20 +66,47 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
       }, 50); // Typing speed
     };
     
-    // Show first message immediately
-    showNextMessage();
+    // Show first message immediately on mount
+    if (currentLogIndex === 0) {
+      showNextMessage();
+    }
     
     // Change message every 3.5 seconds
     messageInterval = setInterval(() => {
       setCurrentLogIndex(prev => (prev + 1) % aiMessages.length);
-      setTimeout(showNextMessage, 100); // Small delay for smooth transition
     }, 3500);
     
     return () => {
       clearInterval(messageInterval);
       clearInterval(typingInterval);
     };
-  }, [currentLogIndex, aiMessages]);
+  }, []); // Remove dependencies to prevent re-execution
+  
+  // Separate effect for message changes
+  useEffect(() => {
+    if (currentLogIndex > 0) { // Skip first message as it's handled in mount effect
+      let typingInterval: NodeJS.Timeout;
+      const message = aiMessages[currentLogIndex];
+      setCurrentMessage('');
+      setIsTyping(true);
+      
+      // Typing effect for subsequent messages
+      let charIndex = 0;
+      typingInterval = setInterval(() => {
+        if (charIndex < message.length) {
+          setCurrentMessage(prev => prev + message[charIndex]);
+          charIndex++;
+        } else {
+          setIsTyping(false);
+          clearInterval(typingInterval);
+        }
+      }, 50);
+      
+      return () => {
+        clearInterval(typingInterval);
+      };
+    }
+  }, [currentLogIndex]);
 
   const minutes = Math.floor(displayTime / 60);
   const seconds = displayTime % 60;
