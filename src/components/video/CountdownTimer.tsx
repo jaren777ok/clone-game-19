@@ -11,24 +11,31 @@ interface CountdownTimerProps {
 const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerProps) => {
   const [displayTime, setDisplayTime] = useState(timeRemaining);
   const [currentLogIndex, setCurrentLogIndex] = useState(0);
-  const [aiLogs, setAiLogs] = useState<string[]>([]);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   
-  // AI Console simulation messages
+  // Enhanced AI Console simulation messages
   const aiMessages = [
-    "Inicializando redes neuronales...",
-    "Analizando script: 47% completado",
-    "Cargando modelo de IA conversacional",
-    "Procesando emociones faciales...",
-    "Generando sincronización labial",
-    "Optimizando calidad de renderizado",
-    "Aplicando filtros de mejora de video",
-    "Calibrando expresiones del avatar",
-    "Sincronizando audio con movimientos",
-    "Renderizando frames: 1280x720p",
-    "Comprimiendo archivo de salida",
-    "Verificando integridad del video",
-    "Aplicando corrección de color",
-    "Finalizando proceso de rendering"
+    "IA Entendiendo Script...",
+    "Desencriptando Código Simbólico...",
+    "Añadiendo Neuroventas...",
+    "Implementando Viralidad...",
+    "Analizando Psicología del Espectador...",
+    "Optimizando Engagement Emocional...",
+    "Calibrando Persuasión Neural...",
+    "Generando Ganchos Virales...",
+    "Inyectando Dopamina Digital...",
+    "Sincronizando Ritmo Hipnótico...",
+    "Activando Neuromarketing Quantum...",
+    "Amplificando Resonancia Emocional...",
+    "Codificando Patrones de Adicción...",
+    "Optimizando Matriz de Conversión...",
+    "Instalando Triggers Psicológicos...",
+    "Maximizando Retención Cerebral...",
+    "Configurando Algoritmos de Impacto...",
+    "Generando Tensión Narrativa...",
+    "Implementando Seducción Visual...",
+    "Calibrando Frecuencias Mentales..."
   ];
   
   // Force re-render when timeRemaining changes
@@ -36,18 +43,42 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
     setDisplayTime(timeRemaining);
   }, [timeRemaining]);
   
-  // Simulate AI working logs
+  // Enhanced AI message display with typing effect
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentLogIndex(prev => (prev + 1) % aiMessages.length);
-      setAiLogs(prev => {
-        const newLog = aiMessages[currentLogIndex];
-        const updated = [...prev, newLog];
-        return updated.slice(-5); // Keep only last 5 logs
-      });
-    }, 2000);
+    let messageInterval: NodeJS.Timeout;
+    let typingInterval: NodeJS.Timeout;
     
-    return () => clearInterval(interval);
+    const showNextMessage = () => {
+      const message = aiMessages[currentLogIndex];
+      setCurrentMessage('');
+      setIsTyping(true);
+      
+      // Typing effect
+      let charIndex = 0;
+      typingInterval = setInterval(() => {
+        if (charIndex < message.length) {
+          setCurrentMessage(prev => prev + message[charIndex]);
+          charIndex++;
+        } else {
+          setIsTyping(false);
+          clearInterval(typingInterval);
+        }
+      }, 50); // Typing speed
+    };
+    
+    // Show first message immediately
+    showNextMessage();
+    
+    // Change message every 3.5 seconds
+    messageInterval = setInterval(() => {
+      setCurrentLogIndex(prev => (prev + 1) % aiMessages.length);
+      setTimeout(showNextMessage, 100); // Small delay for smooth transition
+    }, 3500);
+    
+    return () => {
+      clearInterval(messageInterval);
+      clearInterval(typingInterval);
+    };
   }, [currentLogIndex, aiMessages]);
 
   const minutes = Math.floor(displayTime / 60);
@@ -201,22 +232,24 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
             </div>
           </div>
           
-          <div className="bg-black/60 border border-primary/20 rounded p-3 h-24 overflow-hidden">
-            <div className="space-y-1 text-xs font-mono">
-              {aiLogs.map((log, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center space-x-2 animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="w-1 h-1 bg-green-400 rounded-full"></div>
-                  <span className="text-green-400">[IA]</span>
-                  <span className="text-primary/80">{log}</span>
-                  {index === aiLogs.length - 1 && (
-                    <span className="animate-pulse text-primary">|</span>
-                  )}
-                </div>
-              ))}
+          <div className="bg-black/60 border border-primary/20 rounded p-4 h-24 flex items-center justify-center">
+            <div className="w-full text-center">
+              <div className="flex items-center justify-center space-x-3 mb-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-400 font-mono text-sm">[IA NEURAL]</span>
+                <div className="w-2 h-2 bg-accent rounded-full animate-pulse delay-100"></div>
+              </div>
+              
+              <div className="text-lg md:text-xl font-mono font-bold text-primary animate-fade-in">
+                {currentMessage}
+                {isTyping && (
+                  <span className="animate-pulse text-accent ml-1">|</span>
+                )}
+              </div>
+              
+              {!isTyping && (
+                <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mt-2 animate-pulse"></div>
+              )}
             </div>
           </div>
         </div>
