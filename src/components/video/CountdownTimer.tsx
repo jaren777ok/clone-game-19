@@ -8,33 +8,36 @@ interface CountdownTimerProps {
   startTime?: number; // Optional: timestamp when generation started
 }
 
-// Enhanced AI Console simulation messages - moved outside component to avoid re-creation
-const aiMessages = [
-  "IA Entendiendo Script...",
-  "Desencriptando Código Simbólico...",
-  "Añadiendo Neuroventas...",
-  "Implementando Viralidad...",
-  "Analizando Psicología del Espectador...",
-  "Optimizando Engagement Emocional...",
-  "Calibrando Persuasión Neural...",
-  "Generando Ganchos Virales...",
-  "Inyectando Dopamina Digital...",
-  "Sincronizando Ritmo Hipnótico...",
-  "Activando Neuromarketing Quantum...",
-  "Amplificando Resonancia Emocional...",
-  "Codificando Patrones de Adicción...",
-  "Optimizando Matriz de Conversión...",
-  "Instalando Triggers Psicológicos...",
-  "Maximizando Retención Cerebral...",
-  "Configurando Algoritmos de Impacto...",
-  "Generando Tensión Narrativa...",
-  "Implementando Seducción Visual...",
-  "Calibrando Frecuencias Mentales..."
-];
+// Progress-based AI messages for different phases
+const aiMessagesByPhase = {
+  analysis: [
+    "🎯 IA Entendiendo Script de Venta...",
+    "🧠 Analizando Psicología del Espectador...", 
+    "📋 Desglosando Elementos Narrativos...",
+    "🔍 Identificando Puntos de Dolor Clave...",
+    "💡 Mapeando Gatillos Emocionales...",
+    "📊 Evaluando Potencial de Conversión..."
+  ],
+  processing: [
+    "⚡ Generando Escenas Persuasivas...",
+    "🎨 Calibrando Hooks Visuales...",
+    "🎭 Sincronizando Avatar con Emociones...",
+    "🔮 Optimizando Timing Dramático...",
+    "🚀 Compilando Elementos Virales...",
+    "💎 Puliendo Narrativa de Ventas..."
+  ],
+  finalization: [
+    "🎪 Renderizando Video Final...",
+    "🏆 Aplicando Protocolo de Conversión...",
+    "✨ Optimizando Calidad de Audio...",
+    "🎬 Finalizando Edición Profesional...",
+    "🔥 Activando Magnetismo Viral...",
+    "💯 Preparando Entrega de Alto Impact..."
+  ]
+};
 
 const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerProps) => {
   const [displayTime, setDisplayTime] = useState(timeRemaining);
-  const [currentLogIndex, setCurrentLogIndex] = useState(0);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
@@ -43,13 +46,27 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
     setDisplayTime(timeRemaining);
   }, [timeRemaining]);
   
-  // Consolidated AI message display with typing effect
+  // Calculate progress
+  const minutes = Math.floor(displayTime / 60);
+  const seconds = displayTime % 60;
+  const progress = ((totalTime - displayTime) / totalTime) * 100;
+  
+  // Get current phase based on progress
+  const getCurrentPhase = () => {
+    if (progress <= 33) return 'analysis';
+    if (progress <= 66) return 'processing';
+    return 'finalization';
+  };
+  
+  // Progress-based AI message display with typing effect
   useEffect(() => {
     let messageInterval: NodeJS.Timeout;
     let typingInterval: NodeJS.Timeout;
+    let currentPhaseIndex = 0;
     
-    const showMessage = (messageIndex: number) => {
-      const message = aiMessages[messageIndex];
+    const showMessage = (phase: keyof typeof aiMessagesByPhase, messageIndex: number) => {
+      const messages = aiMessagesByPhase[phase];
+      const message = messages[messageIndex];
       if (!message) return;
       
       setCurrentMessage('');
@@ -65,32 +82,33 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
           setIsTyping(false);
           clearInterval(typingInterval);
         }
-      }, 70); // Slightly slower typing for better readability
+      }, 80);
+    };
+    
+    const updateMessage = () => {
+      const currentPhase = getCurrentPhase();
+      const phaseMessages = aiMessagesByPhase[currentPhase];
+      
+      // Show message based on current phase
+      showMessage(currentPhase, currentPhaseIndex);
+      
+      // Move to next message in the current phase
+      currentPhaseIndex = (currentPhaseIndex + 1) % phaseMessages.length;
     };
     
     // Show first message immediately
-    showMessage(0);
+    updateMessage();
     
     // Change message every 7 seconds
     messageInterval = setInterval(() => {
-      const nextIndex = (currentLogIndex + 1) % aiMessages.length;
-      setCurrentLogIndex(nextIndex);
-      
-      // Small delay to let previous typing complete
-      setTimeout(() => {
-        showMessage(nextIndex);
-      }, 100);
+      updateMessage();
     }, 7000);
     
     return () => {
       clearInterval(messageInterval);
       clearInterval(typingInterval);
     };
-  }, []); // Only run on mount
-
-  const minutes = Math.floor(displayTime / 60);
-  const seconds = displayTime % 60;
-  const progress = ((totalTime - displayTime) / totalTime) * 100;
+  }, [progress]); // Depend on progress to update when phase changes
 
   return (
     <div className="relative bg-black/95 cyber-border rounded-2xl p-8 mb-8 overflow-hidden">
@@ -110,21 +128,6 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
         ))}
       </div>
 
-      {/* Floating Matrix Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-primary/40 rounded-full animate-bounce"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 2}s`
-            }}
-          />
-        ))}
-      </div>
 
       <div className="relative z-10">
         {/* Matrix Console Header */}
