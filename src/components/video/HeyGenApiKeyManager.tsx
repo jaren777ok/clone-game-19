@@ -69,23 +69,35 @@ const HeyGenApiKeyManager: React.FC<Props> = ({
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
       <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex items-center justify-between mb-8 sm:mb-12">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <Button
             variant="outline"
             onClick={onBack}
-            className="cyber-border hover:cyber-glow text-sm"
+            className="cyber-border hover:cyber-glow text-xs sm:text-sm px-2 sm:px-4"
+            size="sm"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al Dashboard
+            <ArrowLeft className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Volver al Dashboard</span>
+            <span className="sm:hidden">Volver</span>
           </Button>
         </div>
 
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gradient-safe">
-              {apiKeys.length === 0 ? "Configurar HeyGen API" : "Seleccionar Clave API"}
+          <div className="text-center mb-6 sm:mb-8 space-y-2 sm:space-y-4">
+            <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gradient-safe">
+              {apiKeys.length === 0 ? (
+                <>
+                  <span className="sm:hidden">HeyGen API</span>
+                  <span className="hidden sm:inline">Configurar HeyGen API</span>
+                </>
+              ) : (
+                <>
+                  <span className="sm:hidden">Clave API</span>
+                  <span className="hidden sm:inline">Seleccionar Clave API</span>
+                </>
+              )}
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-4 leading-relaxed">
+            <p className="text-muted-foreground text-xs sm:text-sm md:text-base max-w-2xl mx-auto px-4 leading-relaxed">
               {apiKeys.length === 0 
                 ? "Agrega tu primera clave API de HeyGen para comenzar a crear videos"
                 : "Selecciona una clave API existente o agrega una nueva"

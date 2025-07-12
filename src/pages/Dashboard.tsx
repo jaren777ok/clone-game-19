@@ -44,44 +44,47 @@ const Dashboard = () => {
       <div className="absolute inset-0 bg-black/30"></div>
 
       {/* Header with user info and logout */}
-      <div className="absolute top-6 right-6 z-20 flex items-center space-x-4">
-        <div className="flex items-center space-x-2 text-muted-foreground">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 sm:space-x-4">
+        <div className="hidden sm:flex items-center space-x-2 text-muted-foreground">
           <User className="w-4 h-4" />
-          <span className="text-sm">{user?.email}</span>
+          <span className="text-sm truncate max-w-[120px] sm:max-w-none">{user?.email}</span>
+        </div>
+        <div className="sm:hidden flex items-center text-muted-foreground">
+          <User className="w-4 h-4" />
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={handleSignOut}
-          className="cyber-border hover:cyber-glow bg-background/80 backdrop-blur-sm"
+          className="cyber-border hover:cyber-glow bg-background/80 backdrop-blur-sm px-2 sm:px-4"
         >
-          <LogOut className="w-4 h-4 mr-2" />
-          Cerrar Sesión
+          <LogOut className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Cerrar Sesión</span>
         </Button>
       </div>
 
       <div className="relative z-10 container mx-auto px-6">
         {/* Header Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">
+        <div className="text-center mb-8 sm:mb-16">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6">
             <span className="text-white">Clone</span>
             <span className="bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">Game</span>
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base sm:text-lg px-4 sm:px-0">
             ¡Bienvenido de vuelta! Selecciona una herramienta para comenzar.
           </p>
         </div>
 
         {/* Options Grid - Solo mostrar crear video */}
-        <div className="flex justify-center">
+        <div className="flex justify-center px-4 sm:px-0">
           <div className="max-w-md w-full">
             {options.map((option) => {
               const IconComponent = option.icon;
               return (
-                <div
+                  <div
                   key={option.id}
                   onClick={option.onClick}
-                  className="group relative bg-card/90 backdrop-blur-sm cyber-border rounded-2xl p-8 hover:cyber-glow-intense transition-all duration-500 cursor-pointer transform hover:scale-105"
+                  className="group relative bg-card/90 backdrop-blur-sm cyber-border rounded-2xl p-4 sm:p-8 hover:cyber-glow-intense transition-all duration-500 cursor-pointer transform hover:scale-105"
                 >
                   {/* Card gradient overlay */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${option.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
@@ -98,10 +101,10 @@ const Dashboard = () => {
                     </div>
 
                     {/* Text content */}
-                    <h3 className="text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors duration-300">
+                    <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 sm:mb-3 group-hover:text-primary transition-colors duration-300">
                       {option.title}
                     </h3>
-                    <p className="text-muted-foreground text-lg leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
+                    <p className="text-muted-foreground text-base sm:text-lg leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
                       {option.description}
                     </p>
 

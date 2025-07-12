@@ -126,39 +126,41 @@ const VideoGeneratorFinal = () => {
 
         <div className="max-w-4xl mx-auto">
           {/* Mostrar información del flujo seleccionado */}
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-6 mb-8 cyber-border">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Configuración seleccionada:</h2>
-              <div className="flex items-center text-sm text-green-400">
+          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-3 sm:p-6 mb-6 sm:mb-8 cyber-border mx-4 sm:mx-0">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-sm sm:text-lg font-semibold">Configuración seleccionada:</h2>
+              <div className="flex items-center text-xs sm:text-sm text-green-400">
                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                Configuración completa
+                <span className="hidden sm:inline">Configuración completa</span>
+                <span className="sm:hidden">Completa</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
               <div>
                 <p className="text-muted-foreground">Clave API:</p>
-                <p className="font-medium">{effectiveFlowState.selectedApiKey?.api_key_name}</p>
+                <p className="font-medium truncate">{effectiveFlowState.selectedApiKey?.api_key_name}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Avatar:</p>
-                <p className="font-medium">{effectiveFlowState.selectedAvatar?.avatar_name}</p>
+                <p className="font-medium truncate">{effectiveFlowState.selectedAvatar?.avatar_name}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Voz:</p>
-                <p className="font-medium">{effectiveFlowState.selectedVoice?.voice_name}</p>
+                <p className="font-medium truncate">{effectiveFlowState.selectedVoice?.voice_name}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Estilo:</p>
-                <p className="font-medium">{effectiveFlowState.selectedStyle?.name}</p>
+                <p className="font-medium truncate">{effectiveFlowState.selectedStyle?.name}</p>
               </div>
             </div>
           </div>
 
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-              CloneGame - Generador de Videos IA
+          <div className="text-center mb-8 sm:mb-12 px-4 sm:px-0">
+            <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
+              <span className="sm:hidden">CloneGame - Videos IA</span>
+              <span className="hidden sm:inline">CloneGame - Generador de Videos IA</span>
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-lg">
               Tu guión ha sido generado con NeuroCopy GPT. Puedes editarlo si deseas antes de crear tu video.
             </p>
           </div>
