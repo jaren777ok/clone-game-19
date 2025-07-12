@@ -19,7 +19,7 @@ export const initiateVideoGeneration = async (
   user: User | null,
   flowState: FlowState,
   toast: any
-): Promise<{ requestId: string; webhookConfirmed: boolean }> => {
+): Promise<{ requestId: string }> => {
   if (!user) {
     throw new Error('Usuario no autenticado');
   }
@@ -170,7 +170,7 @@ export const initiateVideoGeneration = async (
       });
     }
 
-    return { requestId, webhookConfirmed };
+    return { requestId };
 
   } catch (error) {
     console.error('❌ Error enviando al webhook:', {

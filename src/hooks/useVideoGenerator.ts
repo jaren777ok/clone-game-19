@@ -152,40 +152,37 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     console.log('Iniciando nuevo proceso de generación de video');
     
     try {
-      const result = await initiateVideoGeneration(
+      // Generate unique requestId
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 8);
+      const requestId = `${timestamp}-${random}`;
+      setCurrentRequestId(requestId);
+
+      // Create database entry IMMEDIATELY 
+      const success = await handleStartGeneration(script.trim(), requestId);
+      if (!success) {
+        throw new Error('No se pudo guardar el estado de generación');
+      }
+
+      // Start countdown immediately
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId, script.trim());
+
+      toast({
+        title: "Video en procesamiento",
+        description: `Procesamiento iniciado. ID: ${requestId.substring(0, 8)}...`
+      });
+
+      // Send to webhook in background (don't wait for confirmation)
+      initiateVideoGeneration(
         script,
         user,
         flowState!,
         toast
-      );
-      
-      const { requestId, webhookConfirmed } = result;
-      setCurrentRequestId(requestId);
-      
-      // Only save to database if webhook confirmed receipt
-      if (webhookConfirmed) {
-        const success = await handleStartGeneration(script.trim(), requestId);
-        if (!success) {
-          throw new Error('No se pudo guardar el estado de generación');
-        }
-        
-        startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
-        startPeriodicChecking(requestId, script.trim());
-        
-        toast({
-          title: "Video en procesamiento",
-          description: `Webhook confirmó recepción y comenzó el procesamiento.`
-        });
-      } else {
-        // Webhook didn't confirm, but we don't want to throw an error
-        setIsGenerating(false);
-        toast({
-          title: "Advertencia",
-          description: "La solicitud fue enviada pero no se confirmó la recepción. Intenta de nuevo si no ves progreso.",
-          variant: "destructive"
-        });
-        return;
-      }
+      ).catch(err => {
+        console.error('Error enviando al webhook (background):', err);
+        // Webhook error doesn't stop the process - video will expire naturally if webhook fails
+      });
       
     } catch (err) {
       console.error('Error en generación:', err);
@@ -194,7 +191,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       
       toast({ 
         title: "Error de conexión", 
-        description: "No se pudo enviar la solicitud. Por favor, intenta de nuevo.", 
+        description: "No se pudo iniciar la generación. Por favor, intenta de nuevo.", 
         variant: "destructive" 
       });
     }
