@@ -79,10 +79,11 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
   useEffect(() => {
     let messageInterval: NodeJS.Timeout;
     let typingInterval: NodeJS.Timeout;
+    let messageIndex = 0; // Local message index for this phase
     
-    const showMessage = (messageIndex: number) => {
+    const showMessage = (msgIndex: number) => {
       const messages = aiMessagesByPhase[currentPhase];
-      const message = messages[messageIndex];
+      const message = messages[msgIndex];
       if (!message) return;
       
       setCurrentMessage('');
@@ -105,10 +106,10 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
       const messages = aiMessagesByPhase[currentPhase];
       
       // Show current message
-      showMessage(currentPhaseMessageIndex);
+      showMessage(messageIndex);
       
       // Move to next message in the current phase (cycle through phase messages)
-      setCurrentPhaseMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+      messageIndex = (messageIndex + 1) % messages.length;
     };
     
     // Show first message immediately
@@ -123,7 +124,7 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
       clearInterval(messageInterval);
       clearInterval(typingInterval);
     };
-  }, [currentPhase, currentPhaseMessageIndex]); // Only depend on phase and message index
+  }, [currentPhase]); // Only depend on phase changes
 
   return (
     <div className="relative bg-black/95 cyber-border rounded-2xl p-8 mb-8 overflow-hidden">
