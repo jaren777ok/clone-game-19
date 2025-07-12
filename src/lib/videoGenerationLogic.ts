@@ -19,7 +19,7 @@ export const initiateVideoGeneration = async (
   user: User | null,
   flowState: FlowState,
   toast: any
-): Promise<string> => {
+): Promise<{ requestId: string; webhookConfirmed: boolean }> => {
   if (!user) {
     throw new Error('Usuario no autenticado');
   }
@@ -49,7 +49,7 @@ export const initiateVideoGeneration = async (
     throw new Error('Clave API inválida después de desencriptar');
   }
   
-  console.log('🎬 Iniciando generación de video:', {
+  console.log('🎬 Iniciando generación de video (sin crear tracking aún):', {
     requestId: requestId,
     timestamp: timestamp,
     timestampDate: new Date(timestamp).toISOString(),
@@ -64,7 +64,7 @@ export const initiateVideoGeneration = async (
     apiKeyDecrypted: true
   });
 
-  // Guardar estado de generación
+  // Guardar estado de generación en localStorage (solo para UI)
   saveGenerationState({
     requestId,
     script: script.trim(),
@@ -96,15 +96,18 @@ export const initiateVideoGeneration = async (
     webhookType = 'EDUCATIVO_2';
   }
 
-  console.log('📤 Enviando payload al webhook:', {
+  console.log('📤 Enviando payload al webhook (esperando confirmación):', {
     requestId: requestId,
     webhook: webhookType,
     payloadSize: JSON.stringify(basePayload).length,
     presenterName: basePayload.nombrePresentador,
-    apiKeyUsed: decryptedApiKey.substring(0, 8) + '...' // Solo mostrar los primeros 8 caracteres por seguridad
+    apiKeyUsed: decryptedApiKey.substring(0, 8) + '...'
   });
 
   try {
+    // Enviar a webhook y esperar confirmación
+    let webhookConfirmed = false;
+    
     if (flowState.selectedStyle!.id === 'style-1') {
       // Estilo Noticia
       const noticiaPayload = {
@@ -122,7 +125,7 @@ export const initiateVideoGeneration = async (
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
       
-      await sendToEstiloNoticiaWebhook(noticiaPayload);
+      webhookConfirmed = await sendToEstiloNoticiaWebhook(noticiaPayload);
     } else if (flowState.selectedStyle!.id === 'style-3') {
       // Estilo Educativo 1
       console.log('🎓 Enviando a webhook Estilo Educativo 1:', {
@@ -130,7 +133,7 @@ export const initiateVideoGeneration = async (
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
-      await sendToEstiloEducativoWebhook(basePayload);
+      webhookConfirmed = await sendToEstiloEducativoWebhook(basePayload);
     } else if (flowState.selectedStyle!.id === 'style-4') {
       // Estilo Educativo 2
       console.log('🎓 Enviando a webhook Estilo Educativo 2:', {
@@ -138,7 +141,7 @@ export const initiateVideoGeneration = async (
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
-      await sendToEducativo2Webhook(basePayload);
+      webhookConfirmed = await sendToEducativo2Webhook(basePayload);
     } else {
       // Webhook estándar (Estilo Noticiero y otros)
       console.log('🎥 Enviando a webhook estándar:', {
@@ -146,21 +149,28 @@ export const initiateVideoGeneration = async (
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
-      await sendToWebhook(basePayload);
+      webhookConfirmed = await sendToWebhook(basePayload);
     }
 
-    console.log('✅ Payload enviado exitosamente al webhook:', {
-      requestId: requestId,
-      timestamp: new Date().toISOString(),
-      apiKeyDecryptedAndSent: true
-    });
+    if (webhookConfirmed) {
+      console.log('✅ Webhook confirmó recepción:', {
+        requestId: requestId,
+        timestamp: new Date().toISOString(),
+        apiKeyDecryptedAndSent: true
+      });
 
-    toast({
-      title: "Video en procesamiento",
-      description: `Solicitud enviada correctamente. ID: ${requestId.substring(0, 8)}...`
-    });
+      toast({
+        title: "Solicitud recibida",
+        description: `Webhook confirmó recepción. ID: ${requestId.substring(0, 8)}...`
+      });
+    } else {
+      console.warn('⚠️ Webhook no confirmó recepción, pero no hubo error:', {
+        requestId: requestId,
+        timestamp: new Date().toISOString()
+      });
+    }
 
-    return requestId;
+    return { requestId, webhookConfirmed };
 
   } catch (error) {
     console.error('❌ Error enviando al webhook:', {
@@ -169,6 +179,6 @@ export const initiateVideoGeneration = async (
       timestamp: new Date().toISOString(),
       apiKeyWasDecrypted: !!decryptedApiKey
     });
-    throw error;
+    throw new Error(`Error de conexión con webhook: ${error instanceof Error ? error.message : 'Error desconocido'}`);
   }
 };

@@ -153,23 +153,40 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     console.log('Iniciando nuevo proceso de generación de video');
     
     try {
-      const requestId = await initiateVideoGeneration(
+      const result = await initiateVideoGeneration(
         script,
         user,
         flowState!,
         toast
       );
       
+      const { requestId, webhookConfirmed } = result;
       setCurrentRequestId(requestId);
       
-      // Save to database
-      const success = await handleStartGeneration(script.trim(), requestId);
-      if (!success) {
-        throw new Error('No se pudo guardar el estado de generación');
+      // Only save to database if webhook confirmed receipt
+      if (webhookConfirmed) {
+        const success = await handleStartGeneration(script.trim(), requestId);
+        if (!success) {
+          throw new Error('No se pudo guardar el estado de generación');
+        }
+        
+        startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+        startPeriodicChecking(requestId, script.trim());
+        
+        toast({
+          title: "Video en procesamiento",
+          description: `Webhook confirmó recepción y comenzó el procesamiento.`
+        });
+      } else {
+        // Webhook didn't confirm, but we don't want to throw an error
+        setIsGenerating(false);
+        toast({
+          title: "Advertencia",
+          description: "La solicitud fue enviada pero no se confirmó la recepción. Intenta de nuevo si no ves progreso.",
+          variant: "destructive"
+        });
+        return;
       }
-      
-      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId, script.trim());
       
     } catch (err) {
       console.error('Error en generación:', err);

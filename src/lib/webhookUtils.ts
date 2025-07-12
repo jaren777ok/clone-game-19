@@ -18,10 +18,14 @@ interface EstiloNoticiaPayload extends WebhookPayload {
   subtitulo?: string;
 }
 
-export const sendToWebhook = async (payload: WebhookPayload) => {
+export const sendToWebhook = async (payload: WebhookPayload): Promise<boolean> => {
   try {
     console.log('Enviando datos a webhook con respuesta inmediata...');
     console.log('Payload completo:', payload);
+    
+    // Set a 30-second timeout for webhook confirmation
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/veroia', {
       method: 'POST',
@@ -29,26 +33,39 @@ export const sendToWebhook = async (payload: WebhookPayload) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`Error del servidor: ${response.status}`);
+      console.error(`Webhook respondió con error: ${response.status}`);
+      return false;
     }
 
     const data = await response.json();
-    console.log('Respuesta inmediata recibida:', data);
+    console.log('✅ Webhook confirmó recepción:', data);
     
+    // Webhook confirmed receipt successfully
     return true;
   } catch (err) {
-    console.error('Error enviando a webhook:', err);
-    throw err;
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('⏰ Timeout esperando confirmación del webhook (30s)');
+    } else {
+      console.error('❌ Error enviando a webhook:', err);
+    }
+    return false;
   }
 };
 
-export const sendToEstiloNoticiaWebhook = async (payload: EstiloNoticiaPayload) => {
+export const sendToEstiloNoticiaWebhook = async (payload: EstiloNoticiaPayload): Promise<boolean> => {
   try {
     console.log('Enviando datos a webhook Estilo Noticia...');
     console.log('Payload completo Estilo Noticia:', payload);
+    
+    // Set a 30-second timeout for webhook confirmation
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/Estilo1', {
       method: 'POST',
@@ -56,26 +73,38 @@ export const sendToEstiloNoticiaWebhook = async (payload: EstiloNoticiaPayload) 
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`Error del servidor: ${response.status}`);
+      console.error(`Webhook Estilo Noticia respondió con error: ${response.status}`);
+      return false;
     }
 
     const data = await response.json();
-    console.log('Respuesta inmediata recibida Estilo Noticia:', data);
+    console.log('✅ Webhook Estilo Noticia confirmó recepción:', data);
     
     return true;
   } catch (err) {
-    console.error('Error enviando a webhook Estilo Noticia:', err);
-    throw err;
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('⏰ Timeout esperando confirmación del webhook Estilo Noticia (30s)');
+    } else {
+      console.error('❌ Error enviando a webhook Estilo Noticia:', err);
+    }
+    return false;
   }
 };
 
-export const sendToEstiloEducativoWebhook = async (payload: WebhookPayload) => {
+export const sendToEstiloEducativoWebhook = async (payload: WebhookPayload): Promise<boolean> => {
   try {
     console.log('Enviando datos a webhook Estilo Educativo 1...');
     console.log('Payload completo Estilo Educativo 1:', payload);
+    
+    // Set a 30-second timeout for webhook confirmation
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/ESTILO_EDUCATIVO1', {
       method: 'POST',
@@ -83,26 +112,38 @@ export const sendToEstiloEducativoWebhook = async (payload: WebhookPayload) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`Error del servidor: ${response.status}`);
+      console.error(`Webhook Estilo Educativo 1 respondió con error: ${response.status}`);
+      return false;
     }
 
     const data = await response.json();
-    console.log('Respuesta inmediata recibida Estilo Educativo 1:', data);
+    console.log('✅ Webhook Estilo Educativo 1 confirmó recepción:', data);
     
     return true;
   } catch (err) {
-    console.error('Error enviando a webhook Estilo Educativo 1:', err);
-    throw err;
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('⏰ Timeout esperando confirmación del webhook Estilo Educativo 1 (30s)');
+    } else {
+      console.error('❌ Error enviando a webhook Estilo Educativo 1:', err);
+    }
+    return false;
   }
 };
 
-export const sendToEducativo2Webhook = async (payload: WebhookPayload) => {
+export const sendToEducativo2Webhook = async (payload: WebhookPayload): Promise<boolean> => {
   try {
     console.log('Enviando datos a webhook Estilo Educativo 2...');
     console.log('Payload completo Estilo Educativo 2:', payload);
+    
+    // Set a 30-second timeout for webhook confirmation
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/EDUCATIVO_2', {
       method: 'POST',
@@ -110,18 +151,26 @@ export const sendToEducativo2Webhook = async (payload: WebhookPayload) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`Error del servidor: ${response.status}`);
+      console.error(`Webhook Estilo Educativo 2 respondió con error: ${response.status}`);
+      return false;
     }
 
     const data = await response.json();
-    console.log('Respuesta inmediata recibida Estilo Educativo 2:', data);
+    console.log('✅ Webhook Estilo Educativo 2 confirmó recepción:', data);
     
     return true;
   } catch (err) {
-    console.error('Error enviando a webhook Estilo Educativo 2:', err);
-    throw err;
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('⏰ Timeout esperando confirmación del webhook Estilo Educativo 2 (30s)');
+    } else {
+      console.error('❌ Error enviando a webhook Estilo Educativo 2:', err);
+    }
+    return false;
   }
 };
