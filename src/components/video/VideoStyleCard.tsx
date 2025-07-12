@@ -33,8 +33,27 @@ const VideoStyleCard: React.FC<Props> = ({
           <p className="text-muted-foreground">Se requiere Avatar Horizontal</p>
         </div>
       );
+    } else if (['style-1', 'style-2', 'style-3'].includes(styleId)) {
+      // Primeros 3 estilos - fondo verde con enlace de descarga
+      return (
+        <div className="space-y-1">
+          <p className="font-medium text-yellow-400">Requisitos:</p>
+          <p className="text-muted-foreground">1. Se requiere <strong>Fondo Verde</strong></p>
+          <p className="text-muted-foreground">
+            <a 
+              href="https://drive.google.com/uc?id=1CkXfUEhw23bDhVmqSWrCMzHhr3IK6oVE&export=download"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fuchsia-400 font-semibold hover:text-fuchsia-300 underline"
+            >
+              Descargar Fondo
+            </a>
+          </p>
+          <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
+        </div>
+      );
     } else {
-      // Otros estilos - requisitos completos
+      // Otros estilos - requisitos originales
       return (
         <div className="space-y-1">
           <p className="font-medium text-yellow-400">Requisitos:</p>

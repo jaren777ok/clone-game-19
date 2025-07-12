@@ -87,12 +87,12 @@ const ScriptForm = ({
                 : "Aquí aparecerá tu guión generado que puedes editar antes de crear el video..."
             }
             className="min-h-[400px] text-base cyber-border focus:cyber-glow resize-none"
-            maxLength={1400}
+            maxLength={100}
             disabled={isGenerating}
           />
           <div className="flex justify-end items-center mt-2">
             <span className="text-sm text-muted-foreground">
-              {script.length}/1400
+              {script.length}/100
             </span>
           </div>
         </div>
