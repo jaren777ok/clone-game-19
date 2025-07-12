@@ -88,13 +88,21 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   }, [videoResult, currentRequestId, handleVideoCompleted]);
 
-  // Handle video expiration
+  // Handle video expiration - only expire if generation has been running and timeRemaining is truly 0
   useEffect(() => {
-    if (timeRemaining <= 0 && currentRequestId && isGenerating) {
-      handleVideoExpired(currentRequestId);
-      setIsGenerating(false);
+    if (timeRemaining <= 0 && currentRequestId && isGenerating && currentGeneration) {
+      // Only expire if the video has been created for more than 30 seconds
+      const createdAt = new Date(currentGeneration.created_at);
+      const now = new Date();
+      const timeSinceCreation = (now.getTime() - createdAt.getTime()) / 1000; // seconds
+      
+      if (timeSinceCreation > 30) {
+        console.log('⏰ Video expirado - marcando como expired');
+        handleVideoExpired(currentRequestId);
+        setIsGenerating(false);
+      }
     }
-  }, [timeRemaining, currentRequestId, isGenerating, handleVideoExpired]);
+  }, [timeRemaining, currentRequestId, isGenerating, handleVideoExpired, currentGeneration]);
 
   const handleCancelGeneration = async () => {
     console.log('🛑 Cancelando generación de video por solicitud del usuario');
