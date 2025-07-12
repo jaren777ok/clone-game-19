@@ -35,21 +35,23 @@ const aiMessages = [
 const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerProps) => {
   const [displayTime, setDisplayTime] = useState(timeRemaining);
   const [currentLogIndex, setCurrentLogIndex] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState(aiMessages[0]); // Initialize with first message
-  const [isTyping, setIsTyping] = useState(true); // Start typing immediately
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   
   // Force re-render when timeRemaining changes
   useEffect(() => {
     setDisplayTime(timeRemaining);
   }, [timeRemaining]);
   
-  // Enhanced AI message display with typing effect
+  // Consolidated AI message display with typing effect
   useEffect(() => {
     let messageInterval: NodeJS.Timeout;
     let typingInterval: NodeJS.Timeout;
     
-    const showNextMessage = () => {
-      const message = aiMessages[currentLogIndex];
+    const showMessage = (messageIndex: number) => {
+      const message = aiMessages[messageIndex];
+      if (!message) return;
+      
       setCurrentMessage('');
       setIsTyping(true);
       
@@ -57,56 +59,34 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
       let charIndex = 0;
       typingInterval = setInterval(() => {
         if (charIndex < message.length) {
-          setCurrentMessage(prev => prev + message[charIndex]);
+          setCurrentMessage(message.substring(0, charIndex + 1));
           charIndex++;
         } else {
           setIsTyping(false);
           clearInterval(typingInterval);
         }
-      }, 50); // Typing speed
+      }, 70); // Slightly slower typing for better readability
     };
     
-    // Show first message immediately on mount
-    if (currentLogIndex === 0) {
-      showNextMessage();
-    }
+    // Show first message immediately
+    showMessage(0);
     
-    // Change message every 3.5 seconds
+    // Change message every 7 seconds
     messageInterval = setInterval(() => {
-      setCurrentLogIndex(prev => (prev + 1) % aiMessages.length);
-    }, 3500);
+      const nextIndex = (currentLogIndex + 1) % aiMessages.length;
+      setCurrentLogIndex(nextIndex);
+      
+      // Small delay to let previous typing complete
+      setTimeout(() => {
+        showMessage(nextIndex);
+      }, 100);
+    }, 7000);
     
     return () => {
       clearInterval(messageInterval);
       clearInterval(typingInterval);
     };
-  }, []); // Remove dependencies to prevent re-execution
-  
-  // Separate effect for message changes
-  useEffect(() => {
-    if (currentLogIndex > 0) { // Skip first message as it's handled in mount effect
-      let typingInterval: NodeJS.Timeout;
-      const message = aiMessages[currentLogIndex];
-      setCurrentMessage('');
-      setIsTyping(true);
-      
-      // Typing effect for subsequent messages
-      let charIndex = 0;
-      typingInterval = setInterval(() => {
-        if (charIndex < message.length) {
-          setCurrentMessage(prev => prev + message[charIndex]);
-          charIndex++;
-        } else {
-          setIsTyping(false);
-          clearInterval(typingInterval);
-        }
-      }, 50);
-      
-      return () => {
-        clearInterval(typingInterval);
-      };
-    }
-  }, [currentLogIndex]);
+  }, []); // Only run on mount
 
   const minutes = Math.floor(displayTime / 60);
   const seconds = displayTime % 60;
