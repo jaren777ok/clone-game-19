@@ -40,6 +40,7 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
   const [displayTime, setDisplayTime] = useState(timeRemaining);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isTabVisible, setIsTabVisible] = useState(true);
   
   // Persistent states for phase management
   const [currentPhase, setCurrentPhase] = useState<keyof typeof aiMessagesByPhase>('analysis');
@@ -75,8 +76,23 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
     }
   }, [progress, currentPhase]);
   
+  // Page Visibility API for tab switching
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(!document.hidden);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Effect 2: Handle message rotation within the current phase
   useEffect(() => {
+    if (!isTabVisible) return; // Don't run messages when tab is not visible
+    
     let messageInterval: NodeJS.Timeout;
     let typingInterval: NodeJS.Timeout;
     let messageIndex = 0; // Local message index for this phase
@@ -112,7 +128,7 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
       messageIndex = (messageIndex + 1) % messages.length;
     };
     
-    // Show first message immediately
+    // Show first message immediately when tab becomes visible
     updateMessage();
     
     // Change message every 7 seconds
@@ -124,7 +140,7 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
       clearInterval(messageInterval);
       clearInterval(typingInterval);
     };
-  }, [currentPhase]); // Only depend on phase changes
+  }, [currentPhase, isTabVisible]); // Depend on phase changes and tab visibility
 
   return (
     <div className="relative bg-black/95 cyber-border rounded-2xl p-8 mb-8 overflow-hidden">
