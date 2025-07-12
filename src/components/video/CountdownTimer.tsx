@@ -41,6 +41,11 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
+  // Persistent states for phase management
+  const [currentPhase, setCurrentPhase] = useState<keyof typeof aiMessagesByPhase>('analysis');
+  const [currentPhaseMessageIndex, setCurrentPhaseMessageIndex] = useState(0);
+  const [lastProgress, setLastProgress] = useState(0);
+  
   // Force re-render when timeRemaining changes
   useEffect(() => {
     setDisplayTime(timeRemaining);
@@ -52,20 +57,31 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
   const progress = ((totalTime - displayTime) / totalTime) * 100;
   
   // Get current phase based on progress
-  const getCurrentPhase = () => {
+  const getCurrentPhase = (): keyof typeof aiMessagesByPhase => {
     if (progress <= 33) return 'analysis';
     if (progress <= 66) return 'processing';
     return 'finalization';
   };
   
-  // Progress-based AI message display with typing effect
+  // Effect 1: Detect phase changes and reset message index when phase changes
+  useEffect(() => {
+    const newPhase = getCurrentPhase();
+    
+    // Only change phase if we've actually crossed a threshold
+    if (newPhase !== currentPhase) {
+      setCurrentPhase(newPhase);
+      setCurrentPhaseMessageIndex(0); // Reset to first message of new phase
+      setLastProgress(progress);
+    }
+  }, [progress, currentPhase]);
+  
+  // Effect 2: Handle message rotation within the current phase
   useEffect(() => {
     let messageInterval: NodeJS.Timeout;
     let typingInterval: NodeJS.Timeout;
-    let currentPhaseIndex = 0;
     
-    const showMessage = (phase: keyof typeof aiMessagesByPhase, messageIndex: number) => {
-      const messages = aiMessagesByPhase[phase];
+    const showMessage = (messageIndex: number) => {
+      const messages = aiMessagesByPhase[currentPhase];
       const message = messages[messageIndex];
       if (!message) return;
       
@@ -86,14 +102,13 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
     };
     
     const updateMessage = () => {
-      const currentPhase = getCurrentPhase();
-      const phaseMessages = aiMessagesByPhase[currentPhase];
+      const messages = aiMessagesByPhase[currentPhase];
       
-      // Show message based on current phase
-      showMessage(currentPhase, currentPhaseIndex);
+      // Show current message
+      showMessage(currentPhaseMessageIndex);
       
-      // Move to next message in the current phase
-      currentPhaseIndex = (currentPhaseIndex + 1) % phaseMessages.length;
+      // Move to next message in the current phase (cycle through phase messages)
+      setCurrentPhaseMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
     };
     
     // Show first message immediately
@@ -108,7 +123,7 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
       clearInterval(messageInterval);
       clearInterval(typingInterval);
     };
-  }, [progress]); // Depend on progress to update when phase changes
+  }, [currentPhase, currentPhaseMessageIndex]); // Only depend on phase and message index
 
   return (
     <div className="relative bg-black/95 cyber-border rounded-2xl p-8 mb-8 overflow-hidden">
