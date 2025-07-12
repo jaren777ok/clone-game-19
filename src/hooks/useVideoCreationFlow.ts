@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -21,7 +21,8 @@ export const useVideoCreationFlow = () => {
     selectedStyle: null,
     generatedScript: null,
     cardCustomization: null,
-    presenterCustomization: null
+    presenterCustomization: null,
+    apiVersionCustomization: null
   });
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -85,7 +86,8 @@ export const useVideoCreationFlow = () => {
       selectedStyle: null,
       generatedScript: null,
       cardCustomization: null,
-      presenterCustomization: null
+      presenterCustomization: null,
+      apiVersionCustomization: null
     }));
   }, []);
 
@@ -107,13 +109,15 @@ export const useVideoCreationFlow = () => {
     }));
   }, []);
 
-  const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization) => {
+  const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
+    console.log('📐 Configuración de API:', apiVersionCustomization);
     setFlowState(prev => ({
       ...prev,
       selectedStyle: style,
       cardCustomization: cardCustomization || null,
       presenterCustomization: presenterCustomization || null,
+      apiVersionCustomization: apiVersionCustomization || null,
       step: 'neurocopy'
     }));
   }, []);
@@ -142,7 +146,8 @@ export const useVideoCreationFlow = () => {
       selectedStyle: null,
       generatedScript: null,
       cardCustomization: null,
-      presenterCustomization: null
+      presenterCustomization: null,
+      apiVersionCustomization: null
     });
     
     if (user) {

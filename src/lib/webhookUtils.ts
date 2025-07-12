@@ -10,6 +10,8 @@ interface WebhookPayload {
   VoiceID?: string;
   Estilo?: string;
   nombrePresentador?: string;
+  width?: number;
+  height?: number;
 }
 
 interface EstiloNoticiaPayload extends WebhookPayload {

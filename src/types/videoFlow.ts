@@ -34,6 +34,12 @@ export interface PresenterCustomization {
   nombrePresentador: string;
 }
 
+export interface ApiVersionCustomization {
+  isPaidVersion: boolean;
+  width: number;
+  height: number;
+}
+
 export interface FlowState {
   step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'neurocopy' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
@@ -43,4 +49,5 @@ export interface FlowState {
   generatedScript: string | null;
   cardCustomization?: CardCustomization | null;
   presenterCustomization?: PresenterCustomization | null;
+  apiVersionCustomization?: ApiVersionCustomization | null;
 }

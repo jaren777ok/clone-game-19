@@ -10,7 +10,8 @@ export const validateFlowState = (flowState?: FlowState): boolean => {
     flowState.selectedApiKey &&
     flowState.selectedAvatar &&
     flowState.selectedVoice &&
-    flowState.selectedStyle
+    flowState.selectedStyle &&
+    flowState.apiVersionCustomization
   );
 };
 
@@ -83,7 +84,9 @@ export const initiateVideoGeneration = async (
     AvatarID: flowState.selectedAvatar!.avatar_id,
     VoiceID: flowState.selectedVoice!.voice_id,
     Estilo: flowState.selectedStyle!.id,
-    nombrePresentador: flowState.presenterCustomization?.nombrePresentador || flowState.selectedAvatar!.avatar_name
+    nombrePresentador: flowState.presenterCustomization?.nombrePresentador || flowState.selectedAvatar!.avatar_name,
+    width: flowState.apiVersionCustomization?.width || 1280,
+    height: flowState.apiVersionCustomization?.height || 720
   };
 
   // Determinar webhook según el estilo

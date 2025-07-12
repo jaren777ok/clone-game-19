@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { VideoStyle, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
+import { VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization } from '@/types/videoFlow';
 import CustomizeCardsModal from './CustomizeCardsModal';
 import PresenterNameModal from './PresenterNameModal';
+import ApiVersionModal from './ApiVersionModal';
 import StyleSelectorHeader from './StyleSelectorHeader';
 import PreviousStyleSelectionBanner from './PreviousStyleSelectionBanner';
 import StyleGrid from './StyleGrid';
 
 interface Props {
-  onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization) => void;
+  onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization) => void;
   onBack: () => void;
 }
 
@@ -17,7 +18,10 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   const [previouslySelectedStyle, setPreviouslySelectedStyle] = useState<VideoStyle | null>(null);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [showPresenterModal, setShowPresenterModal] = useState(false);
+  const [showApiVersionModal, setShowApiVersionModal] = useState(false);
   const [pendingStyle, setPendingStyle] = useState<VideoStyle | null>(null);
+  const [pendingCardCustomization, setPendingCardCustomization] = useState<CardCustomization | null>(null);
+  const [pendingPresenterCustomization, setPendingPresenterCustomization] = useState<PresenterCustomization | null>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
   const videoStyles: VideoStyle[] = [
@@ -63,48 +67,79 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     if (style.id === 'style-1') {
       // Estilo Noticia requiere personalización de tarjetas
       setPendingStyle(style);
+      setPendingCardCustomization(null);
+      setPendingPresenterCustomization(null);
       setShowCustomizeModal(true);
     } else if (style.id === 'style-2') {
       // Estilo Noticiero requiere nombre del presentador
       setPendingStyle(style);
+      setPendingCardCustomization(null);
+      setPendingPresenterCustomization(null);
       setShowPresenterModal(true);
     } else if (style.id === 'style-3' || style.id === 'style-4') {
-      // Estilo Educativo 1 y 2 - selección directa sin modals
-      setSelectedStyleId(style.id);
-      onSelectStyle(style);
+      // Estilo Educativo 1 y 2 - directo a API version modal
+      setPendingStyle(style);
+      setPendingCardCustomization(null);
+      setPendingPresenterCustomization(null);
+      setShowApiVersionModal(true);
     } else {
-      // Fallback para otros estilos
-      setSelectedStyleId(style.id);
-      onSelectStyle(style);
+      // Fallback para otros estilos - directo a API version modal
+      setPendingStyle(style);
+      setPendingCardCustomization(null);
+      setPendingPresenterCustomization(null);
+      setShowApiVersionModal(true);
     }
   };
 
   const handleCustomizeConfirm = (customization: CardCustomization) => {
-    if (pendingStyle) {
-      setSelectedStyleId(pendingStyle.id);
-      onSelectStyle(pendingStyle, customization, undefined);
-    }
+    setPendingCardCustomization(customization);
     setShowCustomizeModal(false);
-    setPendingStyle(null);
+    // Ahora mostrar el modal de versión de API
+    setShowApiVersionModal(true);
   };
 
   const handlePresenterConfirm = (customization: PresenterCustomization) => {
+    setPendingPresenterCustomization(customization);
+    setShowPresenterModal(false);
+    // Ahora mostrar el modal de versión de API
+    setShowApiVersionModal(true);
+  };
+
+  const handleApiVersionConfirm = (apiVersionCustomization: ApiVersionCustomization) => {
     if (pendingStyle) {
       setSelectedStyleId(pendingStyle.id);
-      onSelectStyle(pendingStyle, undefined, customization);
+      onSelectStyle(
+        pendingStyle, 
+        pendingCardCustomization || undefined, 
+        pendingPresenterCustomization || undefined,
+        apiVersionCustomization
+      );
     }
-    setShowPresenterModal(false);
+    setShowApiVersionModal(false);
     setPendingStyle(null);
+    setPendingCardCustomization(null);
+    setPendingPresenterCustomization(null);
   };
 
   const handleCustomizeCancel = () => {
     setShowCustomizeModal(false);
     setPendingStyle(null);
+    setPendingCardCustomization(null);
+    setPendingPresenterCustomization(null);
   };
 
   const handlePresenterCancel = () => {
     setShowPresenterModal(false);
     setPendingStyle(null);
+    setPendingCardCustomization(null);
+    setPendingPresenterCustomization(null);
+  };
+
+  const handleApiVersionCancel = () => {
+    setShowApiVersionModal(false);
+    setPendingStyle(null);
+    setPendingCardCustomization(null);
+    setPendingPresenterCustomization(null);
   };
 
   const toggleVideoPlayback = (styleId: string, event: React.MouseEvent) => {
@@ -183,6 +218,13 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
         isOpen={showPresenterModal}
         onClose={handlePresenterCancel}
         onConfirm={handlePresenterConfirm}
+      />
+
+      {/* Modal de versión de API */}
+      <ApiVersionModal
+        isOpen={showApiVersionModal}
+        onClose={handleApiVersionCancel}
+        onConfirm={handleApiVersionConfirm}
       />
 
       {/* Background effects */}
