@@ -117,8 +117,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   };
 
   const handleGenerateVideo = async () => {
-    // Check if there's already a generation in progress
-    if (currentGeneration && currentGeneration.status === 'processing') {
+    // Simple check for existing generation without triggering refresh
+    if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
       toast({
         title: "Video en proceso",
         description: "Ya tienes un video siendo generado. Espera a que termine o cancela la generación actual.",

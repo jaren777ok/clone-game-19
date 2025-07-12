@@ -62,24 +62,6 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
         const remaining = calculateRemainingTime(generation.start_time);
         setTimeRemaining(remaining);
         
-        // Only run cleanup if we don't have a recent generation
-        const createdTime = new Date(generation.created_at).getTime();
-        const now = Date.now();
-        const ageInMinutes = (now - createdTime) / (1000 * 60);
-        
-        // If generation is older than 5 minutes, run cleanup
-        if (ageInMinutes > 5) {
-          await cleanupExpiredGenerations(user);
-          // Re-check after cleanup
-          const updatedGeneration = await getCurrentProcessingVideo(user);
-          if (!updatedGeneration) {
-            setCurrentGeneration(null);
-            setTimeRemaining(0);
-            setShowRecoveryOption(false);
-            return;
-          }
-        }
-        
         // Show recovery option if there's time remaining
         if (remaining > 0) {
           setShowRecoveryOption(true);
@@ -92,8 +74,6 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
           setShowRecoveryOption(false);
         }
       } else {
-        // No current generation, safe to run cleanup
-        await cleanupExpiredGenerations(user);
         setTimeRemaining(0);
         setShowRecoveryOption(false);
       }
@@ -107,6 +87,20 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
   useEffect(() => {
     refreshCurrentGeneration();
   }, [refreshCurrentGeneration]);
+
+  // Run cleanup once on mount to handle any truly expired generations
+  useEffect(() => {
+    if (user) {
+      const runInitialCleanup = async () => {
+        try {
+          await cleanupExpiredGenerations(user);
+        } catch (error) {
+          console.error('Error in initial cleanup:', error);
+        }
+      };
+      runInitialCleanup();
+    }
+  }, [user]); // Only run when user changes
 
   // Update time remaining every second when there's an active generation
   useEffect(() => {
