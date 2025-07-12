@@ -96,12 +96,11 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   }, [timeRemaining, currentRequestId, isGenerating, handleVideoExpired]);
 
-  const handleCancelGeneration = () => {
+  const handleCancelGeneration = async () => {
     console.log('🛑 Cancelando generación de video por solicitud del usuario');
     
-    if (currentRequestId) {
-      handleVideoExpired(currentRequestId);
-    }
+    // Use the proper cancel recovery function that handles cleanup
+    await handleCancelRecovery();
     
     setIsGenerating(false);
     setVideoResult('');

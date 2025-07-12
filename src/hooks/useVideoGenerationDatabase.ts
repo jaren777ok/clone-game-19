@@ -26,7 +26,7 @@ export interface UseVideoGenerationDatabaseReturn {
     setVideoResult: (result: string) => void,
     startCountdown: (requestId: string, script: string, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void, startTime?: number) => void
   ) => Promise<void>;
-  handleCancelRecovery: () => void;
+  handleCancelRecovery: () => Promise<void>;
   handleVideoCompleted: (requestId: string) => Promise<void>;
   handleVideoExpired: (requestId: string) => Promise<void>;
   refreshCurrentGeneration: () => Promise<void>;
@@ -62,15 +62,13 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
         const remaining = calculateRemainingTime(generation.start_time);
         setTimeRemaining(remaining);
         
-        // Show recovery option if there's time remaining
-        if (remaining > 0) {
+        // Only show recovery option if there's significant time remaining
+        if (remaining > 60) { // At least 1 minute remaining
           setShowRecoveryOption(true);
           // Update last check time
           await updateLastCheckTime(generation.request_id, user);
         } else {
-          // Mark as expired if time is up
-          await markVideoGenerationExpired(generation.request_id, user);
-          setCurrentGeneration(null);
+          // Don't auto-expire here, let the timer handle it
           setShowRecoveryOption(false);
         }
       } else {
@@ -88,19 +86,7 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
     refreshCurrentGeneration();
   }, [refreshCurrentGeneration]);
 
-  // Run cleanup once on mount to handle any truly expired generations
-  useEffect(() => {
-    if (user) {
-      const runInitialCleanup = async () => {
-        try {
-          await cleanupExpiredGenerations(user);
-        } catch (error) {
-          console.error('Error in initial cleanup:', error);
-        }
-      };
-      runInitialCleanup();
-    }
-  }, [user]); // Only run when user changes
+  // Cleanup removed - will only run manually to avoid race conditions
 
   // Update time remaining every second when there's an active generation
   useEffect(() => {
@@ -182,11 +168,17 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
     }
   }, [currentGeneration, user]);
 
-  // Cancel recovery
-  const handleCancelRecovery = useCallback(() => {
+  // Cancel recovery - also cleanup expired generations for current user
+  const handleCancelRecovery = useCallback(async () => {
+    if (user && currentGeneration) {
+      // Only expire the current generation when user cancels
+      await markVideoGenerationExpired(currentGeneration.request_id, user);
+    }
     setShowRecoveryOption(false);
     setIsRecovering(false);
-  }, []);
+    setCurrentGeneration(null);
+    setTimeRemaining(0);
+  }, [user, currentGeneration]);
 
   // Mark video as completed
   const handleVideoCompleted = useCallback(async (requestId: string) => {
