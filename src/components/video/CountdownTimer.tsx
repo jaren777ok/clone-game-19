@@ -143,7 +143,7 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
   }, [currentPhase, isTabVisible]); // Depend on phase changes and tab visibility
 
   return (
-    <div className="relative bg-black/95 cyber-border rounded-2xl p-8 mb-8 overflow-hidden">
+    <div className="relative bg-black/95 cyber-border rounded-2xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 md:mb-8 overflow-hidden">
       {/* Matrix Scanlines Effect */}
       <div className="absolute inset-0 opacity-20">
         <div className="h-full w-full bg-gradient-to-b from-transparent via-primary/10 to-transparent animate-pulse"></div>
@@ -163,21 +163,21 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
 
       <div className="relative z-10">
         {/* Matrix Console Header */}
-        <div className="flex items-center justify-center space-x-3 mb-6">
-          <Terminal className="w-6 h-6 text-primary animate-pulse" />
-          <div className="font-mono text-primary text-lg tracking-wider">
+        <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-4 sm:mb-6">
+          <Terminal className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-pulse" />
+          <div className="font-mono text-primary text-sm sm:text-base md:text-lg tracking-wider">
             [ IA NEURAL MATRIX ]
           </div>
-          <Terminal className="w-6 h-6 text-primary animate-pulse" />
+          <Terminal className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-pulse" />
         </div>
 
         {/* Main Timer Display */}
-        <div className="relative mb-8">
+        <div className="relative mb-6 sm:mb-8">
           <div className="text-center">
-            {/* Giant Digital Timer - FIXED LEGIBILITY */}
+            {/* Giant Digital Timer - RESPONSIVE */}
             <div className="relative inline-block">
               <div 
-                className="text-7xl md:text-8xl font-mono font-black text-white tracking-wider"
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-mono font-black text-white tracking-wider"
                 style={{
                   textShadow: '0 0 4px hsl(var(--primary)), 0 2px 0 #000',
                   filter: 'drop-shadow(0 0 2px hsl(var(--primary)))',
@@ -191,22 +191,22 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
               </div>
               
               {/* Subtle Glow Background */}
-              <div className="absolute inset-0 text-7xl md:text-8xl font-mono font-black text-primary/20 blur-sm -z-10">
+              <div className="absolute inset-0 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-mono font-black text-primary/20 blur-sm -z-10">
                 {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
               </div>
             </div>
             
-            <div className="text-primary/70 font-mono text-sm mt-2 tracking-widest">
+            <div className="text-primary/70 font-mono text-xs sm:text-sm mt-2 tracking-widest">
               [ TIEMPO RESTANTE ]
             </div>
           </div>
 
-          {/* Floating Tech Icons */}
-          <div className="absolute -top-4 -right-4 animate-spin" style={{ animationDuration: '8s' }}>
-            <Cpu className="w-8 h-8 text-accent opacity-60" />
+          {/* Floating Tech Icons - Hidden on mobile for cleaner look */}
+          <div className="hidden sm:block absolute -top-4 -right-4 animate-spin" style={{ animationDuration: '8s' }}>
+            <Cpu className="w-6 h-6 md:w-8 md:h-8 text-accent opacity-60" />
           </div>
-          <div className="absolute -bottom-4 -left-4 animate-bounce delay-500">
-            <Zap className="w-6 h-6 text-primary opacity-80" />
+          <div className="hidden sm:block absolute -bottom-4 -left-4 animate-bounce delay-500">
+            <Zap className="w-5 h-5 md:w-6 md:h-6 text-primary opacity-80" />
           </div>
         </div>
 
@@ -233,7 +233,7 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
         </div>
 
         {/* AI Process Simulation */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {[
             { icon: Code, text: "ANALIZANDO GUION", status: "ACTIVO" },
             { icon: Cpu, text: "PROCESANDO ESCENAS", status: progress > 33 ? "ACTIVO" : "ESPERA" },
@@ -241,14 +241,14 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
           ].map((item, index) => (
             <div 
               key={index}
-              className={`bg-black/60 border rounded-lg p-4 transition-all duration-500 ${
+              className={`bg-black/60 border rounded-lg p-2 sm:p-3 md:p-4 transition-all duration-500 ${
                 progress > (index) * 33 
                   ? 'border-primary/50 shadow-lg shadow-primary/20' 
                   : 'border-primary/20'
               }`}
             >
-              <div className="flex items-center space-x-2 mb-2">
-                <item.icon className={`w-5 h-5 ${
+              <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
+                <item.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
                   progress > (index) * 33 ? 'text-primary animate-pulse' : 'text-primary/40'
                 }`} />
                 <div className={`font-mono text-xs tracking-wide ${
@@ -257,32 +257,32 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
                   [ {item.status} ]
                 </div>
               </div>
-              <p className="font-mono text-xs text-primary/70">{item.text}</p>
+              <p className="font-mono text-xs text-primary/70 break-words">{item.text}</p>
             </div>
           ))}
         </div>
 
         {/* Live AI Console */}
-        <div className="bg-black/80 border border-primary/40 rounded-lg p-4 mb-4">
-          <div className="flex items-center space-x-2 mb-3">
-            <Brain className="w-4 h-4 text-primary animate-pulse" />
-            <div className="font-mono text-primary text-sm">[ CONSOLA IA EN VIVO ]</div>
+        <div className="bg-black/80 border border-primary/40 rounded-lg p-3 sm:p-4 mb-4">
+          <div className="flex items-center space-x-2 mb-2 sm:mb-3">
+            <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-primary animate-pulse" />
+            <div className="font-mono text-primary text-xs sm:text-sm">[ CONSOLA IA EN VIVO ]</div>
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-accent rounded-full animate-pulse delay-100"></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-200"></div>
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-accent rounded-full animate-pulse delay-100"></div>
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full animate-pulse delay-200"></div>
             </div>
           </div>
           
-          <div className="bg-black/60 border border-primary/20 rounded p-4 h-24 flex items-center justify-center">
-            <div className="w-full text-center">
-              <div className="flex items-center justify-center space-x-3 mb-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400 font-mono text-sm">[IA NEURAL]</span>
-                <div className="w-2 h-2 bg-accent rounded-full animate-pulse delay-100"></div>
+          <div className="bg-black/60 border border-primary/20 rounded p-3 sm:p-4 min-h-[60px] sm:min-h-[80px] md:h-24 flex items-center justify-center overflow-hidden">
+            <div className="w-full text-center px-2">
+              <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-1 sm:mb-2">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-400 font-mono text-xs sm:text-sm">[IA NEURAL]</span>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-accent rounded-full animate-pulse delay-100"></div>
               </div>
               
-              <div className="text-lg md:text-xl font-mono font-bold text-primary animate-fade-in">
+              <div className="text-sm sm:text-base md:text-lg font-mono font-bold text-primary animate-fade-in break-words hyphens-auto line-clamp-2 sm:line-clamp-none">
                 {currentMessage}
                 {isTyping && (
                   <span className="animate-pulse text-accent ml-1">|</span>
@@ -290,20 +290,20 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
               </div>
               
               {!isTyping && (
-                <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mt-2 animate-pulse"></div>
+                <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent mt-1 sm:mt-2 animate-pulse"></div>
               )}
             </div>
           </div>
         </div>
 
         {/* Fake System Resources */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-black/60 border border-primary/30 rounded p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <Cpu className="w-4 h-4 text-accent" />
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="bg-black/60 border border-primary/30 rounded p-2 sm:p-3">
+            <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
+              <Cpu className="w-3 h-3 sm:w-4 sm:h-4 text-accent" />
               <span className="font-mono text-xs text-primary">CPU</span>
             </div>
-            <div className="bg-black/40 h-2 rounded overflow-hidden">
+            <div className="bg-black/40 h-1.5 sm:h-2 rounded overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-accent to-accent/60 animate-pulse"
                 style={{ width: `${60 + Math.sin(Date.now() / 1000) * 20}%` }}
@@ -314,12 +314,12 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
             </div>
           </div>
 
-          <div className="bg-black/60 border border-primary/30 rounded p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <Activity className="w-4 h-4 text-green-400" />
+          <div className="bg-black/60 border border-primary/30 rounded p-2 sm:p-3">
+            <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
+              <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
               <span className="font-mono text-xs text-primary">GPU</span>
             </div>
-            <div className="bg-black/40 h-2 rounded overflow-hidden">
+            <div className="bg-black/40 h-1.5 sm:h-2 rounded overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-green-400 to-green-600 animate-pulse"
                 style={{ width: `${80 + Math.cos(Date.now() / 800) * 15}%` }}
@@ -330,12 +330,12 @@ const CountdownTimer = ({ timeRemaining, totalTime, startTime }: CountdownTimerP
             </div>
           </div>
 
-          <div className="bg-black/60 border border-primary/30 rounded p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <Wifi className="w-4 h-4 text-primary" />
+          <div className="bg-black/60 border border-primary/30 rounded p-2 sm:p-3">
+            <div className="flex items-center space-x-1 sm:space-x-2 mb-1 sm:mb-2">
+              <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               <span className="font-mono text-xs text-primary">NET</span>
             </div>
-            <div className="bg-black/40 h-2 rounded overflow-hidden">
+            <div className="bg-black/40 h-1.5 sm:h-2 rounded overflow-hidden">
               <div className="h-full bg-gradient-to-r from-primary to-primary/60 w-full animate-pulse" />
             </div>
             <div className="text-xs text-primary font-mono mt-1">STABLE</div>
