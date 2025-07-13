@@ -181,6 +181,7 @@ export type Database = {
           current_step: string
           generated_script: string | null
           id: string
+          manual_customization: Json | null
           presenter_customization: Json | null
           style_data: Json | null
           updated_at: string
@@ -195,6 +196,7 @@ export type Database = {
           current_step?: string
           generated_script?: string | null
           id?: string
+          manual_customization?: Json | null
           presenter_customization?: Json | null
           style_data?: Json | null
           updated_at?: string
@@ -209,6 +211,7 @@ export type Database = {
           current_step?: string
           generated_script?: string | null
           id?: string
+          manual_customization?: Json | null
           presenter_customization?: Json | null
           style_data?: Json | null
           updated_at?: string

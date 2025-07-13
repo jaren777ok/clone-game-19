@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization } from '@/types/videoFlow';
 
 export interface VideoConfigData {
   id: string;
@@ -35,6 +35,18 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
   });
 
   try {
+    // For manual customization, save only metadata (not File objects)
+    let manualCustomizationData = null;
+    if (flowState.manualCustomization) {
+      manualCustomizationData = {
+        sessionId: flowState.manualCustomization.sessionId,
+        imageCount: flowState.manualCustomization.images.length,
+        videoCount: flowState.manualCustomization.videos.length,
+        imageNames: flowState.manualCustomization.images.map(f => f.name),
+        videoNames: flowState.manualCustomization.videos.map(f => f.name)
+      };
+    }
+
     const configData = {
       user_id: user.id,
       api_key_id: flowState.selectedApiKey?.id || null,
@@ -45,6 +57,7 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       card_customization: flowState.cardCustomization ? JSON.parse(JSON.stringify(flowState.cardCustomization)) : null,
       generated_script: flowState.generatedScript || null,
       current_step: flowState.step,
+      manual_customization: manualCustomizationData,
       updated_at: new Date().toISOString()
     };
 
@@ -107,8 +120,20 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
       hasApiKey: !!data.heygen_api_keys,
       hasAvatar: !!data.avatar_data,
       hasVoice: !!data.voice_data,
-      hasStyle: !!data.style_data
+      hasStyle: !!data.style_data,
+      hasManualCustomization: !!data.manual_customization
     });
+
+    // Reconstruct manual customization with sessionId but empty File arrays
+    let manualCustomization: ManualCustomization | null = null;
+    if (data.manual_customization) {
+      const manualData = data.manual_customization as any;
+      manualCustomization = {
+        images: [], // Will be loaded from localStorage later
+        videos: [], // Will be loaded from localStorage later
+        sessionId: manualData.sessionId
+      };
+    }
 
     // Reconstruir el FlowState desde los datos de la DB
     const flowState: FlowState = {
@@ -124,7 +149,9 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
       selectedStyle: data.style_data ? data.style_data as unknown as VideoStyle : null,
       generatedScript: data.generated_script,
       cardCustomization: data.card_customization ? data.card_customization as unknown as CardCustomization : null,
-      presenterCustomization: data.presenter_customization ? data.presenter_customization as unknown as PresenterCustomization : null
+      presenterCustomization: data.presenter_customization ? data.presenter_customization as unknown as PresenterCustomization : null,
+      apiVersionCustomization: null, // Not persisted in DB, only in localStorage
+      manualCustomization
     };
 
     return flowState;
