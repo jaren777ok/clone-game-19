@@ -176,3 +176,64 @@ export const sendToEducativo2Webhook = async (payload: WebhookPayload): Promise<
     return false;
   }
 };
+
+export const sendToManualWebhook = async (
+  payload: WebhookPayload, 
+  images: File[], 
+  videos: File[]
+): Promise<boolean> => {
+  try {
+    console.log('Enviando datos a webhook Estilo Manual...');
+    console.log('Payload completo Estilo Manual:', payload);
+    console.log(`Enviando ${images.length} imágenes y ${videos.length} videos`);
+    
+    // Create FormData for binary file upload
+    const formData = new FormData();
+    
+    // Add regular payload data
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
+    
+    // Add images with specific naming (imagen1, imagen2, etc.)
+    images.forEach((image, index) => {
+      formData.append(`imagen${index + 1}`, image);
+    });
+    
+    // Add videos with specific naming (video1, video2, etc.)
+    videos.forEach((video, index) => {
+      formData.append(`video${index + 1}`, video);
+    });
+    
+    // Set a 30-second timeout for webhook confirmation
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
+    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL', {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`Webhook Estilo Manual respondió con error: ${response.status}`);
+      return false;
+    }
+
+    const data = await response.json();
+    console.log('✅ Webhook Estilo Manual confirmó recepción:', data);
+    
+    return true;
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('⏰ Timeout esperando confirmación del webhook Estilo Manual (30s)');
+    } else {
+      console.error('❌ Error enviando a webhook Estilo Manual:', err);
+    }
+    return false;
+  }
+};

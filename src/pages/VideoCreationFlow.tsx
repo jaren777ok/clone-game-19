@@ -8,6 +8,7 @@ import AvatarSelector from '@/components/video/AvatarSelector';
 import VoiceSelector from '@/components/video/VoiceSelector';
 import StyleSelector from '@/components/video/StyleSelector';
 import NeuroCopyGenerator from '@/components/video/NeuroCopyGenerator';
+import { ManualUploadModal } from '@/components/video/ManualUploadModal';
 
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const VideoCreationFlow = () => {
     selectAvatar,
     selectVoice,
     selectStyle,
+    selectManualCustomization,
     selectGeneratedScript,
     goToStep,
     resetFlow
@@ -35,8 +37,15 @@ const VideoCreationFlow = () => {
       goToStep('avatar');
     } else if (flowState.step === 'style') {
       goToStep('voice');
-    } else if (flowState.step === 'neurocopy') {
+    } else if (flowState.step === 'manual-upload') {
       goToStep('style');
+    } else if (flowState.step === 'neurocopy') {
+      // For manual style, go back to manual upload, otherwise to style
+      if (flowState.selectedStyle?.id === 'style-5') {
+        goToStep('manual-upload');
+      } else {
+        goToStep('style');
+      }
     }
   };
 
@@ -146,6 +155,19 @@ const VideoCreationFlow = () => {
         <StyleSelector
           onSelectStyle={selectStyle}
           onBack={handleBack}
+        />
+      );
+
+    case 'manual-upload':
+      if (!flowState.selectedStyle) {
+        goToStep('style');
+        return null;
+      }
+      return (
+        <ManualUploadModal
+          open={true}
+          onClose={() => goToStep('style')}
+          onConfirm={selectManualCustomization}
         />
       );
 

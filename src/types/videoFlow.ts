@@ -40,8 +40,13 @@ export interface ApiVersionCustomization {
   height: number;
 }
 
+export interface ManualCustomization {
+  images: File[];
+  videos: File[];
+}
+
 export interface FlowState {
-  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'neurocopy' | 'generator';
+  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'manual-upload' | 'neurocopy' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
   selectedAvatar: Avatar | null;
   selectedVoice: Voice | null;
@@ -50,4 +55,5 @@ export interface FlowState {
   cardCustomization?: CardCustomization | null;
   presenterCustomization?: PresenterCustomization | null;
   apiVersionCustomization?: ApiVersionCustomization | null;
+  manualCustomization?: ManualCustomization | null;
 }

@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization } from '@/types/videoFlow';
+import { VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization } from '@/types/videoFlow';
 import CustomizeCardsModal from './CustomizeCardsModal';
 import PresenterNameModal from './PresenterNameModal';
 import ApiVersionModal from './ApiVersionModal';
+import { ManualUploadModal } from './ManualUploadModal';
 import StyleSelectorHeader from './StyleSelectorHeader';
 import PreviousStyleSelectionBanner from './PreviousStyleSelectionBanner';
 import StyleGrid from './StyleGrid';
 
 interface Props {
-  onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization) => void;
+  onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => void;
   onBack: () => void;
 }
 
@@ -19,6 +20,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [showPresenterModal, setShowPresenterModal] = useState(false);
   const [showApiVersionModal, setShowApiVersionModal] = useState(false);
+  const [showManualUploadModal, setShowManualUploadModal] = useState(false);
   const [pendingStyle, setPendingStyle] = useState<VideoStyle | null>(null);
   const [pendingCardCustomization, setPendingCardCustomization] = useState<CardCustomization | null>(null);
   const [pendingPresenterCustomization, setPendingPresenterCustomization] = useState<PresenterCustomization | null>(null);
@@ -44,6 +46,11 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       id: 'style-4',
       name: 'Estilo Educativo 2',
       video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAyIE1PREVMTy5tcDQiLCJpYXQiOjE3NTA5MjE0NDMsImV4cCI6MTc4MjQ1NzQ0M30.KM76FvzzPnRficUwxk4tf1oKaV65RmlRPa-9BkG_2JY'
+    },
+    {
+      id: 'style-5',
+      name: 'Estilo Manual',
+      video_url: 'https://api.theclonegame.com/storage/v1/object/sign/videos-de-app/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAyIE1PREVMTy5tcDQiLCJpYXQiOjE3NTI0MzEzNDMsImV4cCI6MTc4Mzk2NzM0M30.NCgUkmhMzMTTxZVOqtAXkqHShtSBA-DC4Loaoq60u3I'
     }
   ];
 
@@ -82,6 +89,12 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       setPendingCardCustomization(null);
       setPendingPresenterCustomization(null);
       setShowApiVersionModal(true);
+    } else if (style.id === 'style-5') {
+      // Estilo Manual - requiere subida de archivos
+      setPendingStyle(style);
+      setPendingCardCustomization(null);
+      setPendingPresenterCustomization(null);
+      setShowManualUploadModal(true);
     } else {
       // Fallback para otros estilos - directo a API version modal
       setPendingStyle(style);
@@ -137,6 +150,28 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
 
   const handleApiVersionCancel = () => {
     setShowApiVersionModal(false);
+    setPendingStyle(null);
+    setPendingCardCustomization(null);
+    setPendingPresenterCustomization(null);
+  };
+
+  const handleManualUploadConfirm = (manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
+    if (pendingStyle) {
+      setSelectedStyleId(pendingStyle.id);
+      onSelectStyle(
+        pendingStyle, 
+        undefined, 
+        undefined,
+        apiVersionCustomization,
+        manualCustomization
+      );
+    }
+    setShowManualUploadModal(false);
+    setPendingStyle(null);
+  };
+
+  const handleManualUploadCancel = () => {
+    setShowManualUploadModal(false);
     setPendingStyle(null);
     setPendingCardCustomization(null);
     setPendingPresenterCustomization(null);
@@ -225,6 +260,13 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
         isOpen={showApiVersionModal}
         onClose={handleApiVersionCancel}
         onConfirm={handleApiVersionConfirm}
+      />
+
+      {/* Modal de subida manual */}
+      <ManualUploadModal
+        open={showManualUploadModal}
+        onClose={handleManualUploadCancel}
+        onConfirm={handleManualUploadConfirm}
       />
 
       {/* Background effects */}

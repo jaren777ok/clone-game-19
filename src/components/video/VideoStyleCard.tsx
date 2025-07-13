@@ -25,7 +25,18 @@ const VideoStyleCard: React.FC<Props> = ({
   onVideoRef
 }) => {
   const getStyleRequirements = (styleId: string) => {
-    if (styleId === 'style-4') {
+    if (styleId === 'style-5') {
+      // Estilo Manual - requiere archivos propios
+      return (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+          <h4 className="font-semibold text-amber-800 dark:text-amber-200 text-sm mb-2">Requisitos:</h4>
+          <ul className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+            <li>• 14 imágenes propias</li>
+            <li>• 5 videos propios</li>
+          </ul>
+        </div>
+      );
+    } else if (styleId === 'style-4') {
       // Estilo Educativo 2 - solo avatar horizontal
       return (
         <div className="space-y-1">

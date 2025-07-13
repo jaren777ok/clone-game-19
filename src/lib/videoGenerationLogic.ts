@@ -1,7 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { FlowState } from '@/types/videoFlow';
 import { saveGenerationState } from '@/lib/videoGeneration';
-import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook } from '@/lib/webhookUtils';
+import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook, sendToManualWebhook } from '@/lib/webhookUtils';
 
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
@@ -97,6 +97,8 @@ export const initiateVideoGeneration = async (
     webhookType = 'ESTILO_EDUCATIVO1';
   } else if (flowState.selectedStyle!.id === 'style-4') {
     webhookType = 'EDUCATIVO_2';
+  } else if (flowState.selectedStyle!.id === 'style-5') {
+    webhookType = 'MANUAL';
   }
 
   console.log('📤 Enviando payload al webhook (esperando confirmación):', {
@@ -145,6 +147,25 @@ export const initiateVideoGeneration = async (
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
       webhookConfirmed = await sendToEducativo2Webhook(basePayload);
+    } else if (flowState.selectedStyle!.id === 'style-5') {
+      // Estilo Manual
+      if (!flowState.manualCustomization?.images || !flowState.manualCustomization?.videos) {
+        throw new Error('Archivos requeridos para Estilo Manual no encontrados');
+      }
+      
+      console.log('📁 Enviando a webhook Estilo Manual con archivos:', {
+        requestId: requestId,
+        imagesCount: flowState.manualCustomization.images.length,
+        videosCount: flowState.manualCustomization.videos.length,
+        presenterName: basePayload.nombrePresentador,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
+      });
+      
+      webhookConfirmed = await sendToManualWebhook(
+        basePayload, 
+        flowState.manualCustomization.images, 
+        flowState.manualCustomization.videos
+      );
     } else {
       // Webhook estándar (Estilo Noticiero y otros)
       console.log('🎥 Enviando a webhook estándar:', {

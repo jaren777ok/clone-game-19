@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -22,7 +22,8 @@ export const useVideoCreationFlow = () => {
     generatedScript: null,
     cardCustomization: null,
     presenterCustomization: null,
-    apiVersionCustomization: null
+    apiVersionCustomization: null,
+    manualCustomization: null
   });
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -87,7 +88,8 @@ export const useVideoCreationFlow = () => {
       generatedScript: null,
       cardCustomization: null,
       presenterCustomization: null,
-      apiVersionCustomization: null
+      apiVersionCustomization: null,
+      manualCustomization: null
     }));
   }, []);
 
@@ -109,15 +111,39 @@ export const useVideoCreationFlow = () => {
     }));
   }, []);
 
-  const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization) => {
+  const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
     console.log('📐 Configuración de API:', apiVersionCustomization);
+    
+    // Check if it's manual style requiring file upload
+    if (style.id === 'style-5') {
+      setFlowState(prev => ({
+        ...prev,
+        selectedStyle: style,
+        step: 'manual-upload'
+      }));
+    } else {
+      setFlowState(prev => ({
+        ...prev,
+        selectedStyle: style,
+        cardCustomization: cardCustomization || null,
+        presenterCustomization: presenterCustomization || null,
+        apiVersionCustomization: apiVersionCustomization || null,
+        manualCustomization: manualCustomization || null,
+        step: 'neurocopy'
+      }));
+    }
+  }, []);
+
+  const selectManualCustomization = useCallback((manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
+    console.log('📁 Seleccionando archivos manuales:', {
+      images: manualCustomization.images.length,
+      videos: manualCustomization.videos.length
+    });
     setFlowState(prev => ({
       ...prev,
-      selectedStyle: style,
-      cardCustomization: cardCustomization || null,
-      presenterCustomization: presenterCustomization || null,
-      apiVersionCustomization: apiVersionCustomization || null,
+      manualCustomization,
+      apiVersionCustomization,
       step: 'neurocopy'
     }));
   }, []);
@@ -147,7 +173,8 @@ export const useVideoCreationFlow = () => {
       generatedScript: null,
       cardCustomization: null,
       presenterCustomization: null,
-      apiVersionCustomization: null
+      apiVersionCustomization: null,
+      manualCustomization: null
     });
     
     if (user) {
@@ -164,6 +191,7 @@ export const useVideoCreationFlow = () => {
     selectAvatar,
     selectVoice,
     selectStyle,
+    selectManualCustomization,
     selectGeneratedScript,
     goToStep,
     resetFlow
