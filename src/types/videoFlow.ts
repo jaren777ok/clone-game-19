@@ -40,10 +40,17 @@ export interface ApiVersionCustomization {
   height: number;
 }
 
+export interface Base64File {
+  name: string;
+  data: string; // base64 encoded content
+  type: string;
+  size: number;
+}
+
 export interface ManualCustomization {
-  images: File[];
-  videos: File[];
-  sessionId?: string; // For local storage reference
+  images: Base64File[];
+  videos: Base64File[];
+  sessionId?: string; // For reference
 }
 
 export interface FlowState {

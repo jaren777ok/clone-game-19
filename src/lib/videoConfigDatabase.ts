@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization, Base64File } from '@/types/videoFlow';
 
 export interface VideoConfigData {
   id: string;
@@ -35,15 +35,13 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
   });
 
   try {
-    // For manual customization, save only metadata (not File objects)
+    // For manual customization, save complete base64 files in Supabase
     let manualCustomizationData = null;
     if (flowState.manualCustomization) {
       manualCustomizationData = {
         sessionId: flowState.manualCustomization.sessionId,
-        imageCount: flowState.manualCustomization.images.length,
-        videoCount: flowState.manualCustomization.videos.length,
-        imageNames: flowState.manualCustomization.images.map(f => f.name),
-        videoNames: flowState.manualCustomization.videos.map(f => f.name)
+        images: flowState.manualCustomization.images,
+        videos: flowState.manualCustomization.videos
       };
     }
 
@@ -124,13 +122,13 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
       hasManualCustomization: !!data.manual_customization
     });
 
-    // Reconstruct manual customization with sessionId but empty File arrays
+    // Reconstruct manual customization with base64 files from Supabase
     let manualCustomization: ManualCustomization | null = null;
     if (data.manual_customization) {
       const manualData = data.manual_customization as any;
       manualCustomization = {
-        images: [], // Will be loaded from localStorage later
-        videos: [], // Will be loaded from localStorage later
+        images: manualData.images || [],
+        videos: manualData.videos || [],
         sessionId: manualData.sessionId
       };
     }

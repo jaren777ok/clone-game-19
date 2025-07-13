@@ -2,7 +2,7 @@
 import { FlowState, HeyGenApiKey } from '@/types/videoFlow';
 import { saveVideoConfig, loadVideoConfig, clearVideoConfig } from '@/lib/videoConfigDatabase';
 import { User } from '@supabase/supabase-js';
-import { loadFilesFromLocal, hasLocalFiles } from '@/lib/fileStorage';
+// No longer using localStorage for file storage
 
 export const determineInitialStep = (
   savedState: FlowState | null, 
@@ -33,33 +33,29 @@ export const determineInitialStep = (
       if (savedState.selectedStyle?.id === 'style-5' && savedState.manualCustomization && savedState.apiVersionCustomization) {
         console.log('📦 Found saved manual customization, checking local files...');
         
-        // Try to restore files from localStorage
-        const localFiles = loadFilesFromLocal(savedState.manualCustomization.sessionId);
-        if (localFiles) {
-          console.log('✅ Files restored from localStorage');
-          const updatedManualCustomization = {
-            ...savedState.manualCustomization,
-            images: localFiles.images,
-            videos: localFiles.videos
-          };
+        // Files are now loaded directly from Supabase as base64
+        if (savedState.manualCustomization.images.length > 0 && savedState.manualCustomization.videos.length > 0) {
+          console.log('✅ Archivos cargados desde Supabase:', {
+            images: savedState.manualCustomization.images.length,
+            videos: savedState.manualCustomization.videos.length,
+            sessionId: savedState.manualCustomization.sessionId
+          });
           
           // If has all selections including generated script, go to generator
           if (savedState.generatedScript) {
             return {
               ...savedState,
-              manualCustomization: updatedManualCustomization,
               step: 'generator'
             };
           }
           // If has all selections but no script, go to neurocopy
           return {
             ...savedState,
-            manualCustomization: updatedManualCustomization,
             step: 'neurocopy',
             generatedScript: null
           };
         } else {
-          console.log('❌ Could not restore files, going back to manual-upload');
+          console.log('❌ No se encontraron archivos válidos, regresando a manual-upload');
           return {
             ...savedState,
             step: 'manual-upload'

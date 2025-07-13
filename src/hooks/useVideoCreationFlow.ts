@@ -9,7 +9,7 @@ import {
   saveFlowState, 
   clearFlowState 
 } from '@/utils/videoFlowUtils';
-import { saveFilesToLocal, clearLocalFiles } from '@/lib/fileStorage';
+// Removed localStorage dependency - now using Supabase for file storage
 
 export const useVideoCreationFlow = () => {
   const { user } = useAuth();
@@ -137,45 +137,21 @@ export const useVideoCreationFlow = () => {
   }, []);
 
   const selectManualCustomization = useCallback(async (manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
-    console.log('📁 Seleccionando archivos manuales:', {
+    console.log('🎨 Seleccionando configuración manual (archivos en base64):', {
       images: manualCustomization.images.length,
       videos: manualCustomization.videos.length,
-      apiVersionCustomization
+      sessionId: manualCustomization.sessionId
     });
-    
-    try {
-      // Save files to localStorage
-      const sessionId = await saveFilesToLocal(manualCustomization.images, manualCustomization.videos);
-      console.log('💾 Files saved to localStorage with sessionId:', sessionId);
-      
-      const updatedManualCustomization: ManualCustomization = {
-        ...manualCustomization,
-        sessionId
-      };
-      
-      setFlowState(prev => {
-        const newState = {
-          ...prev,
-          manualCustomization: updatedManualCustomization,
-          apiVersionCustomization,
-          step: 'neurocopy' as const
-        };
-        
-        console.log('📁 Estado actualizado para flujo manual:', {
-          step: newState.step,
-          hasManualCustomization: !!newState.manualCustomization,
-          hasApiVersionCustomization: !!newState.apiVersionCustomization,
-          imageCount: newState.manualCustomization?.images.length,
-          videoCount: newState.manualCustomization?.videos.length,
-          sessionId: newState.manualCustomization?.sessionId
-        });
-        
-        return newState;
-      });
-    } catch (error) {
-      console.error('❌ Error saving files to localStorage:', error);
-      // Could show an error toast here
-    }
+
+    // Directly save to Supabase, no localStorage needed
+    setFlowState(prev => ({
+      ...prev,
+      step: 'neurocopy',
+      manualCustomization,
+      apiVersionCustomization
+    }));
+
+    console.log('✅ Configuración manual guardada directamente en Supabase');
   }, []);
 
   const selectGeneratedScript = useCallback((script: string) => {
@@ -193,11 +169,14 @@ export const useVideoCreationFlow = () => {
   }, []);
 
   const resetFlow = useCallback(async () => {
-    console.log('🔄 Reseteando flujo de creación');
+    console.log('🔄 Reiniciando flujo completo...');
     
-    // Clear local files
-    clearLocalFiles();
+    // Clear flow state in Supabase (including base64 files)
+    if (user) {
+      await clearFlowState(user);
+    }
     
+    // Reset to initial state
     setFlowState({
       step: 'api-key',
       selectedApiKey: null,
@@ -211,9 +190,7 @@ export const useVideoCreationFlow = () => {
       manualCustomization: null
     });
     
-    if (user) {
-      await clearFlowState(user);
-    }
+    console.log('✅ Flujo reiniciado completamente');
   }, [user]);
 
   return {

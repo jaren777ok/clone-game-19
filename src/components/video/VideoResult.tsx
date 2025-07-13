@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Copy, ExternalLink, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { cleanupManualCustomizationFiles } from '@/lib/videoCleanup';
 
 interface VideoResultProps {
   videoUrl: string;
@@ -14,6 +16,21 @@ const VideoResult = ({ videoUrl, onNewVideo }: VideoResultProps) => {
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Clean up base64 files when video is successfully completed
+  useEffect(() => {
+    const cleanupFiles = async () => {
+      try {
+        await cleanupManualCustomizationFiles(user);
+        console.log('🧹 Archivos base64 limpiados después de completar video');
+      } catch (error) {
+        console.error('❌ Error limpiando archivos base64:', error);
+      }
+    };
+
+    cleanupFiles();
+  }, [user]);
 
   const handleCopyLink = async () => {
     try {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Upload, ChevronLeft, ChevronRight } from "lucide-react";
-import { ManualCustomization, ApiVersionCustomization } from "@/types/videoFlow";
+import { ManualCustomization, ApiVersionCustomization, Base64File } from "@/types/videoFlow";
 import { ImageUploadStep } from "./ImageUploadStep";
 import { VideoUploadStep } from "./VideoUploadStep";
 import ApiVersionModal from "./ApiVersionModal";
@@ -40,25 +40,68 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     }
   };
 
-  const handleApiVersionConfirm = (apiVersionCustomization: ApiVersionCustomization) => {
-    const manualCustomization: ManualCustomization = {
-      images,
-      videos
-    };
-    
-    console.log('📁 Confirmando configuración de API y archivos:', {
-      images: images.length,
-      videos: videos.length,
-      apiVersionCustomization
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1]); // Remove data:mime;base64, prefix
+      };
+      reader.onerror = error => reject(error);
     });
-    
-    onConfirm(manualCustomization, apiVersionCustomization);
-    
-    // Reset state and close modal
-    setCurrentStep('images');
-    setImages([]);
-    setVideos([]);
-    onClose();
+  };
+
+  const handleApiVersionConfirm = async (apiVersionCustomization: ApiVersionCustomization) => {
+    console.log('📁 Convirtiendo archivos a base64...', {
+      images: images.length,
+      videos: videos.length
+    });
+
+    try {
+      // Convert images to base64
+      const base64Images: Base64File[] = await Promise.all(
+        images.map(async (file, index) => ({
+          name: `imagen${index + 1}.${file.name.split('.').pop()}`,
+          data: await fileToBase64(file),
+          type: file.type,
+          size: file.size
+        }))
+      );
+
+      // Convert videos to base64
+      const base64Videos: Base64File[] = await Promise.all(
+        videos.map(async (file, index) => ({
+          name: `video${index + 1}.${file.name.split('.').pop()}`,
+          data: await fileToBase64(file),
+          type: file.type,
+          size: file.size
+        }))
+      );
+
+      const manualCustomization: ManualCustomization = {
+        images: base64Images,
+        videos: base64Videos,
+        sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+      
+      console.log('✅ Archivos convertidos a base64:', {
+        images: base64Images.length,
+        videos: base64Videos.length,
+        sessionId: manualCustomization.sessionId
+      });
+      
+      onConfirm(manualCustomization, apiVersionCustomization);
+      
+      // Reset state and close modal
+      setCurrentStep('images');
+      setImages([]);
+      setVideos([]);
+      onClose();
+    } catch (error) {
+      console.error('❌ Error convirtiendo archivos a base64:', error);
+      // Handle error - maybe show a toast notification
+    }
   };
 
   const isNextDisabled = () => {

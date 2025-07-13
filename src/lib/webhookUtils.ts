@@ -179,33 +179,37 @@ export const sendToEducativo2Webhook = async (payload: WebhookPayload): Promise<
 
 export const sendToManualWebhook = async (
   payload: WebhookPayload, 
-  images: File[], 
-  videos: File[]
+  images: { name: string; data: string; type: string; size: number; }[], 
+  videos: { name: string; data: string; type: string; size: number; }[]
 ): Promise<boolean> => {
   try {
     console.log('Enviando datos a webhook Estilo Manual...');
     console.log('Payload completo Estilo Manual:', payload);
     console.log(`Enviando ${images.length} imágenes y ${videos.length} videos`);
     
-    // Create FormData for binary file upload
-    const formData = new FormData();
-    
-    // Add regular payload data
-    Object.entries(payload).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, String(value));
-      }
-    });
-    
-    // Add images with specific naming (imagen1, imagen2, etc.)
-    images.forEach((image, index) => {
-      formData.append(`imagen${index + 1}`, image);
-    });
-    
-    // Add videos with specific naming (video1, video2, etc.)
-    videos.forEach((video, index) => {
-      formData.append(`video${index + 1}`, video);
-    });
+    // Create payload with base64 files instead of FormData
+    const manualPayload = {
+      ...payload,
+      // Add images with structured naming and base64 data
+      images: images.reduce((acc, image, index) => {
+        acc[image.name] = {
+          data: image.data,
+          type: image.type,
+          size: image.size
+        };
+        return acc;
+      }, {} as Record<string, { data: string; type: string; size: number; }>),
+      
+      // Add videos with structured naming and base64 data
+      videos: videos.reduce((acc, video, index) => {
+        acc[video.name] = {
+          data: video.data,
+          type: video.type,
+          size: video.size
+        };
+        return acc;
+      }, {} as Record<string, { data: string; type: string; size: number; }>)
+    };
     
     // Set a 30-second timeout for webhook confirmation
     const controller = new AbortController();
@@ -213,7 +217,10 @@ export const sendToManualWebhook = async (
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(manualPayload),
       signal: controller.signal
     });
 
