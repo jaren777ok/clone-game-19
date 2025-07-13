@@ -249,16 +249,6 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       const requestId = `${timestamp}-${random}`;
       setCurrentRequestId(requestId);
 
-      // Create database entry IMMEDIATELY 
-      const success = await handleStartGeneration(script.trim(), requestId);
-      if (!success) {
-        throw new Error('No se pudo guardar el estado de generación');
-      }
-
-      // Start countdown immediately
-      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId, script.trim());
-
       // Decrypt API key
       const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
       
@@ -277,13 +267,23 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         height: flowState!.apiVersionCustomization?.height || 720
       };
 
+      // Send directly to webhook with files FIRST
+      await sendDirectToManualWebhook(payload, images, videos);
+      
+      // ONLY if webhook is successful, create database entry and start tracking
+      const success = await handleStartGeneration(script.trim(), requestId);
+      if (!success) {
+        throw new Error('No se pudo guardar el estado de generación');
+      }
+
+      // Start countdown and monitoring ONLY after successful webhook call
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId, script.trim());
+
       toast({
         title: "Video en procesamiento",
         description: `Procesamiento iniciado. ID: ${requestId.substring(0, 8)}...`
       });
-
-      // Send directly to webhook with files
-      await sendDirectToManualWebhook(payload, images, videos);
       
     } catch (err) {
       console.error('Error en generación con archivos:', err);
