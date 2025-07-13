@@ -163,12 +163,22 @@ const VideoCreationFlow = () => {
         goToStep('style');
         return null;
       }
+      // Render the style selector as background and show modal overlay
       return (
-        <ManualUploadModal
-          open={true}
-          onClose={() => goToStep('style')}
-          onConfirm={selectManualCustomization}
-        />
+        <>
+          <StyleSelector
+            onSelectStyle={selectStyle}
+            onBack={handleBack}
+          />
+          <ManualUploadModal
+            open={true}
+            onClose={() => goToStep('style')}
+            onConfirm={(manualCustomization, apiVersionCustomization) => {
+              console.log('🚀 Manual upload confirmed, transitioning to neurocopy...');
+              selectManualCustomization(manualCustomization, apiVersionCustomization);
+            }}
+          />
+        </>
       );
 
     case 'neurocopy':
