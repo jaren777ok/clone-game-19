@@ -135,13 +135,10 @@ export const useVideoCreationFlow = () => {
     console.log('📝 Seleccionando Script generado, longitud:', script.length);
     
     setFlowState(prev => {
-      // If style is manual (style-5), go to manual-files step, otherwise go to generator
-      const nextStep = prev.selectedStyle?.id === 'style-5' ? 'manual-files' : 'generator';
-      
       return {
         ...prev,
         generatedScript: script,
-        step: nextStep
+        step: 'generator'
       };
     });
   }, []);
@@ -151,20 +148,6 @@ export const useVideoCreationFlow = () => {
     setFlowState(prev => ({ ...prev, step }));
   }, []);
 
-  const selectManualFiles = useCallback((apiVersionCustomization: ApiVersionCustomization, sessionId: string) => {
-    console.log('📁 Archivos manuales seleccionados con sessionId:', sessionId);
-    
-    setFlowState(prev => ({
-      ...prev,
-      apiVersionCustomization,
-      manualCustomization: {
-        images: [], // We'll load from localStorage when needed
-        videos: [], // We'll load from localStorage when needed
-        sessionId
-      },
-      step: 'generator'
-    }));
-  }, []);
 
   const resetFlow = useCallback(async () => {
     console.log('🔄 Reiniciando flujo completo...');
@@ -202,7 +185,6 @@ export const useVideoCreationFlow = () => {
     selectStyle,
     selectManualCustomization,
     selectGeneratedScript,
-    selectManualFiles,
     goToStep,
     resetFlow
   };

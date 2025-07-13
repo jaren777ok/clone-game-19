@@ -55,10 +55,10 @@ export const determineInitialStep = (
             generatedScript: null
           };
         } else {
-          console.log('❌ No se encontraron archivos válidos, regresando a manual-files');
+          console.log('❌ No se encontraron archivos válidos, regresando a neurocopy');
           return {
             ...savedState,
-            step: 'manual-files'
+            step: 'neurocopy'
           };
         }
       }

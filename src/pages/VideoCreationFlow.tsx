@@ -8,7 +8,6 @@ import AvatarSelector from '@/components/video/AvatarSelector';
 import VoiceSelector from '@/components/video/VoiceSelector';
 import StyleSelector from '@/components/video/StyleSelector';
 import NeuroCopyGenerator from '@/components/video/NeuroCopyGenerator';
-import { ManualUploadModal } from '@/components/video/ManualUploadModal';
 
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
@@ -24,7 +23,6 @@ const VideoCreationFlow = () => {
     selectStyle,
     selectManualCustomization,
     selectGeneratedScript,
-    selectManualFiles,
     goToStep,
     resetFlow
   } = useVideoCreationFlow();
@@ -43,15 +41,8 @@ const VideoCreationFlow = () => {
       case 'neurocopy':
         goToStep('style');
         break;
-      case 'manual-files':
-        goToStep('neurocopy');
-        break;
       case 'generator':
-        if (flowState.selectedStyle?.id === 'style-5') {
-          goToStep('manual-files');
-        } else {
-          goToStep('neurocopy');
-        }
+        goToStep('neurocopy');
         break;
       default:
         navigate('/');
@@ -165,15 +156,6 @@ const VideoCreationFlow = () => {
         <StyleSelector
           onSelectStyle={selectStyle}
           onBack={handleBack}
-        />
-      );
-
-    case 'manual-files':
-      return (
-        <ManualUploadModal
-          open={true}
-          onClose={() => goToStep('neurocopy')}
-          onConfirm={selectManualFiles}
         />
       );
 

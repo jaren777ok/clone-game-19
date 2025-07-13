@@ -8,6 +8,7 @@ import { validateFlowState } from '@/lib/videoGenerationLogic';
 import { FlowState } from '@/types/videoFlow';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
 import { migrateLegacyData } from '@/lib/migrationUtils';
+import { sendDirectToManualWebhook } from '@/lib/webhookUtils';
 
 interface UseVideoGeneratorProps {
   flowState?: FlowState;
@@ -205,6 +206,98 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   };
 
+  const handleGenerateVideoWithFiles = async (images: File[], videos: File[]) => {
+    // Simple check for existing generation without triggering refresh
+    if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
+      toast({
+        title: "Video en proceso",
+        description: "Ya tienes un video siendo generado. Espera a que termine o cancela la generación actual.",
+        variant: "destructive"
+      });
+      throw new Error("Video en proceso");
+    }
+
+    if (!script.trim()) {
+      toast({ 
+        title: "Guion requerido", 
+        description: "Por favor, ingresa un guion para generar el video.", 
+        variant: "destructive" 
+      });
+      throw new Error("Guion requerido");
+    }
+
+    const flowState = props?.flowState;
+    if (!validateFlowState(flowState)) {
+      toast({ 
+        title: "Configuración incompleta", 
+        description: "Faltan datos de configuración. Por favor, completa el flujo de creación.", 
+        variant: "destructive" 
+      });
+      throw new Error("Configuración incompleta");
+    }
+
+    setIsGenerating(true);
+    setError('');
+    setVideoResult('');
+
+    console.log('Iniciando generación de video con archivos manuales');
+    
+    try {
+      // Generate unique requestId
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 8);
+      const requestId = `${timestamp}-${random}`;
+      setCurrentRequestId(requestId);
+
+      // Create database entry IMMEDIATELY 
+      const success = await handleStartGeneration(script.trim(), requestId);
+      if (!success) {
+        throw new Error('No se pudo guardar el estado de generación');
+      }
+
+      // Start countdown immediately
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId, script.trim());
+
+      // Build payload for webhook
+      const payload = {
+        script: script.trim(),
+        userId: user?.id || '',
+        requestId,
+        timestamp: new Date().toISOString(),
+        appMode: 'production',
+        ClaveAPI: flowState!.selectedApiKey?.api_key_name,
+        AvatarID: flowState!.selectedAvatar?.avatar_id,
+        VoiceID: flowState!.selectedVoice?.voice_id,
+        Estilo: flowState!.selectedStyle?.id,
+        nombrePresentador: flowState!.presenterCustomization?.nombrePresentador,
+        width: flowState!.apiVersionCustomization?.width,
+        height: flowState!.apiVersionCustomization?.height
+      };
+
+      toast({
+        title: "Video en procesamiento",
+        description: `Procesamiento iniciado. ID: ${requestId.substring(0, 8)}...`
+      });
+
+      // Send directly to webhook with files
+      await sendDirectToManualWebhook(payload, images, videos);
+      
+    } catch (err) {
+      console.error('Error en generación con archivos:', err);
+      setError(err instanceof Error ? err.message : 'Error de conexión');
+      setIsGenerating(false);
+      
+      toast({ 
+        title: "Error de conexión", 
+        description: "No se pudo iniciar la generación. Por favor, intenta de nuevo.", 
+        variant: "destructive" 
+      });
+      
+      throw err;
+    }
+  };
+
   const handleNewVideo = () => {
     setScript('');
     setVideoResult('');
@@ -229,6 +322,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     handlers: {
       setScript,
       handleGenerateVideo,
+      handleGenerateVideoWithFiles,
       handleRecoverGeneration,
       handleCancelRecovery,
       handleNewVideo,

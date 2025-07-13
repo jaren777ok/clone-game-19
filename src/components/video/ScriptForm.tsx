@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Send, Clock, Zap, X, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ManualUploadModal } from './ManualUploadModal';
+import { FlowState } from '@/types/videoFlow';
 
 interface ScriptFormProps {
   script: string;
@@ -14,6 +16,8 @@ interface ScriptFormProps {
   error: string | null;
   timeRemaining?: number;
   currentRequestId?: string | null;
+  flowState?: FlowState;
+  onGenerateWithFiles?: (images: File[], videos: File[]) => Promise<void>;
 }
 
 const ScriptForm = ({ 
@@ -24,12 +28,34 @@ const ScriptForm = ({
   isGenerating, 
   error, 
   timeRemaining,
-  currentRequestId 
+  currentRequestId,
+  flowState,
+  onGenerateWithFiles
 }: ScriptFormProps) => {
+  const [showManualModal, setShowManualModal] = useState(false);
+
   const formatTimeRemaining = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Check if this is manual style
+  const isManualStyle = flowState?.selectedStyle?.id === 'style-5';
+
+  const handleGenerateClick = () => {
+    if (isManualStyle) {
+      setShowManualModal(true);
+    } else {
+      onSubmit();
+    }
+  };
+
+  const handleManualModalConfirm = async (images: File[], videos: File[]) => {
+    if (onGenerateWithFiles) {
+      await onGenerateWithFiles(images, videos);
+      setShowManualModal(false);
+    }
   };
 
   return (
@@ -160,7 +186,7 @@ const ScriptForm = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                onClick={onSubmit}
+                onClick={handleGenerateClick}
                 disabled={!script.trim() || isGenerating}
                 size="lg"
                 className="w-full cyber-border hover:cyber-glow-intense transition-all duration-300"
@@ -180,6 +206,17 @@ const ScriptForm = ({
             )}
           </Tooltip>
         </TooltipProvider>
+
+        {/* Manual Upload Modal */}
+        {isManualStyle && (
+          <ManualUploadModal
+            open={showManualModal}
+            onClose={() => setShowManualModal(false)}
+            script={script}
+            flowState={flowState}
+            onConfirm={handleManualModalConfirm}
+          />
+        )}
       </div>
     </div>
   );

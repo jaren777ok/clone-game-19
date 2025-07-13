@@ -7,9 +7,11 @@ import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
 import RecoveryNotification from '@/components/video/RecoveryNotification';
 import ScriptForm from '@/components/video/ScriptForm';
 import TipsSection from '@/components/video/TipsSection';
+import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 
 const VideoGenerator = () => {
-  const { state, handlers } = useVideoGenerator();
+  const { flowState } = useVideoCreationFlow();
+  const { state, handlers } = useVideoGenerator({ flowState });
 
   if (state.isGenerating) {
     return (
@@ -63,6 +65,8 @@ const VideoGenerator = () => {
             error={state.error}
             timeRemaining={state.timeRemaining}
             currentRequestId={state.currentRequestId}
+            flowState={flowState}
+            onGenerateWithFiles={handlers.handleGenerateVideoWithFiles}
           />
 
           <TipsSection />
