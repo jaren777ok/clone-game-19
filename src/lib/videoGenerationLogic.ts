@@ -148,21 +148,35 @@ export const initiateVideoGeneration = async (
       });
       webhookConfirmed = await sendToEducativo2Webhook(basePayload);
     } else if (flowState.selectedStyle!.id === 'style-5') {
-      // Estilo Manual
+      // Estilo Manual - sin nombre del presentador
       if (!flowState.manualCustomization?.images || !flowState.manualCustomization?.videos) {
         throw new Error('Archivos requeridos para Estilo Manual no encontrados');
       }
       
-      console.log('📁 Enviando a webhook Estilo Manual con archivos:', {
+      // Crear payload especial para manual sin nombrePresentador
+      const manualPayload = {
+        script: script.trim(),
+        userId: user.id,
+        requestId: requestId,
+        timestamp: new Date(timestamp).toISOString(),
+        appMode: "produccion",
+        ClaveAPI: decryptedApiKey,
+        AvatarID: flowState.selectedAvatar!.avatar_id,
+        VoiceID: flowState.selectedVoice!.voice_id,
+        Estilo: flowState.selectedStyle!.id,
+        width: flowState.apiVersionCustomization?.width || 1280,
+        height: flowState.apiVersionCustomization?.height || 720
+      };
+      
+      console.log('📁 Enviando a webhook Estilo Manual con archivos (sin nombrePresentador):', {
         requestId: requestId,
         imagesCount: flowState.manualCustomization.images.length,
         videosCount: flowState.manualCustomization.videos.length,
-        presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
       });
       
       webhookConfirmed = await sendToManualWebhook(
-        basePayload, 
+        manualPayload, 
         flowState.manualCustomization.images, 
         flowState.manualCustomization.videos
       );

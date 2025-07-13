@@ -138,14 +138,28 @@ export const useVideoCreationFlow = () => {
   const selectManualCustomization = useCallback((manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
     console.log('📁 Seleccionando archivos manuales:', {
       images: manualCustomization.images.length,
-      videos: manualCustomization.videos.length
+      videos: manualCustomization.videos.length,
+      apiVersionCustomization
     });
-    setFlowState(prev => ({
-      ...prev,
-      manualCustomization,
-      apiVersionCustomization,
-      step: 'neurocopy'
-    }));
+    
+    setFlowState(prev => {
+      const newState = {
+        ...prev,
+        manualCustomization,
+        apiVersionCustomization,
+        step: 'neurocopy' as const
+      };
+      
+      console.log('📁 Estado actualizado para flujo manual:', {
+        step: newState.step,
+        hasManualCustomization: !!newState.manualCustomization,
+        hasApiVersionCustomization: !!newState.apiVersionCustomization,
+        imageCount: newState.manualCustomization?.images.length,
+        videoCount: newState.manualCustomization?.videos.length
+      });
+      
+      return newState;
+    });
   }, []);
 
   const selectGeneratedScript = useCallback((script: string) => {

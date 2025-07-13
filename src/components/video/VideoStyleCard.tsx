@@ -28,12 +28,11 @@ const VideoStyleCard: React.FC<Props> = ({
     if (styleId === 'style-5') {
       // Estilo Manual - requiere archivos propios
       return (
-        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
-          <h4 className="font-semibold text-amber-800 dark:text-amber-200 text-sm mb-2">Requisitos:</h4>
-          <ul className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
-            <li>• 14 imágenes propias</li>
-            <li>• 5 videos propios</li>
-          </ul>
+        <div className="space-y-1">
+          <p className="font-medium text-yellow-400">Requisitos:</p>
+          <p className="text-muted-foreground">1. Se requiere subir 14 imágenes</p>
+          <p className="text-muted-foreground">2. Se requiere subir 5 videos</p>
+          <p className="text-muted-foreground">3. Se requiere Avatar Horizontal</p>
         </div>
       );
     } else if (styleId === 'style-4') {

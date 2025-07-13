@@ -17,7 +17,9 @@ export const determineInitialStep = (
       selectedStyle: null,
       generatedScript: null,
       cardCustomization: null,
-      presenterCustomization: null
+      presenterCustomization: null,
+      apiVersionCustomization: null,
+      manualCustomization: null
     };
   }
 
@@ -26,15 +28,33 @@ export const determineInitialStep = (
     const savedKeyExists = availableKeys.some(key => key.id === savedState.selectedApiKey?.id);
     
     if (savedKeyExists) {
-      // If has all selections including generated script, go to generator
-      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle && savedState.generatedScript) {
+      // For manual style (style-5), check if manual customization is complete
+      if (savedState.selectedStyle?.id === 'style-5' && savedState.manualCustomization && savedState.apiVersionCustomization) {
+        // If has all selections including generated script, go to generator
+        if (savedState.generatedScript) {
+          return {
+            ...savedState,
+            step: 'generator'
+          };
+        }
+        // If has all selections but no script, go to neurocopy
         return {
           ...savedState,
-          step: 'generator'
+          step: 'neurocopy',
+          generatedScript: null
         };
       }
-      // If has all selections but no script, go to neurocopy
+      
+      // For non-manual styles
       if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle) {
+        // If has all selections including generated script, go to generator
+        if (savedState.generatedScript) {
+          return {
+            ...savedState,
+            step: 'generator'
+          };
+        }
+        // If has all selections but no script, go to neurocopy
         return {
           ...savedState,
           step: 'neurocopy',
@@ -89,7 +109,9 @@ export const determineInitialStep = (
     selectedStyle: null,
     generatedScript: null,
     cardCustomization: null,
-    presenterCustomization: null
+    presenterCustomization: null,
+    apiVersionCustomization: null,
+    manualCustomization: null
   };
 };
 

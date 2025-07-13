@@ -45,7 +45,20 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
       images,
       videos
     };
+    
+    console.log('📁 Confirmando configuración de API y archivos:', {
+      images: images.length,
+      videos: videos.length,
+      apiVersionCustomization
+    });
+    
     onConfirm(manualCustomization, apiVersionCustomization);
+    
+    // Reset state and close modal
+    setCurrentStep('images');
+    setImages([]);
+    setVideos([]);
+    onClose();
   };
 
   const isNextDisabled = () => {
