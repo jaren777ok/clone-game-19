@@ -2,6 +2,7 @@
 import { FlowState, HeyGenApiKey } from '@/types/videoFlow';
 import { saveVideoConfig, loadVideoConfig, clearVideoConfig } from '@/lib/videoConfigDatabase';
 import { User } from '@supabase/supabase-js';
+import { loadFilesFromLocal, hasLocalFiles } from '@/lib/fileStorage';
 
 export const determineInitialStep = (
   savedState: FlowState | null, 
@@ -30,19 +31,40 @@ export const determineInitialStep = (
     if (savedKeyExists) {
       // For manual style (style-5), check if manual customization is complete
       if (savedState.selectedStyle?.id === 'style-5' && savedState.manualCustomization && savedState.apiVersionCustomization) {
-        // If has all selections including generated script, go to generator
-        if (savedState.generatedScript) {
+        console.log('📦 Found saved manual customization, checking local files...');
+        
+        // Try to restore files from localStorage
+        const localFiles = loadFilesFromLocal(savedState.manualCustomization.sessionId);
+        if (localFiles) {
+          console.log('✅ Files restored from localStorage');
+          const updatedManualCustomization = {
+            ...savedState.manualCustomization,
+            images: localFiles.images,
+            videos: localFiles.videos
+          };
+          
+          // If has all selections including generated script, go to generator
+          if (savedState.generatedScript) {
+            return {
+              ...savedState,
+              manualCustomization: updatedManualCustomization,
+              step: 'generator'
+            };
+          }
+          // If has all selections but no script, go to neurocopy
           return {
             ...savedState,
-            step: 'generator'
+            manualCustomization: updatedManualCustomization,
+            step: 'neurocopy',
+            generatedScript: null
+          };
+        } else {
+          console.log('❌ Could not restore files, going back to manual-upload');
+          return {
+            ...savedState,
+            step: 'manual-upload'
           };
         }
-        // If has all selections but no script, go to neurocopy
-        return {
-          ...savedState,
-          step: 'neurocopy',
-          generatedScript: null
-        };
       }
       
       // For non-manual styles

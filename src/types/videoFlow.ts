@@ -43,6 +43,7 @@ export interface ApiVersionCustomization {
 export interface ManualCustomization {
   images: File[];
   videos: File[];
+  sessionId?: string; // For local storage reference
 }
 
 export interface FlowState {

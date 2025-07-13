@@ -9,6 +9,7 @@ import {
   saveFlowState, 
   clearFlowState 
 } from '@/utils/videoFlowUtils';
+import { saveFilesToLocal, clearLocalFiles } from '@/lib/fileStorage';
 
 export const useVideoCreationFlow = () => {
   const { user } = useAuth();
@@ -135,31 +136,46 @@ export const useVideoCreationFlow = () => {
     }
   }, []);
 
-  const selectManualCustomization = useCallback((manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
+  const selectManualCustomization = useCallback(async (manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
     console.log('📁 Seleccionando archivos manuales:', {
       images: manualCustomization.images.length,
       videos: manualCustomization.videos.length,
       apiVersionCustomization
     });
     
-    setFlowState(prev => {
-      const newState = {
-        ...prev,
-        manualCustomization,
-        apiVersionCustomization,
-        step: 'neurocopy' as const
+    try {
+      // Save files to localStorage
+      const sessionId = await saveFilesToLocal(manualCustomization.images, manualCustomization.videos);
+      console.log('💾 Files saved to localStorage with sessionId:', sessionId);
+      
+      const updatedManualCustomization: ManualCustomization = {
+        ...manualCustomization,
+        sessionId
       };
       
-      console.log('📁 Estado actualizado para flujo manual:', {
-        step: newState.step,
-        hasManualCustomization: !!newState.manualCustomization,
-        hasApiVersionCustomization: !!newState.apiVersionCustomization,
-        imageCount: newState.manualCustomization?.images.length,
-        videoCount: newState.manualCustomization?.videos.length
+      setFlowState(prev => {
+        const newState = {
+          ...prev,
+          manualCustomization: updatedManualCustomization,
+          apiVersionCustomization,
+          step: 'neurocopy' as const
+        };
+        
+        console.log('📁 Estado actualizado para flujo manual:', {
+          step: newState.step,
+          hasManualCustomization: !!newState.manualCustomization,
+          hasApiVersionCustomization: !!newState.apiVersionCustomization,
+          imageCount: newState.manualCustomization?.images.length,
+          videoCount: newState.manualCustomization?.videos.length,
+          sessionId: newState.manualCustomization?.sessionId
+        });
+        
+        return newState;
       });
-      
-      return newState;
-    });
+    } catch (error) {
+      console.error('❌ Error saving files to localStorage:', error);
+      // Could show an error toast here
+    }
   }, []);
 
   const selectGeneratedScript = useCallback((script: string) => {
@@ -178,6 +194,10 @@ export const useVideoCreationFlow = () => {
 
   const resetFlow = useCallback(async () => {
     console.log('🔄 Reseteando flujo de creación');
+    
+    // Clear local files
+    clearLocalFiles();
+    
     setFlowState({
       step: 'api-key',
       selectedApiKey: null,
