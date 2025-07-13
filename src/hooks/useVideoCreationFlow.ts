@@ -114,81 +114,56 @@ export const useVideoCreationFlow = () => {
 
   const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
-    console.log('📐 Configuración de API:', apiVersionCustomization);
     
-    // Check if it's manual style requiring file upload
-    if (style.id === 'style-5') {
-      setFlowState(prev => ({
-        ...prev,
-        selectedStyle: style,
-        step: 'manual-upload'
-      }));
-    } else {
-      setFlowState(prev => ({
-        ...prev,
-        selectedStyle: style,
-        cardCustomization: cardCustomization || null,
-        presenterCustomization: presenterCustomization || null,
-        apiVersionCustomization: apiVersionCustomization || null,
-        manualCustomization: manualCustomization || null,
-        step: 'neurocopy'
-      }));
-    }
+    setFlowState(prev => ({
+      ...prev,
+      selectedStyle: style,
+      cardCustomization: cardCustomization || null,
+      presenterCustomization: presenterCustomization || null,
+      apiVersionCustomization: apiVersionCustomization || null,
+      manualCustomization: manualCustomization || null,
+      step: 'neurocopy' // Always go to neurocopy first, regardless of style
+    }));
   }, []);
 
+  // Legacy function kept for compatibility (no longer used with new flow)
   const selectManualCustomization = useCallback(async (manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
-    console.log('🎨 Seleccionando configuración manual (archivos en base64):', {
-      images: manualCustomization.images.length,
-      videos: manualCustomization.videos.length,
-      sessionId: manualCustomization.sessionId,
-      totalSize: manualCustomization.images.reduce((acc, img) => acc + img.size, 0) + manualCustomization.videos.reduce((acc, vid) => acc + vid.size, 0)
-    });
-
-    if (!user) {
-      throw new Error('No hay usuario autenticado para guardar');
-    }
-
-    try {
-      // Construct the complete new state with all current data plus new manual customization
-      const newFlowState: FlowState = {
-        ...flowState, // Keep all current selections
-        step: 'neurocopy',
-        manualCustomization,
-        apiVersionCustomization
-      };
-
-      console.log('💾 Guardando estado completo directamente a Supabase...', {
-        step: newFlowState.step,
-        hasImages: newFlowState.manualCustomization?.images.length || 0,
-        hasVideos: newFlowState.manualCustomization?.videos.length || 0
-      });
-
-      // Force immediate save to Supabase with complete state
-      await saveFlowState(user, newFlowState);
-      
-      console.log('✅ Configuración manual guardada exitosamente en Supabase');
-
-      // Only update React state after successful save
-      setFlowState(newFlowState);
-      
-    } catch (error) {
-      console.error('❌ Error guardando configuración manual:', error);
-      throw error; // Re-throw to let the modal handle the error
-    }
-  }, [user, flowState]);
+    console.warn('selectManualCustomization is deprecated in the new flow');
+  }, []);
 
   const selectGeneratedScript = useCallback((script: string) => {
     console.log('📝 Seleccionando Script generado, longitud:', script.length);
-    setFlowState(prev => ({
-      ...prev,
-      generatedScript: script,
-      step: 'generator'
-    }));
+    
+    setFlowState(prev => {
+      // If style is manual (style-5), go to manual-files step, otherwise go to generator
+      const nextStep = prev.selectedStyle?.id === 'style-5' ? 'manual-files' : 'generator';
+      
+      return {
+        ...prev,
+        generatedScript: script,
+        step: nextStep
+      };
+    });
   }, []);
 
   const goToStep = useCallback((step: FlowState['step']) => {
     console.log('🔄 Navegando a paso:', step);
     setFlowState(prev => ({ ...prev, step }));
+  }, []);
+
+  const selectManualFiles = useCallback((apiVersionCustomization: ApiVersionCustomization, sessionId: string) => {
+    console.log('📁 Archivos manuales seleccionados con sessionId:', sessionId);
+    
+    setFlowState(prev => ({
+      ...prev,
+      apiVersionCustomization,
+      manualCustomization: {
+        images: [], // We'll load from localStorage when needed
+        videos: [], // We'll load from localStorage when needed
+        sessionId
+      },
+      step: 'generator'
+    }));
   }, []);
 
   const resetFlow = useCallback(async () => {
@@ -227,6 +202,7 @@ export const useVideoCreationFlow = () => {
     selectStyle,
     selectManualCustomization,
     selectGeneratedScript,
+    selectManualFiles,
     goToStep,
     resetFlow
   };

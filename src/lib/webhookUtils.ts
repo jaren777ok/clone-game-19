@@ -177,69 +177,101 @@ export const sendToEducativo2Webhook = async (payload: WebhookPayload): Promise<
   }
 };
 
-export const sendToManualWebhook = async (
-  payload: WebhookPayload, 
-  images: { name: string; data: string; type: string; size: number; }[], 
-  videos: { name: string; data: string; type: string; size: number; }[]
-): Promise<boolean> => {
-  try {
-    console.log('Enviando datos a webhook Estilo Manual...');
-    console.log('Payload completo Estilo Manual:', payload);
-    console.log(`Enviando ${images.length} imágenes y ${videos.length} videos`);
-    
-    // Create payload with base64 files instead of FormData
-    const manualPayload = {
-      ...payload,
-      // Add images with structured naming and base64 data
-      images: images.reduce((acc, image, index) => {
-        acc[image.name] = {
-          data: image.data,
-          type: image.type,
-          size: image.size
-        };
-        return acc;
-      }, {} as Record<string, { data: string; type: string; size: number; }>),
-      
-      // Add videos with structured naming and base64 data
-      videos: videos.reduce((acc, video, index) => {
-        acc[video.name] = {
-          data: video.data,
-          type: video.type,
-          size: video.size
-        };
-        return acc;
-      }, {} as Record<string, { data: string; type: string; size: number; }>)
+// Helper function to convert File to base64
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1]); // Remove data:mime;base64, prefix
     };
+    reader.onerror = error => reject(error);
+  });
+}
+
+export const sendToManualWebhook = async (
+  payload: WebhookPayload,
+  sessionId?: string
+): Promise<boolean> => {
+  console.log('🔄 Sending to MANUAL webhook...');
+  console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
+  console.log('🗂️ SessionId:', sessionId);
+
+  // Dynamic import to avoid circular dependency
+  const { loadFilesFromLocal, clearLocalFiles } = await import('./fileStorage');
+
+  // Load files from localStorage
+  const localFiles = loadFilesFromLocal(sessionId);
+  if (!localFiles) {
+    console.error('❌ No files found in localStorage for sessionId:', sessionId);
+    return false;
+  }
+
+  const { images: imageFiles, videos: videoFiles } = localFiles;
+  console.log('🖼️ Images loaded:', imageFiles.length);
+  console.log('🎥 Videos loaded:', videoFiles.length);
+
+  const webhookUrl = 'https://hook.eu2.make.com/n5aqhq8iwrz6ej7oec59y7u91kw9bz81';
+  
+  // Create FormData for the webhook
+  const formData = new FormData();
+  
+  // Add all payload fields
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      formData.append(key, String(value));
+    }
+  });
+  
+  // Convert files to base64 and add to FormData
+  try {
+    // Process images
+    for (let i = 0; i < imageFiles.length; i++) {
+      const image = imageFiles[i];
+      const base64Data = await fileToBase64(image);
+      formData.append(`image_${i}_name`, image.name);
+      formData.append(`image_${i}_data`, base64Data);
+      formData.append(`image_${i}_type`, image.type);
+      formData.append(`image_${i}_size`, String(image.size));
+    }
     
-    // Set a 30-second timeout for webhook confirmation
+    // Process videos
+    for (let i = 0; i < videoFiles.length; i++) {
+      const video = videoFiles[i];
+      const base64Data = await fileToBase64(video);
+      formData.append(`video_${i}_name`, video.name);
+      formData.append(`video_${i}_data`, base64Data);
+      formData.append(`video_${i}_type`, video.type);
+      formData.append(`video_${i}_size`, String(video.size));
+    }
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL', {
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const response = await fetch(webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(manualPayload),
+      body: formData,
       signal: controller.signal
     });
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      console.error(`Webhook Estilo Manual respondió con error: ${response.status}`);
+    if (response.ok) {
+      console.log('✅ MANUAL webhook sent successfully');
+      // Clear files from localStorage after successful send
+      clearLocalFiles();
+      console.log('🗑️ Files cleared from localStorage after successful webhook');
+      return true;
+    } else {
+      console.error('❌ MANUAL webhook failed:', response.status, response.statusText);
       return false;
     }
-
-    const data = await response.json();
-    console.log('✅ Webhook Estilo Manual confirmó recepción:', data);
-    
-    return true;
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      console.error('⏰ Timeout esperando confirmación del webhook Estilo Manual (30s)');
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('❌ MANUAL webhook timeout after 30 seconds');
     } else {
-      console.error('❌ Error enviando a webhook Estilo Manual:', err);
+      console.error('❌ Error sending MANUAL webhook:', error);
     }
     return false;
   }

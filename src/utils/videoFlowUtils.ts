@@ -55,10 +55,10 @@ export const determineInitialStep = (
             generatedScript: null
           };
         } else {
-          console.log('❌ No se encontraron archivos válidos, regresando a manual-upload');
+          console.log('❌ No se encontraron archivos válidos, regresando a manual-files');
           return {
             ...savedState,
-            step: 'manual-upload'
+            step: 'manual-files'
           };
         }
       }

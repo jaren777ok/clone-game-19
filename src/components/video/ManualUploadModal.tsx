@@ -3,15 +3,16 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Upload, ChevronLeft, ChevronRight } from "lucide-react";
-import { ManualCustomization, ApiVersionCustomization, Base64File } from "@/types/videoFlow";
+import { ApiVersionCustomization } from "@/types/videoFlow";
 import { ImageUploadStep } from "./ImageUploadStep";
 import { VideoUploadStep } from "./VideoUploadStep";
 import ApiVersionModal from "./ApiVersionModal";
+import { saveFilesToLocal } from "@/lib/fileStorage";
 
 interface ManualUploadModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => void;
+  onConfirm: (apiVersionCustomization: ApiVersionCustomization, sessionId: string) => void;
 }
 
 type UploadStep = 'images' | 'videos' | 'api-version';
@@ -42,95 +43,41 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     }
   };
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(',')[1]); // Remove data:mime;base64, prefix
-      };
-      reader.onerror = error => reject(error);
-    });
-  };
-
   const handleApiVersionConfirm = async (apiVersionCustomization: ApiVersionCustomization) => {
+    if (images.length === 0 && videos.length === 0) {
+      toast.error("Por favor, sube al menos una imagen o video antes de continuar.");
+      return;
+    }
+
     setIsProcessing(true);
     
-    console.log('📁 Convirtiendo archivos a base64...', {
-      images: images.length,
-      videos: videos.length
-    });
-
     try {
-      toast.info("Procesando archivos, esto puede tomar unos segundos...", {
-        duration: 5000
-      });
+      toast.info("Guardando archivos en el almacenamiento local...");
 
-      // Convert images to base64
-      const base64Images: Base64File[] = await Promise.all(
-        images.map(async (file, index) => ({
-          name: `imagen${index + 1}.${file.name.split('.').pop()}`,
-          data: await fileToBase64(file),
-          type: file.type,
-          size: file.size
-        }))
-      );
+      // Save files to localStorage and get sessionId
+      const sessionId = await saveFilesToLocal(images, videos);
+      
+      toast.success("¡Archivos guardados exitosamente!");
 
-      // Convert videos to base64
-      const base64Videos: Base64File[] = await Promise.all(
-        videos.map(async (file, index) => ({
-          name: `video${index + 1}.${file.name.split('.').pop()}`,
-          data: await fileToBase64(file),
-          type: file.type,
-          size: file.size
-        }))
-      );
-
-      const manualCustomization: ManualCustomization = {
-        images: base64Images,
-        videos: base64Videos,
-        sessionId: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      };
+      // Call the confirm callback with apiVersionCustomization and sessionId
+      onConfirm(apiVersionCustomization, sessionId);
       
-      console.log('✅ Archivos convertidos a base64:', {
-        images: base64Images.length,
-        videos: base64Videos.length,
-        sessionId: manualCustomization.sessionId,
-        totalSizeMB: ((base64Images.reduce((acc, img) => acc + img.size, 0) + base64Videos.reduce((acc, vid) => acc + vid.size, 0)) / 1024 / 1024).toFixed(2),
-        firstImageDataLength: base64Images[0]?.data?.length || 0,
-        firstVideoDataLength: base64Videos[0]?.data?.length || 0
-      });
-      
-      toast.info("Guardando configuración en la base de datos...", {
-        duration: 10000
-      });
-      
-      // Add timeout for save operation
-      const savePromise = onConfirm(manualCustomization, apiVersionCustomization);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La operación de guardado tomó demasiado tiempo')), 30000)
-      );
-      
-      // Race between save and timeout
-      await Promise.race([savePromise, timeoutPromise]);
-      
-      toast.success("¡Archivos guardados exitosamente!", {
-        duration: 3000
-      });
-      
-      // Reset state and close modal only after successful save
+      // Reset state and close modal
       setCurrentStep('images');
       setImages([]);
       setVideos([]);
       setIsProcessing(false);
       onClose();
+      
     } catch (error) {
-      console.error('❌ Error procesando archivos:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      toast.error(`Error guardando los archivos: ${errorMessage}`, {
-        duration: 5000
-      });
+      console.error('Error saving files:', error);
+      
+      let errorMessage = "Error guardando los archivos";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
       setIsProcessing(false);
     }
   };

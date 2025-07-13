@@ -24,28 +24,38 @@ const VideoCreationFlow = () => {
     selectStyle,
     selectManualCustomization,
     selectGeneratedScript,
+    selectManualFiles,
     goToStep,
     resetFlow
   } = useVideoCreationFlow();
 
   const handleBack = () => {
-    if (flowState.step === 'api-key') {
-      navigate('/dashboard');
-    } else if (flowState.step === 'avatar') {
-      goToStep('api-key');
-    } else if (flowState.step === 'voice') {
-      goToStep('avatar');
-    } else if (flowState.step === 'style') {
-      goToStep('voice');
-    } else if (flowState.step === 'manual-upload') {
-      goToStep('style');
-    } else if (flowState.step === 'neurocopy') {
-      // For manual style, go back to manual upload, otherwise to style
-      if (flowState.selectedStyle?.id === 'style-5') {
-        goToStep('manual-upload');
-      } else {
+    switch (flowState.step) {
+      case 'avatar':
+        goToStep('api-key');
+        break;
+      case 'voice':
+        goToStep('avatar');
+        break;
+      case 'style':
+        goToStep('voice');
+        break;
+      case 'neurocopy':
         goToStep('style');
-      }
+        break;
+      case 'manual-files':
+        goToStep('neurocopy');
+        break;
+      case 'generator':
+        if (flowState.selectedStyle?.id === 'style-5') {
+          goToStep('manual-files');
+        } else {
+          goToStep('neurocopy');
+        }
+        break;
+      default:
+        navigate('/');
+        break;
     }
   };
 
@@ -158,27 +168,13 @@ const VideoCreationFlow = () => {
         />
       );
 
-    case 'manual-upload':
-      if (!flowState.selectedStyle) {
-        goToStep('style');
-        return null;
-      }
-      // Render the style selector as background and show modal overlay
+    case 'manual-files':
       return (
-        <>
-          <StyleSelector
-            onSelectStyle={selectStyle}
-            onBack={handleBack}
-          />
-          <ManualUploadModal
-            open={true}
-            onClose={() => goToStep('style')}
-            onConfirm={(manualCustomization, apiVersionCustomization) => {
-              console.log('🚀 Manual upload confirmed, transitioning to neurocopy...');
-              selectManualCustomization(manualCustomization, apiVersionCustomization);
-            }}
-          />
-        </>
+        <ManualUploadModal
+          open={true}
+          onClose={() => goToStep('neurocopy')}
+          onConfirm={selectManualFiles}
+        />
       );
 
     case 'neurocopy':

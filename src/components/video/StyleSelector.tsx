@@ -71,34 +71,28 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   }, []);
 
   const handleSelectStyle = (style: VideoStyle) => {
-    if (style.id === 'style-1') {
-      // Estilo Noticia requiere personalización de tarjetas
-      setPendingStyle(style);
-      setPendingCardCustomization(null);
-      setPendingPresenterCustomization(null);
-      setShowCustomizeModal(true);
-    } else if (style.id === 'style-2') {
-      // Estilo Noticiero requiere nombre del presentador
-      setPendingStyle(style);
-      setPendingCardCustomization(null);
-      setPendingPresenterCustomization(null);
-      setShowPresenterModal(true);
-    } else if (style.id === 'style-3' || style.id === 'style-4') {
-      // Estilo Educativo 1 y 2 - directo a API version modal
-      setPendingStyle(style);
-      setPendingCardCustomization(null);
-      setPendingPresenterCustomization(null);
-      setShowApiVersionModal(true);
-    } else if (style.id === 'style-5') {
-      // Estilo Manual - se maneja directamente en el flujo
-      setSelectedStyleId(style.id);
+    setSelectedStyleId(style.id);
+    setPlayingVideo(null);
+
+    // For "Carga Manual" style (style-5), go directly to neurocopy without modals
+    if (style.id === 'style-5') {
       onSelectStyle(style);
-    } else {
-      // Fallback para otros estilos - directo a API version modal
+      return;
+    }
+    
+    // For other styles, check if they need customization
+    const needsCardCustomization = ['style-1', 'style-2'].includes(style.id);
+    const needsPresenterCustomization = ['style-3', 'style-4'].includes(style.id);
+
+    if (needsCardCustomization) {
+      setShowCustomizeModal(true);
       setPendingStyle(style);
-      setPendingCardCustomization(null);
-      setPendingPresenterCustomization(null);
-      setShowApiVersionModal(true);
+    } else if (needsPresenterCustomization) {
+      setShowPresenterModal(true);
+      setPendingStyle(style);
+    } else {
+      // No customization needed
+      onSelectStyle(style);
     }
   };
 

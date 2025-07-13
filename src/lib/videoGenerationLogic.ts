@@ -177,8 +177,7 @@ export const initiateVideoGeneration = async (
       
       webhookConfirmed = await sendToManualWebhook(
         manualPayload, 
-        flowState.manualCustomization.images, 
-        flowState.manualCustomization.videos
+        flowState.manualCustomization.sessionId
       );
     } else {
       // Webhook estándar (Estilo Noticiero y otros)

@@ -54,7 +54,7 @@ export interface ManualCustomization {
 }
 
 export interface FlowState {
-  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'manual-upload' | 'neurocopy' | 'generator';
+  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'neurocopy' | 'manual-files' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
   selectedAvatar: Avatar | null;
   selectedVoice: Voice | null;
