@@ -144,28 +144,33 @@ export const useVideoCreationFlow = () => {
       totalSize: manualCustomization.images.reduce((acc, img) => acc + img.size, 0) + manualCustomization.videos.reduce((acc, vid) => acc + vid.size, 0)
     });
 
+    if (!user) {
+      throw new Error('No hay usuario autenticado para guardar');
+    }
+
     try {
-      // Update state immediately
-      setFlowState(prev => ({
-        ...prev,
+      // Construct the complete new state with all current data plus new manual customization
+      const newFlowState: FlowState = {
+        ...flowState, // Keep all current selections
         step: 'neurocopy',
         manualCustomization,
         apiVersionCustomization
-      }));
+      };
 
-      // Force immediate save to Supabase
-      if (user) {
-        console.log('💾 Forzando guardado inmediato a Supabase...');
-        await saveFlowState(user, {
-          ...flowState,
-          step: 'neurocopy',
-          manualCustomization,
-          apiVersionCustomization
-        });
-        console.log('✅ Configuración manual guardada exitosamente en Supabase');
-      } else {
-        throw new Error('No hay usuario autenticado para guardar');
-      }
+      console.log('💾 Guardando estado completo directamente a Supabase...', {
+        step: newFlowState.step,
+        hasImages: newFlowState.manualCustomization?.images.length || 0,
+        hasVideos: newFlowState.manualCustomization?.videos.length || 0
+      });
+
+      // Force immediate save to Supabase with complete state
+      await saveFlowState(user, newFlowState);
+      
+      console.log('✅ Configuración manual guardada exitosamente en Supabase');
+
+      // Only update React state after successful save
+      setFlowState(newFlowState);
+      
     } catch (error) {
       console.error('❌ Error guardando configuración manual:', error);
       throw error; // Re-throw to let the modal handle the error

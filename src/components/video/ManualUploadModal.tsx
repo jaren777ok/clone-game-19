@@ -63,7 +63,9 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     });
 
     try {
-      toast.info("Procesando archivos, esto puede tomar unos segundos...");
+      toast.info("Procesando archivos, esto puede tomar unos segundos...", {
+        duration: 5000
+      });
 
       // Convert images to base64
       const base64Images: Base64File[] = await Promise.all(
@@ -95,15 +97,27 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
         images: base64Images.length,
         videos: base64Videos.length,
         sessionId: manualCustomization.sessionId,
-        totalSizeMB: ((base64Images.reduce((acc, img) => acc + img.size, 0) + base64Videos.reduce((acc, vid) => acc + vid.size, 0)) / 1024 / 1024).toFixed(2)
+        totalSizeMB: ((base64Images.reduce((acc, img) => acc + img.size, 0) + base64Videos.reduce((acc, vid) => acc + vid.size, 0)) / 1024 / 1024).toFixed(2),
+        firstImageDataLength: base64Images[0]?.data?.length || 0,
+        firstVideoDataLength: base64Videos[0]?.data?.length || 0
       });
       
-      toast.info("Guardando configuración en la base de datos...");
+      toast.info("Guardando configuración en la base de datos...", {
+        duration: 10000
+      });
       
-      // Call onConfirm and wait for it to complete
-      await onConfirm(manualCustomization, apiVersionCustomization);
+      // Add timeout for save operation
+      const savePromise = onConfirm(manualCustomization, apiVersionCustomization);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: La operación de guardado tomó demasiado tiempo')), 30000)
+      );
       
-      toast.success("¡Archivos guardados exitosamente!");
+      // Race between save and timeout
+      await Promise.race([savePromise, timeoutPromise]);
+      
+      toast.success("¡Archivos guardados exitosamente!", {
+        duration: 3000
+      });
       
       // Reset state and close modal only after successful save
       setCurrentStep('images');
@@ -113,7 +127,10 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
       onClose();
     } catch (error) {
       console.error('❌ Error procesando archivos:', error);
-      toast.error("Error guardando los archivos. Por favor, inténtalo de nuevo.");
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error guardando los archivos: ${errorMessage}`, {
+        duration: 5000
+      });
       setIsProcessing(false);
     }
   };

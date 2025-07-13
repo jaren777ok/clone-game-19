@@ -45,7 +45,11 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
         images: flowState.manualCustomization.images.length,
         videos: flowState.manualCustomization.videos.length,
         totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
-        sessionId: flowState.manualCustomization.sessionId
+        sessionId: flowState.manualCustomization.sessionId,
+        base64DataPreview: {
+          firstImageSize: flowState.manualCustomization.images[0]?.data.length || 0,
+          firstVideoSize: flowState.manualCustomization.videos[0]?.data.length || 0
+        }
       });
 
       manualCustomizationData = {
@@ -58,6 +62,16 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       if (totalSize > 50 * 1024 * 1024) {
         console.warn('⚠️ Archivos muy grandes - tamaño total:', (totalSize / 1024 / 1024).toFixed(2), 'MB');
       }
+
+      // Validate that we actually have base64 data
+      const hasValidData = manualCustomizationData.images.some(img => img.data && img.data.length > 0) || 
+                          manualCustomizationData.videos.some(vid => vid.data && vid.data.length > 0);
+      
+      if (!hasValidData) {
+        throw new Error('No se encontraron datos base64 válidos en los archivos');
+      }
+
+      console.log('✅ Datos de configuración manual validados correctamente');
     }
 
     const configData = {
@@ -74,7 +88,11 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       updated_at: new Date().toISOString()
     };
 
-    console.log('🔄 Ejecutando upsert en Supabase...');
+    console.log('🔄 Ejecutando upsert en Supabase...', {
+      has_manual_customization: !!configData.manual_customization,
+      current_step: configData.current_step
+    });
+    
     const { data, error } = await supabase
       .from('user_video_configs')
       .upsert(configData, { 
@@ -88,7 +106,12 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       console.error('❌ Error guardando configuración de video:', error);
       console.error('📋 Datos que se intentaron guardar:', {
         ...configData,
-        manual_customization: configData.manual_customization ? 'DATOS_BASE64_PRESENTES' : null
+        manual_customization: configData.manual_customization ? {
+          sessionId: configData.manual_customization.sessionId,
+          imagesCount: configData.manual_customization.images?.length,
+          videosCount: configData.manual_customization.videos?.length,
+          firstImageDataLength: configData.manual_customization.images?.[0]?.data?.length
+        } : null
       });
       throw error;
     }
@@ -96,7 +119,12 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
     console.log('✅ Configuración de video guardada exitosamente:', {
       id: data?.id,
       current_step: data?.current_step,
-      has_manual_customization: !!data?.manual_customization
+      has_manual_customization: !!data?.manual_customization,
+      manual_customization_preview: data?.manual_customization ? {
+        sessionId: (data.manual_customization as any)?.sessionId,
+        imagesCount: (data.manual_customization as any)?.images?.length,
+        videosCount: (data.manual_customization as any)?.videos?.length
+      } : null
     });
   } catch (error) {
     console.error('💥 Error inesperado guardando configuración:', error);
