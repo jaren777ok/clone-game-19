@@ -43,10 +43,23 @@ const ScriptForm = ({
   // Check if this is manual style
   const isManualStyle = flowState?.selectedStyle?.id === 'style-5';
 
+  // DEBUG: Log flowState and manual style detection
+  console.log('🐛 DEBUG ScriptForm - flowState:', {
+    flowState: flowState,
+    selectedStyle: flowState?.selectedStyle,
+    selectedStyleId: flowState?.selectedStyle?.id,
+    isManualStyle: isManualStyle,
+    hasOnGenerateWithFiles: !!onGenerateWithFiles
+  });
+
   const handleGenerateClick = () => {
+    console.log('🐛 DEBUG handleGenerateClick - isManualStyle:', isManualStyle);
+    
     if (isManualStyle) {
+      console.log('🐛 DEBUG - Opening manual modal');
       setShowManualModal(true);
     } else {
+      console.log('🐛 DEBUG - Calling onSubmit for regular style');
       onSubmit();
     }
   };
@@ -61,6 +74,13 @@ const ScriptForm = ({
   return (
     <div className="bg-card cyber-border rounded-2xl p-8 hover:cyber-glow transition-all duration-500 mb-8">
       <div className="space-y-6">
+        {/* DEBUG: Visual indicator for manual style detection */}
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+          <p className="text-blue-300 text-xs font-mono">
+            DEBUG: flowState?.selectedStyle?.id = {flowState?.selectedStyle?.id || 'undefined'} | 
+            isManualStyle = {isManualStyle ? 'TRUE' : 'FALSE'}
+          </p>
+        </div>
         {/* Estado de generación activa */}
         {isGenerating && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">

@@ -13,6 +13,13 @@ const VideoGenerator = () => {
   const { flowState } = useVideoCreationFlow();
   const { state, handlers } = useVideoGenerator({ flowState });
 
+  // DEBUG: Log flowState in VideoGenerator
+  console.log('🐛 DEBUG VideoGenerator - flowState:', {
+    flowState: flowState,
+    selectedStyle: flowState?.selectedStyle,
+    step: flowState?.step
+  });
+
   if (state.isGenerating) {
     return (
       <VideoProcessingState 
