@@ -6,6 +6,17 @@ import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
   
+  // For manual style (style-5), don't require apiVersionCustomization
+  if (flowState.selectedStyle?.id === 'style-5') {
+    return !!(
+      flowState.selectedApiKey &&
+      flowState.selectedAvatar &&
+      flowState.selectedVoice &&
+      flowState.selectedStyle
+    );
+  }
+  
+  // For other styles, require all fields including apiVersionCustomization
   return !!(
     flowState.selectedApiKey &&
     flowState.selectedAvatar &&

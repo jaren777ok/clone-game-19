@@ -259,20 +259,22 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
       startPeriodicChecking(requestId, script.trim());
 
-      // Build payload for webhook
+      // Decrypt API key
+      const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
+      
+      // Build payload for webhook with default dimensions for manual style
       const payload = {
         script: script.trim(),
         userId: user?.id || '',
         requestId,
         timestamp: new Date().toISOString(),
         appMode: 'production',
-        ClaveAPI: flowState!.selectedApiKey?.api_key_name,
+        ClaveAPI: decryptedApiKey,
         AvatarID: flowState!.selectedAvatar?.avatar_id,
         VoiceID: flowState!.selectedVoice?.voice_id,
         Estilo: flowState!.selectedStyle?.id,
-        nombrePresentador: flowState!.presenterCustomization?.nombrePresentador,
-        width: flowState!.apiVersionCustomization?.width,
-        height: flowState!.apiVersionCustomization?.height
+        width: flowState!.apiVersionCustomization?.width || 1280,
+        height: flowState!.apiVersionCustomization?.height || 720
       };
 
       toast({
