@@ -3,7 +3,7 @@ import { VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustom
 import CustomizeCardsModal from './CustomizeCardsModal';
 import PresenterNameModal from './PresenterNameModal';
 import ApiVersionModal from './ApiVersionModal';
-import { ManualUploadModal } from './ManualUploadModal';
+
 import StyleSelectorHeader from './StyleSelectorHeader';
 import PreviousStyleSelectionBanner from './PreviousStyleSelectionBanner';
 import StyleGrid from './StyleGrid';
@@ -20,7 +20,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [showPresenterModal, setShowPresenterModal] = useState(false);
   const [showApiVersionModal, setShowApiVersionModal] = useState(false);
-  const [showManualUploadModal, setShowManualUploadModal] = useState(false);
+  
   const [pendingStyle, setPendingStyle] = useState<VideoStyle | null>(null);
   const [pendingCardCustomization, setPendingCardCustomization] = useState<CardCustomization | null>(null);
   const [pendingPresenterCustomization, setPendingPresenterCustomization] = useState<PresenterCustomization | null>(null);
@@ -90,11 +90,9 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       setPendingPresenterCustomization(null);
       setShowApiVersionModal(true);
     } else if (style.id === 'style-5') {
-      // Estilo Manual - requiere subida de archivos
-      setPendingStyle(style);
-      setPendingCardCustomization(null);
-      setPendingPresenterCustomization(null);
-      setShowManualUploadModal(true);
+      // Estilo Manual - se maneja directamente en el flujo
+      setSelectedStyleId(style.id);
+      onSelectStyle(style);
     } else {
       // Fallback para otros estilos - directo a API version modal
       setPendingStyle(style);
@@ -155,27 +153,6 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     setPendingPresenterCustomization(null);
   };
 
-  const handleManualUploadConfirm = (manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
-    if (pendingStyle) {
-      setSelectedStyleId(pendingStyle.id);
-      onSelectStyle(
-        pendingStyle, 
-        undefined, 
-        undefined,
-        apiVersionCustomization,
-        manualCustomization
-      );
-    }
-    setShowManualUploadModal(false);
-    setPendingStyle(null);
-  };
-
-  const handleManualUploadCancel = () => {
-    setShowManualUploadModal(false);
-    setPendingStyle(null);
-    setPendingCardCustomization(null);
-    setPendingPresenterCustomization(null);
-  };
 
   const toggleVideoPlayback = (styleId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -262,12 +239,6 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
         onConfirm={handleApiVersionConfirm}
       />
 
-      {/* Modal de subida manual */}
-      <ManualUploadModal
-        open={showManualUploadModal}
-        onClose={handleManualUploadCancel}
-        onConfirm={handleManualUploadConfirm}
-      />
 
       {/* Background effects */}
       <div className="absolute top-0 right-0 w-72 sm:w-96 h-72 sm:h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
