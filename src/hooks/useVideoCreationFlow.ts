@@ -140,19 +140,37 @@ export const useVideoCreationFlow = () => {
     console.log('🎨 Seleccionando configuración manual (archivos en base64):', {
       images: manualCustomization.images.length,
       videos: manualCustomization.videos.length,
-      sessionId: manualCustomization.sessionId
+      sessionId: manualCustomization.sessionId,
+      totalSize: manualCustomization.images.reduce((acc, img) => acc + img.size, 0) + manualCustomization.videos.reduce((acc, vid) => acc + vid.size, 0)
     });
 
-    // Directly save to Supabase, no localStorage needed
-    setFlowState(prev => ({
-      ...prev,
-      step: 'neurocopy',
-      manualCustomization,
-      apiVersionCustomization
-    }));
+    try {
+      // Update state immediately
+      setFlowState(prev => ({
+        ...prev,
+        step: 'neurocopy',
+        manualCustomization,
+        apiVersionCustomization
+      }));
 
-    console.log('✅ Configuración manual guardada directamente en Supabase');
-  }, []);
+      // Force immediate save to Supabase
+      if (user) {
+        console.log('💾 Forzando guardado inmediato a Supabase...');
+        await saveFlowState(user, {
+          ...flowState,
+          step: 'neurocopy',
+          manualCustomization,
+          apiVersionCustomization
+        });
+        console.log('✅ Configuración manual guardada exitosamente en Supabase');
+      } else {
+        throw new Error('No hay usuario autenticado para guardar');
+      }
+    } catch (error) {
+      console.error('❌ Error guardando configuración manual:', error);
+      throw error; // Re-throw to let the modal handle the error
+    }
+  }, [user, flowState]);
 
   const selectGeneratedScript = useCallback((script: string) => {
     console.log('📝 Seleccionando Script generado, longitud:', script.length);

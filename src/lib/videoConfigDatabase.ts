@@ -38,11 +38,26 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
     // For manual customization, save complete base64 files in Supabase
     let manualCustomizationData = null;
     if (flowState.manualCustomization) {
+      const totalSize = flowState.manualCustomization.images.reduce((acc, img) => acc + img.size, 0) + 
+                       flowState.manualCustomization.videos.reduce((acc, vid) => acc + vid.size, 0);
+      
+      console.log('📁 Preparando datos de configuración manual:', {
+        images: flowState.manualCustomization.images.length,
+        videos: flowState.manualCustomization.videos.length,
+        totalSizeMB: (totalSize / 1024 / 1024).toFixed(2),
+        sessionId: flowState.manualCustomization.sessionId
+      });
+
       manualCustomizationData = {
         sessionId: flowState.manualCustomization.sessionId,
         images: flowState.manualCustomization.images,
         videos: flowState.manualCustomization.videos
       };
+      
+      // Validate total size (warn if > 50MB)
+      if (totalSize > 50 * 1024 * 1024) {
+        console.warn('⚠️ Archivos muy grandes - tamaño total:', (totalSize / 1024 / 1024).toFixed(2), 'MB');
+      }
     }
 
     const configData = {
@@ -59,19 +74,30 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await supabase
+    console.log('🔄 Ejecutando upsert en Supabase...');
+    const { data, error } = await supabase
       .from('user_video_configs')
       .upsert(configData, { 
         onConflict: 'user_id',
         ignoreDuplicates: false 
-      });
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error('❌ Error guardando configuración de video:', error);
+      console.error('📋 Datos que se intentaron guardar:', {
+        ...configData,
+        manual_customization: configData.manual_customization ? 'DATOS_BASE64_PRESENTES' : null
+      });
       throw error;
     }
 
-    console.log('✅ Configuración de video guardada exitosamente');
+    console.log('✅ Configuración de video guardada exitosamente:', {
+      id: data?.id,
+      current_step: data?.current_step,
+      has_manual_customization: !!data?.manual_customization
+    });
   } catch (error) {
     console.error('💥 Error inesperado guardando configuración:', error);
     throw error;

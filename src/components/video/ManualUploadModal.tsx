@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Upload, ChevronLeft, ChevronRight } from "lucide-react";
@@ -23,6 +24,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const [currentStep, setCurrentStep] = useState<UploadStep>('images');
   const [images, setImages] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleNext = () => {
     if (currentStep === 'images' && images.length === 14) {
@@ -53,12 +55,16 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   };
 
   const handleApiVersionConfirm = async (apiVersionCustomization: ApiVersionCustomization) => {
+    setIsProcessing(true);
+    
     console.log('📁 Convirtiendo archivos a base64...', {
       images: images.length,
       videos: videos.length
     });
 
     try {
+      toast.info("Procesando archivos, esto puede tomar unos segundos...");
+
       // Convert images to base64
       const base64Images: Base64File[] = await Promise.all(
         images.map(async (file, index) => ({
@@ -88,19 +94,27 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
       console.log('✅ Archivos convertidos a base64:', {
         images: base64Images.length,
         videos: base64Videos.length,
-        sessionId: manualCustomization.sessionId
+        sessionId: manualCustomization.sessionId,
+        totalSizeMB: ((base64Images.reduce((acc, img) => acc + img.size, 0) + base64Videos.reduce((acc, vid) => acc + vid.size, 0)) / 1024 / 1024).toFixed(2)
       });
       
-      onConfirm(manualCustomization, apiVersionCustomization);
+      toast.info("Guardando configuración en la base de datos...");
       
-      // Reset state and close modal
+      // Call onConfirm and wait for it to complete
+      await onConfirm(manualCustomization, apiVersionCustomization);
+      
+      toast.success("¡Archivos guardados exitosamente!");
+      
+      // Reset state and close modal only after successful save
       setCurrentStep('images');
       setImages([]);
       setVideos([]);
+      setIsProcessing(false);
       onClose();
     } catch (error) {
-      console.error('❌ Error convirtiendo archivos a base64:', error);
-      // Handle error - maybe show a toast notification
+      console.error('❌ Error procesando archivos:', error);
+      toast.error("Error guardando los archivos. Por favor, inténtalo de nuevo.");
+      setIsProcessing(false);
     }
   };
 
@@ -111,9 +125,11 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   };
 
   const resetAndClose = () => {
+    if (isProcessing) return; // Prevent closing while processing
     setCurrentStep('images');
     setImages([]);
     setVideos([]);
+    setIsProcessing(false);
     onClose();
   };
 
@@ -121,7 +137,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     return (
       <ApiVersionModal 
         isOpen={open}
-        onClose={resetAndClose}
+        onClose={isProcessing ? () => {} : resetAndClose}
         onConfirm={handleApiVersionConfirm}
       />
     );
@@ -182,6 +198,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
             <Button 
               variant="outline" 
               onClick={currentStep === 'images' ? resetAndClose : handleBack}
+              disabled={isProcessing}
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               {currentStep === 'images' ? 'Cancelar' : 'Anterior'}
@@ -189,9 +206,9 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
             
             <Button 
               onClick={handleNext}
-              disabled={isNextDisabled()}
+              disabled={isNextDisabled() || isProcessing}
             >
-              Siguiente
+              {isProcessing ? 'Procesando...' : 'Siguiente'}
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
