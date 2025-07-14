@@ -6,6 +6,7 @@ import { Upload, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { FlowState, ApiVersionCustomization } from "@/types/videoFlow";
 import { ImageUploadStep } from "./ImageUploadStep";
 import { VideoUploadStep } from "./VideoUploadStep";
+import { DriveUploadStep } from "./DriveUploadStep";
 import ApiVersionModal from "./ApiVersionModal";
 
 interface ManualUploadModalProps {
@@ -17,11 +18,13 @@ interface ManualUploadModalProps {
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
-    onProgress?: (current: number, total: number, type: 'image') => void
+    onProgress?: (current: number, total: number, type: 'image') => void,
+    driveImageUrls?: string[],
+    driveVideoUrls?: string[]
   ) => Promise<void>;
 }
 
-type UploadStep = 'images' | 'videos' | 'api-version';
+type UploadStep = 'images' | 'videos' | 'drive-upload' | 'api-version';
 
 export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   open,
@@ -33,6 +36,8 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const [currentStep, setCurrentStep] = useState<UploadStep>('images');
   const [images, setImages] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
+  const [driveImageUrls, setDriveImageUrls] = useState<string[]>([]);
+  const [driveVideoUrls, setDriveVideoUrls] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0, type: '' });
   const [apiVersionCustomization, setApiVersionCustomization] = useState<ApiVersionCustomization | null>(null);
@@ -41,6 +46,8 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     if (currentStep === 'images' && images.length === 14) {
       setCurrentStep('videos');
     } else if (currentStep === 'videos' && videos.length === 5) {
+      setCurrentStep('drive-upload');
+    } else if (currentStep === 'drive-upload') {
       setCurrentStep('api-version');
     }
   };
@@ -48,9 +55,17 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const handleBack = () => {
     if (currentStep === 'videos') {
       setCurrentStep('images');
-    } else if (currentStep === 'api-version') {
+    } else if (currentStep === 'drive-upload') {
       setCurrentStep('videos');
+    } else if (currentStep === 'api-version') {
+      setCurrentStep('drive-upload');
     }
+  };
+
+  const handleDriveUploadComplete = (imageUrls: string[], videoUrls: string[]) => {
+    setDriveImageUrls(imageUrls);
+    setDriveVideoUrls(videoUrls);
+    setCurrentStep('api-version');
   };
 
   const handleApiVersionConfirm = (customization: ApiVersionCustomization) => {
@@ -76,10 +91,17 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     try {
       toast.info("Procesando archivos...");
 
-      // Call the confirm callback with files and API version customization and progress callback
-      await onConfirm(images, videos, customization || apiVersionCustomization!, (current, total, type) => {
-        setProcessingProgress({ current, total, type });
-      });
+      // Call the confirm callback with Google Drive URLs instead of files
+      await onConfirm(
+        [], // Empty arrays for files since we're using Drive URLs
+        [], 
+        customization || apiVersionCustomization!, 
+        (current, total, type) => {
+          setProcessingProgress({ current, total, type });
+        },
+        driveImageUrls, // Pass Drive URLs
+        driveVideoUrls
+      );
       
       toast.success("¡Video enviado a generación!");
 
@@ -103,6 +125,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const isNextDisabled = () => {
     if (currentStep === 'images') return images.length !== 14;
     if (currentStep === 'videos') return videos.length !== 5;
+    if (currentStep === 'drive-upload') return driveImageUrls.length === 0 && driveVideoUrls.length === 0;
     return false;
   };
 
@@ -110,6 +133,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     switch (currentStep) {
       case 'images': return 'Subir Imágenes';
       case 'videos': return 'Subir Videos';
+      case 'drive-upload': return 'Convertir Archivos para Procesar';
       case 'api-version': return 'Configurar API';
       default: return 'Upload';
     }
@@ -120,6 +144,8 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     setCurrentStep('images');
     setImages([]);
     setVideos([]);
+    setDriveImageUrls([]);
+    setDriveVideoUrls([]);
     setApiVersionCustomization(null);
     setIsProcessing(false);
     setProcessingProgress({ current: 0, total: 0, type: '' });
@@ -176,9 +202,16 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
               <span>5 Videos</span>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <div className={`flex items-center space-x-2 ${currentStep === 'drive-upload' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'drive-upload' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                3
+              </div>
+              <span>Drive Upload</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
             <div className={`flex items-center space-x-2 ${currentStep === 'api-version' ? 'text-primary' : 'text-muted-foreground'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'api-version' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                3
+                4
               </div>
               <span>API Version</span>
             </div>
@@ -199,6 +232,15 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
             />
           )}
 
+          {currentStep === 'drive-upload' && (
+            <DriveUploadStep
+              images={images}
+              videos={videos}
+              onComplete={handleDriveUploadComplete}
+              onBack={handleBack}
+            />
+          )}
+
           {currentStep === 'api-version' && (
             <ApiVersionModal 
               isOpen={true}
@@ -208,7 +250,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
           )}
 
           {/* Navigation buttons */}
-          {currentStep !== 'api-version' && (
+          {currentStep !== 'api-version' && currentStep !== 'drive-upload' && (
             <div className="flex justify-between pt-4">
               <Button 
                 variant="outline" 

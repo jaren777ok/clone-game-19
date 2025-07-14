@@ -289,7 +289,7 @@ export const sendDirectToManualWebhook = async (
   console.log('🖼️ Images:', images.length);
   console.log('🎥 Videos:', videos.length);
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL';
+  const webhookUrl = 'https://hook.us2.make.com/ug1nwjfcvrcl2xz8vfhpx7kz9kmjsreo';
   
   // Create FormData for the webhook
   const formData = new FormData();
@@ -307,8 +307,8 @@ export const sendDirectToManualWebhook = async (
       onProgress?.(i + 1, images.length, 'image');
       const image = images[i];
       const base64Data = await fileToBase64(image);
-      // Send as base64 data with clean naming: image_0_data to image_13_data
-      formData.append(`image_${i}_data`, base64Data);
+      // Send as base64 data with clean naming: image_0 to image_13
+      formData.append(`image_${i}`, base64Data);
     }
     
     // Process videos as binary files (no base64 conversion)
@@ -319,7 +319,7 @@ export const sendDirectToManualWebhook = async (
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // Reduced to 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -332,7 +332,9 @@ export const sendDirectToManualWebhook = async (
     if (response.ok) {
       console.log('✅ DIRECT MANUAL webhook sent successfully');
       console.log('📊 Sent:', `${images.length} images (base64) + ${videos.length} videos (binary)`);
-      return payload.requestId; // Return requestId for tracking
+      const responseText = await response.text();
+      console.log('Manual webhook response:', responseText);
+      return responseText;
     } else {
       console.error('❌ DIRECT MANUAL webhook failed:', response.status, response.statusText);
       throw new Error(`Webhook failed with status ${response.status}`);
@@ -345,5 +347,57 @@ export const sendDirectToManualWebhook = async (
       console.error('❌ Error sending DIRECT MANUAL webhook:', error);
       throw error;
     }
+  }
+};
+
+// New function for sending Google Drive URLs to webhook
+export const sendDriveUrlsToManualWebhook = async (
+  payload: WebhookPayload,
+  imageUrls: string[],
+  videoUrls: string[]
+): Promise<string> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout (much faster with URLs)
+
+  try {
+    console.log('Sending Google Drive URLs to manual webhook...');
+    
+    const webhookPayload = {
+      ...payload,
+      // Add image URLs (image_0_url to image_13_url)
+      ...imageUrls.reduce((acc, url, index) => {
+        acc[`image_${index}_url`] = url;
+        return acc;
+      }, {} as Record<string, string>),
+      // Add video URLs (video1_url to video5_url)
+      ...videoUrls.reduce((acc, url, index) => {
+        acc[`video${index + 1}_url`] = url;
+        return acc;
+      }, {} as Record<string, string>)
+    };
+
+    const response = await fetch('https://hook.us2.make.com/ug1nwjfcvrcl2xz8vfhpx7kz9kmjsreo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(webhookPayload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseText = await response.text();
+    console.log('Drive URLs webhook response:', responseText);
+    
+    return responseText;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    console.error('Error sending Drive URLs to manual webhook:', error);
+    throw error;
   }
 };

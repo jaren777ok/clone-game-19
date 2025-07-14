@@ -210,7 +210,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
-    onProgress?: (current: number, total: number, type: 'image') => void
+    onProgress?: (current: number, total: number, type: 'image') => void,
+    driveImageUrls?: string[],
+    driveVideoUrls?: string[]
   ) => {
     // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
@@ -272,8 +274,15 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         height: apiVersionCustomization?.height || 720
       };
 
-      // Send directly to webhook with files FIRST, with progress callback
-      await sendDirectToManualWebhook(payload, images, videos, onProgress);
+      // Send to webhook - use Drive URLs if available, otherwise use files
+      if (driveImageUrls && driveVideoUrls) {
+        console.log('Sending Google Drive URLs to webhook...');
+        const { sendDriveUrlsToManualWebhook } = await import('@/lib/webhookUtils');
+        await sendDriveUrlsToManualWebhook(payload, driveImageUrls, driveVideoUrls);
+      } else {
+        console.log('Sending files directly to webhook...');
+        await sendDirectToManualWebhook(payload, images, videos, onProgress);
+      }
       
       // ONLY if webhook is successful, create database entry and start tracking
       const success = await handleStartGeneration(script.trim(), requestId);

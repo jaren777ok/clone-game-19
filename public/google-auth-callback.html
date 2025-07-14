@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Drive Authentication</title>
+</head>
+<body>
+    <script>
+        // Extract the access token from the URL fragment
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const error = params.get('error');
+        
+        if (accessToken) {
+            // Send the token back to the parent window
+            window.opener.postMessage({
+                type: 'GOOGLE_AUTH_SUCCESS',
+                token: accessToken
+            }, window.location.origin);
+        } else if (error) {
+            // Send the error back to the parent window
+            window.opener.postMessage({
+                type: 'GOOGLE_AUTH_ERROR',
+                error: error
+            }, window.location.origin);
+        }
+        
+        // Close the popup
+        window.close();
+    </script>
+</body>
+</html>
