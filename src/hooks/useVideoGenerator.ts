@@ -210,7 +210,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
-    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+    onProgress?: (current: number, total: number, type: 'image') => void
   ) => {
     // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {

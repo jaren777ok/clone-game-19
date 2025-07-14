@@ -17,7 +17,7 @@ interface ManualUploadModalProps {
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
-    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+    onProgress?: (current: number, total: number, type: 'image') => void
   ) => Promise<void>;
 }
 
@@ -141,8 +141,11 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
           {isProcessing && (
             <div className="text-center space-y-2">
               <div className="text-sm text-muted-foreground">
-                Procesando archivos {processingProgress.type}... 
-                {processingProgress.total > 0 && ` (${processingProgress.current}/${processingProgress.total})`}
+                {processingProgress.type === 'image' ? (
+                  <>Procesando imágenes... ({processingProgress.current}/{processingProgress.total})</>
+                ) : (
+                  'Enviando archivos...'
+                )}
               </div>
               <div className="w-full bg-secondary rounded-full h-2">
                 <div 

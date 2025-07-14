@@ -282,7 +282,7 @@ export const sendDirectToManualWebhook = async (
   payload: WebhookPayload,
   images: File[],
   videos: File[],
-  onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+  onProgress?: (current: number, total: number, type: 'image') => void
 ): Promise<string> => {
   console.log('🔄 Sending DIRECT to MANUAL webhook...');
   console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
@@ -301,28 +301,25 @@ export const sendDirectToManualWebhook = async (
     }
   });
   
-  // Convert files to base64 and add to FormData
   try {
-    // Process images with progress reporting
+    // Process images with progress reporting (convert to base64)
     for (let i = 0; i < images.length; i++) {
       onProgress?.(i + 1, images.length, 'image');
       const image = images[i];
       const base64Data = await fileToBase64(image);
-      // Only send base64 data, no metadata
+      // Send as base64 data with clean naming: image_0_data to image_13_data
       formData.append(`image_${i}_data`, base64Data);
     }
     
-    // Process videos with progress reporting
+    // Process videos as binary files (no base64 conversion)
     for (let i = 0; i < videos.length; i++) {
-      onProgress?.(i + 1, videos.length, 'video');
       const video = videos[i];
-      const base64Data = await fileToBase64(video);
-      // Only send base64 data, no metadata
-      formData.append(`video_${i}_data`, base64Data);
+      // Send as binary files with clean naming: video1, video2, video3, video4, video5
+      formData.append(`video${i + 1}`, video, video.name);
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // Reduced to 30 second timeout
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -334,6 +331,7 @@ export const sendDirectToManualWebhook = async (
 
     if (response.ok) {
       console.log('✅ DIRECT MANUAL webhook sent successfully');
+      console.log('📊 Sent:', `${images.length} images (base64) + ${videos.length} videos (binary)`);
       return payload.requestId; // Return requestId for tracking
     } else {
       console.error('❌ DIRECT MANUAL webhook failed:', response.status, response.statusText);
@@ -341,8 +339,8 @@ export const sendDirectToManualWebhook = async (
     }
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('❌ DIRECT MANUAL webhook timeout after 60 seconds');
-      throw new Error('Webhook timeout after 60 seconds');
+      console.error('❌ DIRECT MANUAL webhook timeout after 30 seconds');
+      throw new Error('Webhook timeout after 30 seconds');
     } else {
       console.error('❌ Error sending DIRECT MANUAL webhook:', error);
       throw error;

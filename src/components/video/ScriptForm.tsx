@@ -21,7 +21,7 @@ interface ScriptFormProps {
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
-    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+    onProgress?: (current: number, total: number, type: 'image') => void
   ) => Promise<void>;
 }
 
@@ -73,7 +73,7 @@ const ScriptForm = ({
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
-    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+    onProgress?: (current: number, total: number, type: 'image') => void
   ) => {
     if (onGenerateWithFiles) {
       await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
