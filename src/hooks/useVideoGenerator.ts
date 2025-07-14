@@ -206,7 +206,12 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   };
 
-  const handleGenerateVideoWithFiles = async (images: File[], videos: File[], apiVersionCustomization: ApiVersionCustomization) => {
+  const handleGenerateVideoWithFiles = async (
+    images: File[], 
+    videos: File[], 
+    apiVersionCustomization: ApiVersionCustomization,
+    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+  ) => {
     // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
       toast({
@@ -267,8 +272,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         height: apiVersionCustomization?.height || 720
       };
 
-      // Send directly to webhook with files FIRST
-      await sendDirectToManualWebhook(payload, images, videos);
+      // Send directly to webhook with files FIRST, with progress callback
+      await sendDirectToManualWebhook(payload, images, videos, onProgress);
       
       // ONLY if webhook is successful, create database entry and start tracking
       const success = await handleStartGeneration(script.trim(), requestId);

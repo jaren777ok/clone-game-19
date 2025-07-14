@@ -17,7 +17,12 @@ interface ScriptFormProps {
   timeRemaining?: number;
   currentRequestId?: string | null;
   flowState?: FlowState;
-  onGenerateWithFiles?: (images: File[], videos: File[], apiVersionCustomization: ApiVersionCustomization) => Promise<void>;
+  onGenerateWithFiles?: (
+    images: File[], 
+    videos: File[], 
+    apiVersionCustomization: ApiVersionCustomization,
+    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+  ) => Promise<void>;
 }
 
 const ScriptForm = ({ 
@@ -64,9 +69,14 @@ const ScriptForm = ({
     }
   };
 
-  const handleManualModalConfirm = async (images: File[], videos: File[], apiVersionCustomization: ApiVersionCustomization) => {
+  const handleManualModalConfirm = async (
+    images: File[], 
+    videos: File[], 
+    apiVersionCustomization: ApiVersionCustomization,
+    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+  ) => {
     if (onGenerateWithFiles) {
-      await onGenerateWithFiles(images, videos, apiVersionCustomization);
+      await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
       setShowManualModal(false);
     }
   };

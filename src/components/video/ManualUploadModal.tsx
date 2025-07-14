@@ -13,7 +13,12 @@ interface ManualUploadModalProps {
   onClose: () => void;
   script: string;
   flowState?: FlowState;
-  onConfirm: (images: File[], videos: File[], apiVersionCustomization: ApiVersionCustomization) => Promise<void>;
+  onConfirm: (
+    images: File[], 
+    videos: File[], 
+    apiVersionCustomization: ApiVersionCustomization,
+    onProgress?: (current: number, total: number, type: 'image' | 'video') => void
+  ) => Promise<void>;
 }
 
 type UploadStep = 'images' | 'videos' | 'api-version';
@@ -29,6 +34,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const [images, setImages] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0, type: '' });
   const [apiVersionCustomization, setApiVersionCustomization] = useState<ApiVersionCustomization | null>(null);
 
   const handleNext = () => {
@@ -65,22 +71,20 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     }
 
     setIsProcessing(true);
+    setProcessingProgress({ current: 0, total: 0, type: '' });
     
     try {
-      toast.info("Enviando archivos y generando video...");
+      toast.info("Procesando archivos...");
 
-      // Call the confirm callback with files and API version customization
-      await onConfirm(images, videos, customization || apiVersionCustomization!);
+      // Call the confirm callback with files and API version customization and progress callback
+      await onConfirm(images, videos, customization || apiVersionCustomization!, (current, total, type) => {
+        setProcessingProgress({ current, total, type });
+      });
       
       toast.success("¡Video enviado a generación!");
 
       // Reset state and close modal
-      setCurrentStep('images');
-      setImages([]);
-      setVideos([]);
-      setApiVersionCustomization(null);
-      setIsProcessing(false);
-      onClose();
+      resetAndClose();
       
     } catch (error) {
       console.error('Error generating video:', error);
@@ -92,6 +96,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
 
       toast.error(errorMessage);
       setIsProcessing(false);
+      setProcessingProgress({ current: 0, total: 0, type: '' });
     }
   };
 
@@ -117,6 +122,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     setVideos([]);
     setApiVersionCustomization(null);
     setIsProcessing(false);
+    setProcessingProgress({ current: 0, total: 0, type: '' });
     onClose();
   };
 
@@ -131,6 +137,26 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Processing indicator */}
+          {isProcessing && (
+            <div className="text-center space-y-2">
+              <div className="text-sm text-muted-foreground">
+                Procesando archivos {processingProgress.type}... 
+                {processingProgress.total > 0 && ` (${processingProgress.current}/${processingProgress.total})`}
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-300" 
+                  style={{ 
+                    width: processingProgress.total > 0 
+                      ? `${(processingProgress.current / processingProgress.total) * 100}%` 
+                      : '10%' 
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Step indicator */}
           <div className="flex items-center justify-center space-x-4 text-sm">
             <div className={`flex items-center space-x-2 ${currentStep === 'images' ? 'text-primary' : 'text-muted-foreground'}`}>
