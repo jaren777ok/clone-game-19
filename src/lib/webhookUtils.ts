@@ -288,7 +288,7 @@ export const sendDirectToManualWebhook = async (
   console.log('🖼️ Images:', images.length);
   console.log('🎥 Videos:', videos.length);
 
-  const webhookUrl = 'https://hook.eu2.make.com/n5aqhq8iwrz6ej7oec59y7u91kw9bz81';
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL';
   
   // Create FormData for the webhook
   const formData = new FormData();
