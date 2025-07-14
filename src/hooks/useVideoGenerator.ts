@@ -5,7 +5,7 @@ import { useVideoGenerationDatabase } from './useVideoGenerationDatabase';
 import { useVideoMonitoring } from './useVideoMonitoring';
 import { initiateVideoGeneration } from '@/lib/videoGenerationLogic';
 import { validateFlowState } from '@/lib/videoGenerationLogic';
-import { FlowState } from '@/types/videoFlow';
+import { FlowState, ApiVersionCustomization } from '@/types/videoFlow';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
 import { migrateLegacyData } from '@/lib/migrationUtils';
 import { sendDirectToManualWebhook } from '@/lib/webhookUtils';
@@ -206,7 +206,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   };
 
-  const handleGenerateVideoWithFiles = async (images: File[], videos: File[]) => {
+  const handleGenerateVideoWithFiles = async (images: File[], videos: File[], apiVersionCustomization: ApiVersionCustomization) => {
     // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
       toast({
@@ -263,8 +263,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         AvatarID: flowState!.selectedAvatar?.avatar_id,
         VoiceID: flowState!.selectedVoice?.voice_id,
         Estilo: flowState!.selectedStyle?.id,
-        width: flowState!.apiVersionCustomization?.width || 1280,
-        height: flowState!.apiVersionCustomization?.height || 720
+        width: apiVersionCustomization?.width || 1280,
+        height: apiVersionCustomization?.height || 720
       };
 
       // Send directly to webhook with files FIRST

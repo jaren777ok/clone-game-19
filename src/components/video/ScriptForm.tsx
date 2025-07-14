@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ManualUploadModal } from './ManualUploadModal';
-import { FlowState } from '@/types/videoFlow';
+import { FlowState, ApiVersionCustomization } from '@/types/videoFlow';
 
 interface ScriptFormProps {
   script: string;
@@ -17,7 +17,7 @@ interface ScriptFormProps {
   timeRemaining?: number;
   currentRequestId?: string | null;
   flowState?: FlowState;
-  onGenerateWithFiles?: (images: File[], videos: File[]) => Promise<void>;
+  onGenerateWithFiles?: (images: File[], videos: File[], apiVersionCustomization: ApiVersionCustomization) => Promise<void>;
 }
 
 const ScriptForm = ({ 
@@ -64,9 +64,9 @@ const ScriptForm = ({
     }
   };
 
-  const handleManualModalConfirm = async (images: File[], videos: File[]) => {
+  const handleManualModalConfirm = async (images: File[], videos: File[], apiVersionCustomization: ApiVersionCustomization) => {
     if (onGenerateWithFiles) {
-      await onGenerateWithFiles(images, videos);
+      await onGenerateWithFiles(images, videos, apiVersionCustomization);
       setShowManualModal(false);
     }
   };
