@@ -24,22 +24,38 @@ const VideoGeneratorFinal = () => {
     // Prioridad 1: Estado pasado via navegación
     const navigationState = location.state as FlowState | undefined;
     
+    // DEBUG: Log navigation state
+    console.log('🐛 DEBUG VideoGeneratorFinal - Navigation state:', {
+      navigationState: navigationState,
+      selectedStyle: navigationState?.selectedStyle,
+      selectedStyleId: navigationState?.selectedStyle?.id
+    });
+    
     if (navigationState && navigationState.selectedApiKey && navigationState.selectedAvatar && 
         navigationState.selectedVoice && navigationState.selectedStyle) {
       console.log('✅ Usando estado de navegación:', {
         step: navigationState.step,
-        hasScript: !!navigationState.generatedScript
+        hasScript: !!navigationState.generatedScript,
+        selectedStyleId: navigationState.selectedStyle.id
       });
       setEffectiveFlowState(navigationState);
       return;
     }
 
     // Prioridad 2: Estado actual del hook
+    // DEBUG: Log current flow state
+    console.log('🐛 DEBUG VideoGeneratorFinal - Current flow state:', {
+      currentFlowState: currentFlowState,
+      selectedStyle: currentFlowState?.selectedStyle,
+      selectedStyleId: currentFlowState?.selectedStyle?.id
+    });
+    
     if (currentFlowState && currentFlowState.selectedApiKey && currentFlowState.selectedAvatar && 
         currentFlowState.selectedVoice && currentFlowState.selectedStyle) {
       console.log('✅ Usando estado actual del hook:', {
         step: currentFlowState.step,
-        hasScript: !!currentFlowState.generatedScript
+        hasScript: !!currentFlowState.generatedScript,
+        selectedStyleId: currentFlowState.selectedStyle.id
       });
       setEffectiveFlowState(currentFlowState);
       return;
@@ -76,6 +92,14 @@ const VideoGeneratorFinal = () => {
       handleVideoGenerated();
     }
   }, [state.videoResult]);
+
+  // DEBUG: Log effective flow state
+  console.log('🐛 DEBUG VideoGeneratorFinal - Effective flow state:', {
+    effectiveFlowState: effectiveFlowState,
+    selectedStyle: effectiveFlowState?.selectedStyle,
+    selectedStyleId: effectiveFlowState?.selectedStyle?.id,
+    hasHandleGenerateVideoWithFiles: !!handlers.handleGenerateVideoWithFiles
+  });
 
   // Si no tenemos configuración efectiva aún, mostrar loading
   if (!effectiveFlowState) {
@@ -174,6 +198,8 @@ const VideoGeneratorFinal = () => {
             error={state.error}
             timeRemaining={state.timeRemaining}
             currentRequestId={state.currentRequestId}
+            flowState={effectiveFlowState}
+            onGenerateWithFiles={handlers.handleGenerateVideoWithFiles}
           />
         </div>
       </div>
