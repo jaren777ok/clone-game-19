@@ -8,7 +8,7 @@ import { validateFlowState } from '@/lib/videoGenerationLogic';
 import { FlowState, ApiVersionCustomization } from '@/types/videoFlow';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
 import { migrateLegacyData } from '@/lib/migrationUtils';
-import { sendDirectToManualWebhook, sendDirectToManualWebhookWithUrls } from '@/lib/webhookUtils';
+import { sendDirectToManualWebhook, sendDirectToManualWebhookWithUrls, sendDirectToManualWebhook2, sendDirectToManualWebhook2WithUrls } from '@/lib/webhookUtils';
 
 interface UseVideoGeneratorProps {
   flowState?: FlowState;
@@ -273,7 +273,12 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       };
 
       // Send directly to webhook with files FIRST, with progress callback
-      await sendDirectToManualWebhook(payload, images, videos, onProgress);
+      // Use different webhook based on style
+      if (flowState!.selectedStyle?.id === 'style-6') {
+        await sendDirectToManualWebhook2(payload, images, videos, onProgress);
+      } else {
+        await sendDirectToManualWebhook(payload, images, videos, onProgress);
+      }
       
       // ONLY if webhook is successful, create database entry and start tracking
       const success = await handleStartGeneration(script.trim(), requestId);
@@ -370,7 +375,12 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       };
 
       // Send to webhook with Drive URLs instead of files
-      await sendDirectToManualWebhookWithUrls(payload, driveUrls);
+      // Use different webhook based on style
+      if (flowState!.selectedStyle?.id === 'style-6') {
+        await sendDirectToManualWebhook2WithUrls(payload, driveUrls);
+      } else {
+        await sendDirectToManualWebhookWithUrls(payload, driveUrls);
+      }
       
       // ONLY if webhook is successful, create database entry and start tracking
       const success = await handleStartGeneration(script.trim(), requestId);

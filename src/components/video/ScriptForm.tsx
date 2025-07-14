@@ -121,13 +121,16 @@ const ScriptForm = ({
   return (
     <div className="bg-card cyber-border rounded-2xl p-8 hover:cyber-glow transition-all duration-500 mb-8">
       <div className="space-y-6">
-        {/* DEBUG: Visual indicator for manual style detection */}
+        {/* DEBUG: Visual indicator for manual style detection - Hidden from UI */}
+        {/* 
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
           <p className="text-blue-300 text-xs font-mono">
             DEBUG: flowState?.selectedStyle?.id = {flowState?.selectedStyle?.id || 'undefined'} | 
             isManualStyle = {isManualStyle ? 'TRUE' : 'FALSE'}
           </p>
         </div>
+        */}
+        
         {/* Estado de generación activa */}
         {isGenerating && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
