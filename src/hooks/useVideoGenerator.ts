@@ -8,7 +8,7 @@ import { validateFlowState } from '@/lib/videoGenerationLogic';
 import { FlowState, ApiVersionCustomization } from '@/types/videoFlow';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
 import { migrateLegacyData } from '@/lib/migrationUtils';
-import { sendDirectToManualWebhook } from '@/lib/webhookUtils';
+import { sendDirectToManualWebhook, sendDirectToManualWebhookWithUrls } from '@/lib/webhookUtils';
 
 interface UseVideoGeneratorProps {
   flowState?: FlowState;
@@ -305,6 +305,103 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   };
 
+  const handleGenerateVideoWithUrls = async (
+    driveUrls: any,
+    apiVersionCustomization: ApiVersionCustomization
+  ) => {
+    // Simple check for existing generation without triggering refresh
+    if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
+      toast({
+        title: "Video en proceso",
+        description: "Ya tienes un video siendo generado. Espera a que termine o cancela la generación actual.",
+        variant: "destructive"
+      });
+      throw new Error("Video en proceso");
+    }
+
+    if (!script.trim()) {
+      toast({ 
+        title: "Guion requerido", 
+        description: "Por favor, ingresa un guion para generar el video.", 
+        variant: "destructive" 
+      });
+      throw new Error("Guion requerido");
+    }
+
+    const flowState = props?.flowState;
+    if (!validateFlowState(flowState)) {
+      toast({ 
+        title: "Configuración incompleta", 
+        description: "Faltan datos de configuración. Por favor, completa el flujo de creación.", 
+        variant: "destructive" 
+      });
+      throw new Error("Configuración incompleta");
+    }
+
+    setIsGenerating(true);
+    setError('');
+    setVideoResult('');
+
+    console.log('Iniciando generación de video con URLs de Drive');
+    
+    try {
+      // Generate unique requestId
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 8);
+      const requestId = `${timestamp}-${random}`;
+      setCurrentRequestId(requestId);
+
+      // Decrypt API key
+      const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
+      
+      // Build payload for webhook with default dimensions for manual style
+      const payload = {
+        script: script.trim(),
+        userId: user?.id || '',
+        requestId,
+        timestamp: new Date().toISOString(),
+        appMode: 'production',
+        ClaveAPI: decryptedApiKey,
+        AvatarID: flowState!.selectedAvatar?.avatar_id,
+        VoiceID: flowState!.selectedVoice?.voice_id,
+        Estilo: flowState!.selectedStyle?.id,
+        width: apiVersionCustomization?.width || 1280,
+        height: apiVersionCustomization?.height || 720
+      };
+
+      // Send to webhook with Drive URLs instead of files
+      await sendDirectToManualWebhookWithUrls(payload, driveUrls);
+      
+      // ONLY if webhook is successful, create database entry and start tracking
+      const success = await handleStartGeneration(script.trim(), requestId);
+      if (!success) {
+        throw new Error('No se pudo guardar el estado de generación');
+      }
+
+      // Start countdown and monitoring ONLY after successful webhook call
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId, script.trim());
+
+      toast({
+        title: "Video en procesamiento",
+        description: `Procesamiento iniciado. ID: ${requestId.substring(0, 8)}...`
+      });
+      
+    } catch (err) {
+      console.error('Error en generación con URLs:', err);
+      setError(err instanceof Error ? err.message : 'Error de conexión');
+      setIsGenerating(false);
+      
+      toast({ 
+        title: "Error de conexión", 
+        description: "No se pudo iniciar la generación. Por favor, intenta de nuevo.", 
+        variant: "destructive" 
+      });
+      
+      throw err;
+    }
+  };
+
   const handleNewVideo = () => {
     setScript('');
     setVideoResult('');
@@ -330,6 +427,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       setScript,
       handleGenerateVideo,
       handleGenerateVideoWithFiles,
+      handleGenerateVideoWithUrls,
       handleRecoverGeneration,
       handleCancelRecovery,
       handleNewVideo,

@@ -74,6 +74,7 @@ const VideoGenerator = () => {
             currentRequestId={state.currentRequestId}
             flowState={flowState}
             onGenerateWithFiles={handlers.handleGenerateVideoWithFiles}
+            onGenerateWithUrls={handlers.handleGenerateVideoWithUrls}
           />
 
           <TipsSection />

@@ -6,6 +6,7 @@ import { Upload, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { FlowState, ApiVersionCustomization } from "@/types/videoFlow";
 import { ImageUploadStep } from "./ImageUploadStep";
 import { VideoUploadStep } from "./VideoUploadStep";
+import { ConvertFilesStep } from "./ConvertFilesStep";
 import ApiVersionModal from "./ApiVersionModal";
 
 interface ManualUploadModalProps {
@@ -19,16 +20,21 @@ interface ManualUploadModalProps {
     apiVersionCustomization: ApiVersionCustomization,
     onProgress?: (current: number, total: number, type: 'image') => void
   ) => Promise<void>;
+  onConfirmWithUrls?: (
+    driveUrls: any,
+    apiVersionCustomization: ApiVersionCustomization
+  ) => Promise<void>;
 }
 
-type UploadStep = 'images' | 'videos' | 'api-version';
+type UploadStep = 'images' | 'videos' | 'convert-files' | 'api-version';
 
 export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   open,
   onClose,
   script,
   flowState,
-  onConfirm
+  onConfirm,
+  onConfirmWithUrls
 }) => {
   const [currentStep, setCurrentStep] = useState<UploadStep>('images');
   const [images, setImages] = useState<File[]>([]);
@@ -36,11 +42,16 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0, type: '' });
   const [apiVersionCustomization, setApiVersionCustomization] = useState<ApiVersionCustomization | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
+  const [conversionProgress, setConversionProgress] = useState('');
+  const [convertedUrls, setConvertedUrls] = useState<any>(null);
 
   const handleNext = () => {
     if (currentStep === 'images' && images.length === 14) {
       setCurrentStep('videos');
     } else if (currentStep === 'videos' && videos.length === 5) {
+      setCurrentStep('convert-files');
+    } else if (currentStep === 'convert-files' && convertedUrls) {
       setCurrentStep('api-version');
     }
   };
@@ -48,8 +59,54 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const handleBack = () => {
     if (currentStep === 'videos') {
       setCurrentStep('images');
-    } else if (currentStep === 'api-version') {
+    } else if (currentStep === 'convert-files') {
       setCurrentStep('videos');
+    } else if (currentStep === 'api-version') {
+      setCurrentStep('convert-files');
+    }
+  };
+
+  const handleConvertFiles = async () => {
+    if (images.length === 0 && videos.length === 0) {
+      toast.error("No hay archivos para convertir.");
+      return;
+    }
+
+    setIsConverting(true);
+    setConversionProgress('Preparando archivos...');
+    
+    try {
+      // Import the conversion function
+      const { sendToConvertFilesWebhook } = await import('@/lib/webhookUtils');
+      
+      // Send files to conversion webhook
+      const urls = await sendToConvertFilesWebhook(
+        images, 
+        videos, 
+        setConversionProgress
+      );
+      
+      setConvertedUrls(urls);
+      setConversionProgress('¡Conversión completada!');
+      
+      toast.success("Archivos convertidos exitosamente");
+      
+      // Auto advance to next step after a brief delay
+      setTimeout(() => {
+        setCurrentStep('api-version');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error converting files:', error);
+      
+      let errorMessage = "Error convirtiendo archivos";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -76,10 +133,16 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     try {
       toast.info("Procesando archivos...");
 
-      // Call the confirm callback with files and API version customization and progress callback
-      await onConfirm(images, videos, customization || apiVersionCustomization!, (current, total, type) => {
-        setProcessingProgress({ current, total, type });
-      });
+      // Call the confirm callback with converted URLs instead of direct files
+      if (convertedUrls && onConfirmWithUrls) {
+        // Use the URL-based method
+        await onConfirmWithUrls(convertedUrls, customization || apiVersionCustomization!);
+      } else {
+        // Fallback to original method
+        await onConfirm(images, videos, customization || apiVersionCustomization!, (current, total, type) => {
+          setProcessingProgress({ current, total, type });
+        });
+      }
       
       toast.success("¡Video enviado a generación!");
 
@@ -103,6 +166,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   const isNextDisabled = () => {
     if (currentStep === 'images') return images.length !== 14;
     if (currentStep === 'videos') return videos.length !== 5;
+    if (currentStep === 'convert-files') return !convertedUrls;
     return false;
   };
 
@@ -110,6 +174,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     switch (currentStep) {
       case 'images': return 'Subir Imágenes';
       case 'videos': return 'Subir Videos';
+      case 'convert-files': return 'Convertir Archivos';
       case 'api-version': return 'Configurar API';
       default: return 'Upload';
     }
@@ -123,6 +188,9 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     setApiVersionCustomization(null);
     setIsProcessing(false);
     setProcessingProgress({ current: 0, total: 0, type: '' });
+    setIsConverting(false);
+    setConversionProgress('');
+    setConvertedUrls(null);
     onClose();
   };
 
@@ -161,26 +229,33 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
           )}
 
           {/* Step indicator */}
-          <div className="flex items-center justify-center space-x-4 text-sm">
+          <div className="flex items-center justify-center space-x-2 text-sm overflow-x-auto">
             <div className={`flex items-center space-x-2 ${currentStep === 'images' ? 'text-primary' : 'text-muted-foreground'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'images' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 1
               </div>
-              <span>14 Imágenes</span>
+              <span className="whitespace-nowrap">14 Imágenes</span>
             </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <div className={`flex items-center space-x-2 ${currentStep === 'videos' ? 'text-primary' : 'text-muted-foreground'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'videos' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 2
               </div>
-              <span>5 Videos</span>
+              <span className="whitespace-nowrap">5 Videos</span>
             </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            <div className={`flex items-center space-x-2 ${currentStep === 'api-version' ? 'text-primary' : 'text-muted-foreground'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'api-version' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <div className={`flex items-center space-x-2 ${currentStep === 'convert-files' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'convert-files' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 3
               </div>
-              <span>API Version</span>
+              <span className="whitespace-nowrap">Convertir</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <div className={`flex items-center space-x-2 ${currentStep === 'api-version' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'api-version' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                4
+              </div>
+              <span className="whitespace-nowrap">API Version</span>
             </div>
           </div>
 
@@ -199,6 +274,14 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
             />
           )}
 
+          {currentStep === 'convert-files' && (
+            <ConvertFilesStep 
+              onConvert={handleConvertFiles}
+              isConverting={isConverting}
+              conversionProgress={conversionProgress}
+            />
+          )}
+
           {currentStep === 'api-version' && (
             <ApiVersionModal 
               isOpen={true}
@@ -208,7 +291,7 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
           )}
 
           {/* Navigation buttons */}
-          {currentStep !== 'api-version' && (
+          {currentStep !== 'api-version' && currentStep !== 'convert-files' && (
             <div className="flex justify-between pt-4">
               <Button 
                 variant="outline" 

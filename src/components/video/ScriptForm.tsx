@@ -23,6 +23,10 @@ interface ScriptFormProps {
     apiVersionCustomization: ApiVersionCustomization,
     onProgress?: (current: number, total: number, type: 'image') => void
   ) => Promise<void>;
+  onGenerateWithUrls?: (
+    driveUrls: any,
+    apiVersionCustomization: ApiVersionCustomization
+  ) => Promise<void>;
 }
 
 const ScriptForm = ({ 
@@ -35,7 +39,8 @@ const ScriptForm = ({
   timeRemaining,
   currentRequestId,
   flowState,
-  onGenerateWithFiles
+  onGenerateWithFiles,
+  onGenerateWithUrls
 }: ScriptFormProps) => {
   const [showManualModal, setShowManualModal] = useState(false);
 
@@ -77,6 +82,16 @@ const ScriptForm = ({
   ) => {
     if (onGenerateWithFiles) {
       await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
+      setShowManualModal(false);
+    }
+  };
+
+  const handleManualModalConfirmWithUrls = async (
+    driveUrls: any,
+    apiVersionCustomization: ApiVersionCustomization
+  ) => {
+    if (onGenerateWithUrls) {
+      await onGenerateWithUrls(driveUrls, apiVersionCustomization);
       setShowManualModal(false);
     }
   };
@@ -245,6 +260,7 @@ const ScriptForm = ({
             script={script}
             flowState={flowState}
             onConfirm={handleManualModalConfirm}
+            onConfirmWithUrls={handleManualModalConfirmWithUrls}
           />
         )}
       </div>

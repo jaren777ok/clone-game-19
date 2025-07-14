@@ -277,6 +277,84 @@ export const sendToManualWebhook = async (
   }
 };
 
+// Drive URLs response interface
+interface DriveUrlsResponse {
+  [key: string]: string; // imagen1, imagen2, ..., video1, video2, etc.
+}
+
+// Convert files to Drive URLs webhook
+export const sendToConvertFilesWebhook = async (
+  images: File[],
+  videos: File[],
+  onProgress?: (message: string) => void
+): Promise<DriveUrlsResponse> => {
+  console.log('🔄 Converting files to Drive URLs...');
+  console.log('🖼️ Images:', images.length);
+  console.log('🎥 Videos:', videos.length);
+
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/DRIVE';
+  
+  // Create FormData for the webhook
+  const formData = new FormData();
+  
+  try {
+    // Process images as base64
+    onProgress?.('Convirtiendo imágenes...');
+    for (let i = 0; i < images.length; i++) {
+      onProgress?.(`Procesando imagen ${i + 1} de ${images.length}...`);
+      const image = images[i];
+      const base64Data = await fileToBase64(image);
+      formData.append(`imagen${i + 1}`, base64Data);
+    }
+    
+    // Process videos as binary files
+    onProgress?.('Convirtiendo videos...');
+    for (let i = 0; i < videos.length; i++) {
+      onProgress?.(`Procesando video ${i + 1} de ${videos.length}...`);
+      const video = videos[i];
+      formData.append(`video${i + 1}`, video, video.name);
+    }
+
+    onProgress?.('Enviando archivos a Google Drive...');
+    
+    // 10 minute timeout (600,000ms)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 600000);
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Files converted to Drive URLs successfully');
+      console.log('📊 Response:', data);
+      
+      // Expect response to be an array with a single object
+      if (Array.isArray(data) && data.length > 0) {
+        return data[0] as DriveUrlsResponse;
+      } else {
+        return data as DriveUrlsResponse;
+      }
+    } else {
+      console.error('❌ Convert files webhook failed:', response.status, response.statusText);
+      throw new Error(`Conversion failed with status ${response.status}`);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('❌ Convert files webhook timeout after 10 minutes');
+      throw new Error('Conversion timeout after 10 minutes');
+    } else {
+      console.error('❌ Error converting files:', error);
+      throw error;
+    }
+  }
+};
+
 // New direct webhook function for manual files without localStorage
 export const sendDirectToManualWebhook = async (
   payload: WebhookPayload,
@@ -343,6 +421,63 @@ export const sendDirectToManualWebhook = async (
       throw new Error('Webhook timeout after 30 seconds');
     } else {
       console.error('❌ Error sending DIRECT MANUAL webhook:', error);
+      throw error;
+    }
+  }
+};
+
+// New function to send with Drive URLs instead of files
+export const sendDirectToManualWebhookWithUrls = async (
+  payload: WebhookPayload,
+  driveUrls: DriveUrlsResponse
+): Promise<string> => {
+  console.log('🔄 Sending to MANUAL webhook with Drive URLs...');
+  console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
+  console.log('🔗 Drive URLs:', Object.keys(driveUrls).length);
+
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL';
+  
+  // Create FormData for the webhook
+  const formData = new FormData();
+  
+  // Add all payload fields
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      formData.append(key, String(value));
+    }
+  });
+  
+  // Add all Drive URLs to the payload
+  Object.entries(driveUrls).forEach(([key, url]) => {
+    formData.append(key, url);
+  });
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      console.log('✅ MANUAL webhook with URLs sent successfully');
+      console.log('📊 Sent URLs for:', Object.keys(driveUrls).join(', '));
+      return payload.requestId; // Return requestId for tracking
+    } else {
+      console.error('❌ MANUAL webhook with URLs failed:', response.status, response.statusText);
+      throw new Error(`Webhook failed with status ${response.status}`);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('❌ MANUAL webhook with URLs timeout after 30 seconds');
+      throw new Error('Webhook timeout after 30 seconds');
+    } else {
+      console.error('❌ Error sending MANUAL webhook with URLs:', error);
       throw error;
     }
   }

@@ -200,6 +200,7 @@ const VideoGeneratorFinal = () => {
             currentRequestId={state.currentRequestId}
             flowState={effectiveFlowState}
             onGenerateWithFiles={handlers.handleGenerateVideoWithFiles}
+            onGenerateWithUrls={handlers.handleGenerateVideoWithUrls}
           />
         </div>
       </div>
