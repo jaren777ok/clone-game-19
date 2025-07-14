@@ -8,6 +8,7 @@ export const STYLE_ID_MAPPING: Record<string, string> = {
   'style-3': 'c8f2b947-a5e8-4d92-b1c4-9f3e8d7a6b2c', // Estilo Educativo 1
   'style-4': 'd9a3c058-b6f9-4e03-c2d5-af4f9e8b7c3d', // Estilo Educativo 2
   'style-5': 'manual-style', // Estilo Manual
+  'style-6': 'manual-style-2', // Estilo Manual 2
 };
 
 // Función para obtener el ID interno del estilo

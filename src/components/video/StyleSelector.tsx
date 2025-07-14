@@ -51,6 +51,11 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       id: 'style-5',
       name: 'Estilo Manual',
       video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAyIE1PREVMTy5tcDQiLCJpYXQiOjE3NTI0MzY2NDQsImV4cCI6MTc4Mzk3MjY0NH0.54HB9qw_UDJXBHJn_ItgwaavewSBtsebdodziKF5DFw'
+    },
+    {
+      id: 'style-6',
+      name: 'Estilo Manual 2',
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAyIE1PREVMTy5tcDQiLCJpYXQiOjE3NTI0MzY2NDQsImV4cCI6MTc4Mzk3MjY0NH0.54HB9qw_UDJXBHJn_ItgwaavewSBtsebdodziKF5DFw'
     }
   ];
 
@@ -74,8 +79,8 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     setSelectedStyleId(style.id);
     setPlayingVideo(null);
 
-    // For "Carga Manual" style (style-5), go directly to neurocopy without modals
-    if (style.id === 'style-5') {
+    // For "Carga Manual" styles (style-5 and style-6), go directly to neurocopy without modals
+    if (style.id === 'style-5' || style.id === 'style-6') {
       onSelectStyle(style);
       return;
     }

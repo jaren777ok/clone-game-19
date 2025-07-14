@@ -6,8 +6,8 @@ import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
   
-  // For manual style (style-5), don't require apiVersionCustomization
-  if (flowState.selectedStyle?.id === 'style-5') {
+  // For manual styles (style-5 and style-6), don't require apiVersionCustomization
+  if (flowState.selectedStyle?.id === 'style-5' || flowState.selectedStyle?.id === 'style-6') {
     return !!(
       flowState.selectedApiKey &&
       flowState.selectedAvatar &&
@@ -110,6 +110,8 @@ export const initiateVideoGeneration = async (
     webhookType = 'EDUCATIVO_2';
   } else if (flowState.selectedStyle!.id === 'style-5') {
     webhookType = 'MANUAL';
+  } else if (flowState.selectedStyle!.id === 'style-6') {
+    webhookType = 'MANUAL2';
   }
 
   console.log('📤 Enviando payload al webhook (esperando confirmación):', {

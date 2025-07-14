@@ -25,8 +25,8 @@ const VideoStyleCard: React.FC<Props> = ({
   onVideoRef
 }) => {
   const getStyleRequirements = (styleId: string) => {
-    if (styleId === 'style-5') {
-      // Estilo Manual - requiere archivos propios
+    if (styleId === 'style-5' || styleId === 'style-6') {
+      // Estilo Manual y Estilo Manual 2 - requieren archivos propios
       return (
         <div className="space-y-1">
           <p className="font-medium text-yellow-400">Requisitos:</p>

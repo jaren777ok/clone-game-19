@@ -29,8 +29,8 @@ export const determineInitialStep = (
     const savedKeyExists = availableKeys.some(key => key.id === savedState.selectedApiKey?.id);
     
     if (savedKeyExists) {
-      // For manual style (style-5), check if manual customization is complete
-      if (savedState.selectedStyle?.id === 'style-5' && savedState.manualCustomization && savedState.apiVersionCustomization) {
+      // For manual styles (style-5 and style-6), check if manual customization is complete
+      if ((savedState.selectedStyle?.id === 'style-5' || savedState.selectedStyle?.id === 'style-6') && savedState.manualCustomization && savedState.apiVersionCustomization) {
         console.log('📦 Found saved manual customization, checking local files...');
         
         // Files are now loaded directly from Supabase as base64

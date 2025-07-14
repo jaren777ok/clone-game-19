@@ -482,3 +482,207 @@ export const sendDirectToManualWebhookWithUrls = async (
     }
   }
 };
+
+// Nueva función para webhook MANUAL2 - copia exacta de sendToManualWebhook
+export const sendToManualWebhook2 = async (
+  payload: WebhookPayload,
+  sessionId?: string
+): Promise<boolean> => {
+  console.log('🔄 Sending to MANUAL2 webhook...');
+  console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
+  console.log('🗂️ SessionId:', sessionId);
+
+  // Dynamic import to avoid circular dependency
+  const { loadFilesFromLocal, clearLocalFiles } = await import('./fileStorage');
+
+  // Load files from localStorage
+  const localFiles = loadFilesFromLocal(sessionId);
+  if (!localFiles) {
+    console.error('❌ No files found in localStorage for sessionId:', sessionId);
+    return false;
+  }
+
+  const { images: imageFiles, videos: videoFiles } = localFiles;
+  console.log('🖼️ Images loaded:', imageFiles.length);
+  console.log('🎥 Videos loaded:', videoFiles.length);
+
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
+  
+  // Create FormData for the webhook
+  const formData = new FormData();
+  
+  // Add all payload fields
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      formData.append(key, String(value));
+    }
+  });
+  
+  // Convert files to base64 and add to FormData
+  try {
+    // Process images
+    for (let i = 0; i < imageFiles.length; i++) {
+      const image = imageFiles[i];
+      const base64Data = await fileToBase64(image);
+      formData.append(`image_${i + 1}`, base64Data);
+    }
+    
+    // Process videos (as binary files)
+    for (let i = 0; i < videoFiles.length; i++) {
+      const video = videoFiles[i];
+      formData.append(`video_${i + 1}`, video, video.name);
+    }
+
+    console.log('📤 Sending MANUAL2 webhook with files...');
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    console.log('🔄 MANUAL2 webhook response status:', response.status);
+
+    if (response.ok) {
+      console.log('✅ MANUAL2 webhook accepted files successfully');
+      // Clear files from localStorage after successful send
+      clearLocalFiles();
+      return true;
+    } else {
+      console.error('❌ MANUAL2 webhook error:', response.status, response.statusText);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error sending to MANUAL2 webhook:', error);
+    return false;
+  }
+};
+
+// Nueva función para enviar directamente con archivos a webhook MANUAL2
+export const sendDirectToManualWebhook2 = async (
+  payload: WebhookPayload, 
+  images: File[], 
+  videos: File[], 
+  onProgress?: (current: number, total: number, type: 'image') => void
+): Promise<string> => {
+  console.log('🔄 Sending directly to MANUAL2 webhook with files...');
+  console.log('📦 Payload size:', JSON.stringify(payload).length);
+  console.log('🖼️ Images to send:', images.length);
+  console.log('🎥 Videos to send:', videos.length);
+
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
+  
+  // Create FormData for the webhook
+  const formData = new FormData();
+  
+  // Add all payload fields
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      formData.append(key, String(value));
+    }
+  });
+  
+  // Convert images to base64 and add to FormData
+  try {
+    console.log('🔄 Converting images to base64...');
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      const base64Data = await fileToBase64(image);
+      formData.append(`image_${i + 1}`, base64Data);
+      
+      // Report progress
+      if (onProgress) {
+        onProgress(i + 1, images.length, 'image');
+      }
+    }
+    
+    console.log('🔄 Adding videos as binary files...');
+    // Process videos (as binary files)
+    for (let i = 0; i < videos.length; i++) {
+      const video = videos[i];
+      formData.append(`video_${i + 1}`, video, video.name);
+    }
+
+    console.log('📤 Sending MANUAL2 webhook payload...');
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    console.log('🔄 MANUAL2 webhook response status:', response.status);
+
+    if (response.ok) {
+      console.log('✅ MANUAL2 webhook accepted files successfully');
+      return payload.requestId;
+    } else {
+      const errorText = await response.text();
+      console.error('❌ MANUAL2 webhook error:', response.status, response.statusText, errorText);
+      throw new Error(`Webhook MANUAL2 error: ${response.status} - ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error sending to MANUAL2 webhook:', error);
+    throw error;
+  }
+};
+
+// Nueva función para enviar con URLs a webhook MANUAL2
+export const sendDirectToManualWebhook2WithUrls = async (
+  payload: WebhookPayload,
+  driveUrls: DriveUrlsResponse
+): Promise<string> => {
+  console.log('🔄 Sending to MANUAL2 webhook with URLs...');
+  console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
+  console.log('🔗 Drive URLs:', driveUrls);
+
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
+  
+  // Prepare the full payload with URLs
+  const fullPayload = {
+    ...payload,
+    driveUrls: driveUrls
+  };
+  
+  try {
+    console.log('📤 Sending MANUAL2 webhook with Drive URLs...');
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(fullPayload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    console.log('🔄 MANUAL2 webhook response status:', response.status);
+
+    if (response.ok) {
+      console.log('✅ MANUAL2 webhook with URLs sent successfully');
+      return payload.requestId;
+    } else {
+      const errorText = await response.text();
+      console.error('❌ MANUAL2 webhook with URLs error:', response.status, response.statusText, errorText);
+      throw new Error(`Webhook MANUAL2 with URLs error: ${response.status} - ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('❌ Error sending to MANUAL2 webhook with URLs:', error);
+    throw error;
+  }
+};

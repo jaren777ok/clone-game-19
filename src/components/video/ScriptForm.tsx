@@ -51,7 +51,7 @@ const ScriptForm = ({
   };
 
   // Check if this is manual style
-  const isManualStyle = flowState?.selectedStyle?.id === 'style-5';
+  const isManualStyle = flowState?.selectedStyle?.id === 'style-5' || flowState?.selectedStyle?.id === 'style-6';
 
   // DEBUG: Log flowState and manual style detection
   console.log('🐛 DEBUG ScriptForm - flowState:', {
@@ -80,9 +80,20 @@ const ScriptForm = ({
     apiVersionCustomization: ApiVersionCustomization,
     onProgress?: (current: number, total: number, type: 'image') => void
   ) => {
-    if (onGenerateWithFiles) {
-      await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
-      setShowManualModal(false);
+    // Use different handlers based on style
+    if (flowState?.selectedStyle?.id === 'style-6') {
+      // For style-6, we would need the new handler (not implemented yet in this interface)
+      // For now, fallback to regular handler
+      if (onGenerateWithFiles) {
+        await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
+        setShowManualModal(false);
+      }
+    } else {
+      // For style-5 (original manual)
+      if (onGenerateWithFiles) {
+        await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
+        setShowManualModal(false);
+      }
     }
   };
 
@@ -90,9 +101,20 @@ const ScriptForm = ({
     driveUrls: any,
     apiVersionCustomization: ApiVersionCustomization
   ) => {
-    if (onGenerateWithUrls) {
-      await onGenerateWithUrls(driveUrls, apiVersionCustomization);
-      setShowManualModal(false);
+    // Use different handlers based on style
+    if (flowState?.selectedStyle?.id === 'style-6') {
+      // For style-6, we would need the new handler (not implemented yet in this interface)
+      // For now, fallback to regular handler
+      if (onGenerateWithUrls) {
+        await onGenerateWithUrls(driveUrls, apiVersionCustomization);
+        setShowManualModal(false);
+      }
+    } else {
+      // For style-5 (original manual)
+      if (onGenerateWithUrls) {
+        await onGenerateWithUrls(driveUrls, apiVersionCustomization);
+        setShowManualModal(false);
+      }
     }
   };
 
