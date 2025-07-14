@@ -315,7 +315,7 @@ export const sendToConvertFilesWebhook = async (
       formData.append(`video${i + 1}`, video, video.name);
     }
 
-    onProgress?.('Enviando archivos a Google Drive...');
+    onProgress?.('Enviando archivos al servidor...');
     
     // 10 minute timeout (600,000ms)
     const controller = new AbortController();
@@ -367,7 +367,7 @@ export const sendDirectToManualWebhook = async (
   console.log('🖼️ Images:', images.length);
   console.log('🎥 Videos:', videos.length);
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL';
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL';
   
   // Create FormData for the webhook
   const formData = new FormData();
@@ -435,7 +435,7 @@ export const sendDirectToManualWebhookWithUrls = async (
   console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
   console.log('🔗 Drive URLs:', Object.keys(driveUrls).length);
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook-test/MANUAL';
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL';
   
   // Create FormData for the webhook
   const formData = new FormData();
