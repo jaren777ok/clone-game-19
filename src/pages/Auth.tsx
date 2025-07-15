@@ -158,8 +158,8 @@ const Auth = () => {
                 <Button 
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading || loading}
-                  variant="outline"
-                  className="w-full border border-gray-300 bg-white text-gray-900"
+                  variant="google"
+                  className="w-full"
                 >
                   {googleLoading ? (
                     <div className="flex items-center">
@@ -227,8 +227,8 @@ const Auth = () => {
                 <Button 
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading || loading}
-                  variant="outline"
-                  className="w-full border border-gray-300 bg-white text-gray-900"
+                  variant="google"
+                  className="w-full"
                 >
                   {googleLoading ? (
                     <div className="flex items-center">
