@@ -50,12 +50,12 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     {
       id: 'style-5',
       name: 'Estilo Manual',
-      video_url: 'https://drive.google.com/uc?id=1x0V1eTdO79E_7ikLErq7WLdz7-2Kf0OY&export=download'
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%205.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyA1Lm1wNCIsImlhdCI6MTc1MjU0MjMzMiwiZXhwIjoxNzg0MDc4MzMyfQ.l-ciTjUPjYMwPEn1qyplkMgmaHzB1rcf45_AB1xgsms'
     },
     {
       id: 'style-6',
       name: 'Estilo Manual 2',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAyIE1PREVMTy5tcDQiLCJpYXQiOjE3NTI0MzY2NDQsImV4cCI6MTc4Mzk3MjY0NH0.54HB9qw_UDJXBHJn_ItgwaavewSBtsebdodziKF5DFw'
+      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%206.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyA2Lm1wNCIsImlhdCI6MTc1MjU1NTQ4MywiZXhwIjoxNzg0MDkxNDgzfQ.-wuuV1jVNbFCYi4-4c9wNZ_oJtZrRhbUwIWJFQKuhE4'
     }
   ];
 

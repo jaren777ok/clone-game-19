@@ -86,8 +86,11 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
             <p className="text-muted-foreground text-lg mb-2">
               Inteligencia artificial híbrida para copywriting avanzado
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-1">
               Describe lo que necesitas para tu video e ingresa enlaces de referencia si los tienes
+            </p>
+            <p className="text-xs text-muted-foreground/80">
+              💡 Potencia tu copywriting: Incluye enlaces de Instagram y TikTok para análisis avanzado de tendencias y engagement
             </p>
           </div>
 
