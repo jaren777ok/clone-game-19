@@ -90,7 +90,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
               Describe lo que necesitas para tu video e ingresa enlaces de referencia si los tienes
             </p>
             <p className="text-xs text-muted-foreground/80">
-              💡 Potencia tu copywriting: Incluye enlaces de Instagram y TikTok para análisis avanzado de tendencias y engagement
+              💡 Potencia tu copywriting: Incluye enlaces de Instagram, TikTok o Noticias para análisis avanzado de tendencias y engagement
             </p>
           </div>
 
