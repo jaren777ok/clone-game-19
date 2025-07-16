@@ -58,6 +58,7 @@ export interface SubtitleCustomization {
   subtitleEffect: 'color' | 'fade' | 'bounce' | 'slide';
   placementEffect: 'animate' | 'align';
   textTransform: 'uppercase' | 'capitalize' | 'lowercase';
+  hasBackgroundColor: boolean;
   backgroundColor: string;
   textColor: string;
 }

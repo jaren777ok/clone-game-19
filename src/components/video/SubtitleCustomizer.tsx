@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Eye, Palette, Type, Sparkles, RotateCcw, Monitor } from 'lucide-react';
 import { SubtitleCustomization } from '@/types/videoFlow';
 // Fixed Transform import issue - using RotateCcw instead
@@ -61,6 +62,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     subtitleEffect: 'color',
     placementEffect: 'animate',
     textTransform: 'capitalize',
+    hasBackgroundColor: false,
     backgroundColor: '#421010',
     textColor: '#ffffff'
   });
@@ -92,7 +94,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   const getAnimationStyles = () => {
     const styles: React.CSSProperties = {
       color: customization.textColor,
-      backgroundColor: customization.backgroundColor,
+      backgroundColor: customization.hasBackgroundColor ? customization.backgroundColor : 'transparent',
       padding: '12px 20px',
       borderRadius: '8px',
       display: 'inline-block',
@@ -284,33 +286,59 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
             </Card>
 
             {/* Colors */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Background Color */}
               <Card className="p-4 border-cyber-glow/20 bg-card/50 backdrop-blur">
-                <div className="flex items-center gap-2 mb-3">
-                  <Palette className="w-4 h-4 text-primary" />
-                  <h4 className="font-semibold">Color de Fondo</h4>
-                </div>
-                <div className="grid grid-cols-5 gap-2 mb-3">
-                  {COLOR_PALETTE.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setCustomization(prev => ({ ...prev, backgroundColor: color }))}
-                      className={`w-8 h-8 rounded border-2 transition-all ${
-                        customization.backgroundColor === color
-                          ? 'border-primary scale-110'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      style={{ backgroundColor: color }}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-primary" />
+                    <h4 className="font-semibold">Color de Fondo</h4>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={customization.hasBackgroundColor}
+                      onCheckedChange={(checked) => {
+                        setCustomization(prev => ({ 
+                          ...prev, 
+                          hasBackgroundColor: checked,
+                          backgroundColor: checked ? (prev.backgroundColor || '#421010') : prev.backgroundColor
+                        }));
+                      }}
                     />
-                  ))}
+                    <span className="text-sm text-muted-foreground">
+                      {customization.hasBackgroundColor ? 'Activado' : 'Desactivado'}
+                    </span>
+                  </div>
                 </div>
-                <input
-                  type="color"
-                  value={customization.backgroundColor}
-                  onChange={(e) => setCustomization(prev => ({ ...prev, backgroundColor: e.target.value }))}
-                  className="w-full h-8 rounded border border-border"
-                />
+                
+                {customization.hasBackgroundColor ? (
+                  <div className="space-y-3 animate-fade-in">
+                    <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
+                      {COLOR_PALETTE.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCustomization(prev => ({ ...prev, backgroundColor: color }))}
+                          className={`w-8 h-8 rounded border-2 transition-all ${
+                            customization.backgroundColor === color
+                              ? 'border-primary scale-110'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <input
+                      type="color"
+                      value={customization.backgroundColor}
+                      onChange={(e) => setCustomization(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                      className="w-full h-8 rounded border border-border"
+                    />
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-muted-foreground animate-fade-in">
+                    <div className="text-sm">Activar para personalizar color de fondo</div>
+                  </div>
+                )}
               </Card>
 
               {/* Text Color */}
@@ -319,7 +347,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                   <Palette className="w-4 h-4 text-primary" />
                   <h4 className="font-semibold">Color de Letra</h4>
                 </div>
-                <div className="grid grid-cols-5 gap-2 mb-3">
+                <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
                   {COLOR_PALETTE.map((color) => (
                     <button
                       key={color}

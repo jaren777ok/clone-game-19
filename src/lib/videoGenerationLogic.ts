@@ -104,7 +104,9 @@ export const initiateVideoGeneration = async (
       subtitleEffect: flowState.subtitleCustomization.subtitleEffect || "",
       placementEffect: flowState.subtitleCustomization.placementEffect || "",
       textTransform: flowState.subtitleCustomization.textTransform || "",
-      backgroundColor: flowState.subtitleCustomization.backgroundColor || "",
+      backgroundColor: flowState.subtitleCustomization.hasBackgroundColor 
+        ? flowState.subtitleCustomization.backgroundColor 
+        : "",
       textColor: flowState.subtitleCustomization.textColor || ""
     } : null
   };
