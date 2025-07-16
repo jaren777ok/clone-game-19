@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization, SubtitleCustomization } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -20,6 +20,7 @@ export const useVideoCreationFlow = () => {
     selectedAvatar: null,
     selectedVoice: null,
     selectedStyle: null,
+    subtitleCustomization: null,
     generatedScript: null,
     cardCustomization: null,
     presenterCustomization: null,
@@ -86,6 +87,7 @@ export const useVideoCreationFlow = () => {
       selectedAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
+      subtitleCustomization: null,
       generatedScript: null,
       cardCustomization: null,
       presenterCustomization: null,
@@ -115,6 +117,9 @@ export const useVideoCreationFlow = () => {
   const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
     
+    // Check if style requires subtitle customization (only style-1 for now)
+    const needsSubtitleCustomization = style.id === 'style-1';
+    
     setFlowState(prev => ({
       ...prev,
       selectedStyle: style,
@@ -122,7 +127,17 @@ export const useVideoCreationFlow = () => {
       presenterCustomization: presenterCustomization || null,
       apiVersionCustomization: apiVersionCustomization || null,
       manualCustomization: manualCustomization || null,
-      step: 'neurocopy' // Always go to neurocopy first, regardless of style
+      step: needsSubtitleCustomization ? 'subtitle-customization' : 'neurocopy'
+    }));
+  }, []);
+
+  const selectSubtitleCustomization = useCallback((subtitleCustomization: SubtitleCustomization) => {
+    console.log('📝 Seleccionando personalización de subtítulos:', subtitleCustomization);
+    
+    setFlowState(prev => ({
+      ...prev,
+      subtitleCustomization,
+      step: 'neurocopy'
     }));
   }, []);
 
@@ -164,6 +179,7 @@ export const useVideoCreationFlow = () => {
       selectedAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
+      subtitleCustomization: null,
       generatedScript: null,
       cardCustomization: null,
       presenterCustomization: null,
@@ -183,6 +199,7 @@ export const useVideoCreationFlow = () => {
     selectAvatar,
     selectVoice,
     selectStyle,
+    selectSubtitleCustomization,
     selectManualCustomization,
     selectGeneratedScript,
     goToStep,

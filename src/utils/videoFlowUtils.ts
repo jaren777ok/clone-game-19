@@ -16,6 +16,7 @@ export const determineInitialStep = (
       selectedAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
+      subtitleCustomization: null,
       generatedScript: null,
       cardCustomization: null,
       presenterCustomization: null,
@@ -72,7 +73,27 @@ export const determineInitialStep = (
             step: 'generator'
           };
         }
-        // If has all selections but no script, go to neurocopy
+        
+        // For style-1, check if subtitle customization is needed
+        if (savedState.selectedStyle.id === 'style-1') {
+          if (savedState.subtitleCustomization) {
+            // Has subtitle customization, go to neurocopy
+            return {
+              ...savedState,
+              step: 'neurocopy',
+              generatedScript: null
+            };
+          } else {
+            // Needs subtitle customization
+            return {
+              ...savedState,
+              step: 'subtitle-customization',
+              generatedScript: null
+            };
+          }
+        }
+        
+        // For other styles, go directly to neurocopy
         return {
           ...savedState,
           step: 'neurocopy',
@@ -86,6 +107,7 @@ export const determineInitialStep = (
           step: 'style',
           selectedStyle: null,
           generatedScript: null,
+          subtitleCustomization: null,
           cardCustomization: null,
           presenterCustomization: null
         };
@@ -97,6 +119,7 @@ export const determineInitialStep = (
           step: 'voice',
           selectedVoice: null,
           selectedStyle: null,
+          subtitleCustomization: null,
           generatedScript: null,
           cardCustomization: null,
           presenterCustomization: null
@@ -110,6 +133,7 @@ export const determineInitialStep = (
           selectedAvatar: null,
           selectedVoice: null,
           selectedStyle: null,
+          subtitleCustomization: null,
           generatedScript: null,
           cardCustomization: null,
           presenterCustomization: null
@@ -125,6 +149,7 @@ export const determineInitialStep = (
     selectedAvatar: null,
     selectedVoice: null,
     selectedStyle: null,
+    subtitleCustomization: null,
     generatedScript: null,
     cardCustomization: null,
     presenterCustomization: null,

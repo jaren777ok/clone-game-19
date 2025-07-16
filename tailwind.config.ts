@@ -64,6 +64,20 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
+			fontFamily: {
+				'montserrat': ['Montserrat', 'sans-serif'],
+				'roboto': ['Roboto', 'sans-serif'],
+				'roboto-condensed': ['Roboto Condensed', 'sans-serif'],
+				'roboto-mono': ['Roboto Mono', 'monospace'],
+				'roboto-slab': ['Roboto Slab', 'serif'],
+				'anton': ['Anton', 'sans-serif'],
+				'antonio': ['Antonio', 'sans-serif'],
+				'archivo-black': ['Archivo Black', 'sans-serif'],
+				'archivo-narrow': ['Archivo Narrow', 'sans-serif'],
+				'bebas-neue': ['Bebas Neue', 'sans-serif'],
+				'staatliches': ['Staatliches', 'sans-serif'],
+				'squada-one': ['Squada One', 'sans-serif'],
+			},
 			keyframes: {
 				'accordion-down': {
 					from: {

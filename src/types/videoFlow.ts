@@ -53,12 +53,22 @@ export interface ManualCustomization {
   sessionId?: string; // For reference
 }
 
+export interface SubtitleCustomization {
+  fontFamily: string;
+  subtitleEffect: 'color' | 'fade' | 'bounce' | 'slide';
+  placementEffect: 'animate' | 'align';
+  textTransform: 'uppercase' | 'capitalize' | 'lowercase';
+  backgroundColor: string;
+  textColor: string;
+}
+
 export interface FlowState {
-  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'neurocopy' | 'generator';
+  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'subtitle-customization' | 'neurocopy' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
   selectedAvatar: Avatar | null;
   selectedVoice: Voice | null;
   selectedStyle: VideoStyle | null;
+  subtitleCustomization?: SubtitleCustomization | null;
   generatedScript: string | null;
   cardCustomization?: CardCustomization | null;
   presenterCustomization?: PresenterCustomization | null;

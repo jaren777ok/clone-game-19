@@ -97,7 +97,16 @@ export const initiateVideoGeneration = async (
     Estilo: flowState.selectedStyle!.id,
     nombrePresentador: flowState.presenterCustomization?.nombrePresentador || flowState.selectedAvatar!.avatar_name,
     width: flowState.apiVersionCustomization?.width || 1280,
-    height: flowState.apiVersionCustomization?.height || 720
+    height: flowState.apiVersionCustomization?.height || 720,
+    // Personalización de subtítulos (solo para style-1)
+    subtitleCustomization: flowState.subtitleCustomization ? {
+      fontFamily: flowState.subtitleCustomization.fontFamily || "",
+      subtitleEffect: flowState.subtitleCustomization.subtitleEffect || "",
+      placementEffect: flowState.subtitleCustomization.placementEffect || "",
+      textTransform: flowState.subtitleCustomization.textTransform || "",
+      backgroundColor: flowState.subtitleCustomization.backgroundColor || "",
+      textColor: flowState.subtitleCustomization.textColor || ""
+    } : null
   };
 
   // Determinar webhook según el estilo

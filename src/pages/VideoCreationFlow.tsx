@@ -8,6 +8,7 @@ import AvatarSelector from '@/components/video/AvatarSelector';
 import VoiceSelector from '@/components/video/VoiceSelector';
 import StyleSelector from '@/components/video/StyleSelector';
 import NeuroCopyGenerator from '@/components/video/NeuroCopyGenerator';
+import SubtitleCustomizer from '@/components/video/SubtitleCustomizer';
 
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const VideoCreationFlow = () => {
     selectAvatar,
     selectVoice,
     selectStyle,
+    selectSubtitleCustomization,
     selectManualCustomization,
     selectGeneratedScript,
     goToStep,
@@ -38,8 +40,16 @@ const VideoCreationFlow = () => {
       case 'style':
         goToStep('voice');
         break;
-      case 'neurocopy':
+      case 'subtitle-customization':
         goToStep('style');
+        break;
+      case 'neurocopy':
+        // Check if we came from subtitle customization or directly from style
+        if (flowState.selectedStyle?.id === 'style-1') {
+          goToStep('subtitle-customization');
+        } else {
+          goToStep('style');
+        }
         break;
       case 'generator':
         goToStep('neurocopy');
@@ -155,6 +165,18 @@ const VideoCreationFlow = () => {
       return (
         <StyleSelector
           onSelectStyle={selectStyle}
+          onBack={handleBack}
+        />
+      );
+
+    case 'subtitle-customization':
+      if (!flowState.selectedStyle) {
+        goToStep('style');
+        return null;
+      }
+      return (
+        <SubtitleCustomizer
+          onSelectCustomization={selectSubtitleCustomization}
           onBack={handleBack}
         />
       );
