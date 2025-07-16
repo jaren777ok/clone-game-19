@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Eye, Palette, Type, Sparkles, RotateCcw, Monitor } from 'lucide-react';
 import { SubtitleCustomization } from '@/types/videoFlow';
+// Fixed Transform import issue - using RotateCcw instead
 
 interface SubtitleCustomizerProps {
   onSelectCustomization: (customization: SubtitleCustomization) => void;
