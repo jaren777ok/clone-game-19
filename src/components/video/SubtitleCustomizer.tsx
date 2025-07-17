@@ -194,9 +194,9 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     // Base font sizes - reduced for better fit
     let classes = `text-xl md:text-2xl lg:text-3xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
     
-    // Special smaller size for highlight + static and karaoke + static combinations to fit 3 words in one line
+    // Optimized size for highlight + static and karaoke + static combinations - slightly larger but still fitting 3 words
     if ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') && customization.placementEffect === 'static') {
-      classes = `text-lg md:text-xl lg:text-2xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
+      classes = `text-xl md:text-2xl lg:text-2xl font-bold transition-all duration-500 whitespace-nowrap ${font?.class || 'font-montserrat'}`;
     }
     
     // Apply text transform
@@ -284,7 +284,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
         // Different rendering for highlight vs karaoke
         if (customization.subtitleEffect === 'highlight') {
           return (
-            <div className="inline-flex flex-wrap gap-2">
+            <div className="inline-flex flex-wrap gap-1">
               {currentGroup.map((word, index) => {
                 // Only the word with the current index within the group is highlighted
                 const isHighlighted = index === currentWordInGroup;
@@ -295,7 +295,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                     style={{
                       color: customization.fill || '#ffffff', // Always use user's chosen text color
                       backgroundColor: isHighlighted ? customization.textColor : 'transparent',
-                      padding: '8px 16px',
+                      padding: '6px 12px',
                       borderRadius: '8px',
                       transition: 'all 0.5s ease-in-out',
                       transform: isHighlighted ? 'scale(1.05)' : 'scale(1)',
@@ -312,7 +312,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
         } else if (customization.subtitleEffect === 'karaoke') {
           // Karaoke effect: cumulative color change from left to right
           return (
-            <div className="inline-flex flex-wrap gap-2">
+            <div className="inline-flex flex-wrap gap-1">
               {currentGroup.map((word, index) => {
                 // Words up to and including current word get karaoke color (textColor)
                 const isKaraokeActive = index <= currentWordInGroup;
@@ -323,7 +323,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                     style={{
                       color: isKaraokeActive ? customization.textColor : (customization.fill || '#ffffff'),
                       backgroundColor: 'transparent', // No background for karaoke
-                      padding: '8px 16px',
+                      padding: '6px 12px',
                       borderRadius: '8px',
                       transition: 'color 0.5s ease-in-out',
                       transform: isKaraokeActive ? 'scale(1.05)' : 'scale(1)',
