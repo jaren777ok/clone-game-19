@@ -151,8 +151,8 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       {/* Custom CSS animations */}
       <style>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         @keyframes bounceIn {
           0% { opacity: 0; transform: scale(0.8); }
