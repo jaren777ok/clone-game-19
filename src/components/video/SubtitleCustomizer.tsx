@@ -150,7 +150,14 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
   const getPreviewClasses = () => {
     const font = FONTS.find(f => f.name === customization.fontFamily);
-    let classes = `text-3xl md:text-4xl lg:text-5xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
+    
+    // Base font sizes - reduced for better fit
+    let classes = `text-xl md:text-2xl lg:text-3xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
+    
+    // Special smaller size for highlight + static combination to fit 3 words in one line
+    if (customization.subtitleEffect === 'highlight' && customization.placementEffect === 'static') {
+      classes = `text-lg md:text-xl lg:text-2xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
+    }
     
     // Apply text transform
     if (customization.textTransform === 'uppercase') classes += ' uppercase';
