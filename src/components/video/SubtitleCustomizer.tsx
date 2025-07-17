@@ -89,14 +89,14 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
   const [animationKey, setAnimationKey] = useState(0);
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentWordInGroup, setCurrentWordInGroup] = useState(0);
   const sampleText = "La Mente Humana es muy Rara";
 
   // Trigger animation when effects change
   useEffect(() => {
     setAnimationKey(prev => prev + 1);
     setCurrentGroupIndex(0);
-    setCurrentWordIndex(0);
+    setCurrentWordInGroup(0);
   }, [customization.subtitleEffect, customization.placementEffect]);
 
   // Auto-manage hasBackgroundColor for highlight effect
@@ -128,17 +128,30 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     }
   }, [sampleText, animationKey]);
 
-  // Auto-cycle through individual words for highlight + static effect
+  // Auto-cycle for highlight + static effect: groups of 3 words with sequential highlighting
   useEffect(() => {
     if (customization.subtitleEffect === 'highlight' && customization.placementEffect === 'static') {
       const words = sampleText.split(' ');
+      const groups = [];
+      for (let i = 0; i < words.length; i += 3) {
+        groups.push(words.slice(i, i + 3));
+      }
+      
       const timer = setInterval(() => {
-        setCurrentWordIndex(prev => (prev + 1) % words.length);
+        setCurrentWordInGroup(prev => {
+          const currentGroup = groups[currentGroupIndex] || [];
+          if (prev + 1 >= currentGroup.length) {
+            // Move to next group and reset word index
+            setCurrentGroupIndex(prevGroup => (prevGroup + 1) % groups.length);
+            return 0;
+          }
+          return prev + 1;
+        });
       }, 800); // Change word every 800ms
       
       return () => clearInterval(timer);
     }
-  }, [customization.subtitleEffect, customization.placementEffect, sampleText]);
+  }, [customization.subtitleEffect, customization.placementEffect, sampleText, currentGroupIndex]);
 
   // Helper function to sanitize backgroundColor
   const sanitizeBackgroundColor = (customization: SubtitleCustomization): string => {
@@ -232,20 +245,27 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     
     // Special handling for highlight effect
     if (customization.subtitleEffect === 'highlight') {
-      // For highlight + static: sequential word-by-word highlighting
+      // For highlight + static: sequential word-by-word highlighting in groups of 3
       if (customization.placementEffect === 'static') {
         const words = sampleText.split(' ');
+        const groups = [];
+        for (let i = 0; i < words.length; i += 3) {
+          groups.push(words.slice(i, i + 3));
+        }
+        
+        const currentGroup = groups[currentGroupIndex] || [];
+        
         return (
           <div className="inline-flex flex-wrap gap-2">
-            {words.map((word, index) => {
-              // Only the word with the current index is highlighted
-              const isHighlighted = index === (currentWordIndex % words.length);
+            {currentGroup.map((word, index) => {
+              // Only the word with the current index within the group is highlighted
+              const isHighlighted = index === currentWordInGroup;
               
               return (
                 <div
-                  key={`${animationKey}-word-${index}`}
+                  key={`${animationKey}-group-${currentGroupIndex}-word-${index}`}
                   style={{
-                    color: isHighlighted ? (customization.fill || '#ffffff') : customization.textColor,
+                    color: customization.fill || '#ffffff', // Always use user's chosen text color
                     backgroundColor: isHighlighted ? customization.textColor : 'transparent',
                     padding: '8px 16px',
                     borderRadius: '8px',
