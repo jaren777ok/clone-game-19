@@ -74,31 +74,22 @@ export const determineInitialStep = (
           };
         }
         
-        // For style-1, check if subtitle customization is needed
-        if (savedState.selectedStyle.id === 'style-1') {
-          if (savedState.subtitleCustomization) {
-            // Has subtitle customization, go to neurocopy
-            return {
-              ...savedState,
-              step: 'neurocopy',
-              generatedScript: null
-            };
-          } else {
-            // Needs subtitle customization
-            return {
-              ...savedState,
-              step: 'subtitle-customization',
-              generatedScript: null
-            };
-          }
+        // All styles now require subtitle customization
+        if (savedState.subtitleCustomization) {
+          // Has subtitle customization, go to neurocopy
+          return {
+            ...savedState,
+            step: 'neurocopy',
+            generatedScript: null
+          };
+        } else {
+          // Needs subtitle customization
+          return {
+            ...savedState,
+            step: 'subtitle-customization',
+            generatedScript: null
+          };
         }
-        
-        // For other styles, go directly to neurocopy
-        return {
-          ...savedState,
-          step: 'neurocopy',
-          generatedScript: null
-        };
       }
       // If has key, avatar, and voice, go to style
       if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice) {

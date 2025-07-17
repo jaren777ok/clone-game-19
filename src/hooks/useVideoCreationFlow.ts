@@ -117,8 +117,8 @@ export const useVideoCreationFlow = () => {
   const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
     
-    // Check if style requires subtitle customization (only style-1 for now)
-    const needsSubtitleCustomization = style.id === 'style-1';
+    // All styles now require subtitle customization
+    const needsSubtitleCustomization = true;
     
     setFlowState(prev => ({
       ...prev,
