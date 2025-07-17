@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,16 @@ import VideoGeneratorFinal from "./pages/VideoGeneratorFinal";
 import SavedVideos from "./pages/SavedVideos";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+
+// Create QueryClient instance outside component to avoid context issues
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 // Componente para manejar la redirección de usuarios autenticados
 const AuthRedirect = () => {
@@ -73,30 +82,18 @@ const AppRoutes = () => (
   </Routes>
 );
 
-const App = () => {
-  // Create QueryClient instance inside component to avoid context issues
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        retry: 1,
-      },
-    },
-  }));
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <SonnerToaster />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <Toaster />
+        <SonnerToaster />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
