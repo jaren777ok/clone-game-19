@@ -57,6 +57,21 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   onSelectCustomization,
   onBack
 }) => {
+  // Helper functions for font weight and fixed size mapping
+  const getFontWeight = (fontFamily: string): number => {
+    const fontWeight400 = ['Anton', 'Archivo Black', 'Bebas Neue', 'Staatliches', 'Squada One'];
+    return fontWeight400.includes(fontFamily) ? 400 : 700;
+  };
+
+  const getFixedSize = (fontFamily: string): number => {
+    const size65Fonts = ['Anton', 'Antonio', 'Archivo Narrow', 'Bebas Neue', 'Staatliches', 'Squada One'];
+    const size61Fonts = ['Archivo Black', 'Roboto Condensed'];
+    
+    if (size65Fonts.includes(fontFamily)) return 6.5;
+    if (size61Fonts.includes(fontFamily)) return 6.1;
+    return 5.5; // default
+  };
+
   const [customization, setCustomization] = useState<SubtitleCustomization>({
     fontFamily: 'Montserrat',
     subtitleEffect: 'color',
@@ -64,7 +79,9 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     textTransform: 'capitalize',
     hasBackgroundColor: false,
     backgroundColor: '#421010',
-    textColor: '#ffffff'
+    textColor: '#ffffff',
+    Tamañofuente: getFontWeight('Montserrat'),
+    "Fixed size": getFixedSize('Montserrat')
   });
 
   const [animationKey, setAnimationKey] = useState(0);
@@ -198,7 +215,12 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                 {FONTS.map((font) => (
                   <button
                     key={font.name}
-                    onClick={() => setCustomization(prev => ({ ...prev, fontFamily: font.name }))}
+                    onClick={() => setCustomization(prev => ({ 
+                      ...prev, 
+                      fontFamily: font.name,
+                      Tamañofuente: getFontWeight(font.name),
+                      "Fixed size": getFixedSize(font.name)
+                    }))}
                     className={`p-3 rounded-lg border text-left transition-all ${
                       customization.fontFamily === font.name
                         ? 'border-primary bg-primary/10 text-primary'

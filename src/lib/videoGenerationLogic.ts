@@ -107,7 +107,9 @@ export const initiateVideoGeneration = async (
       backgroundColor: flowState.subtitleCustomization.hasBackgroundColor 
         ? flowState.subtitleCustomization.backgroundColor 
         : "",
-      textColor: flowState.subtitleCustomization.textColor || ""
+      textColor: flowState.subtitleCustomization.textColor || "",
+      Tamañofuente: flowState.subtitleCustomization.Tamañofuente || 700,
+      "Fixed size": flowState.subtitleCustomization["Fixed size"] || 5.5
     } : null
   };
 

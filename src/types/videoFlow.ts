@@ -61,6 +61,8 @@ export interface SubtitleCustomization {
   hasBackgroundColor: boolean;
   backgroundColor: string;
   textColor: string;
+  Tamañofuente: number;
+  "Fixed size": number;
 }
 
 export interface FlowState {
