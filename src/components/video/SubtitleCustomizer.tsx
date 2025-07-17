@@ -123,7 +123,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
   const getPreviewClasses = () => {
     const font = FONTS.find(f => f.name === customization.fontFamily);
-    let classes = `text-2xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
+    let classes = `text-3xl md:text-4xl lg:text-5xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
     
     // Apply text transform
     if (customization.textTransform === 'uppercase') classes += ' uppercase';
@@ -137,7 +137,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     const styles: React.CSSProperties = {
       color: customization.textColor,
       backgroundColor: customization.hasBackgroundColor ? customization.backgroundColor : 'transparent',
-      padding: '12px 20px',
+      padding: '8px 16px',
       borderRadius: '8px',
       display: 'inline-block',
       position: 'relative',
@@ -486,7 +486,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                 <h3 className="text-lg font-semibold">Vista Previa en Tiempo Real</h3>
               </div>
               
-              <div className="bg-black/80 rounded-lg p-8 min-h-[200px] flex items-center justify-center">
+              <div className="bg-black/80 rounded-lg p-4 md:p-6 lg:p-8 min-h-[220px] md:min-h-[250px] lg:min-h-[280px] flex items-center justify-center">
                 <div className="text-center">
                   {renderWordByWord()}
                 </div>
