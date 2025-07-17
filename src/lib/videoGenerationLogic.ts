@@ -16,6 +16,17 @@ export const validateFlowState = (flowState?: FlowState): boolean => {
     );
   }
   
+  // For style-1 (news), require subtitleCustomization instead of apiVersionCustomization
+  if (flowState.selectedStyle?.id === 'style-1') {
+    return !!(
+      flowState.selectedApiKey &&
+      flowState.selectedAvatar &&
+      flowState.selectedVoice &&
+      flowState.selectedStyle &&
+      flowState.subtitleCustomization
+    );
+  }
+  
   // For other styles, require all fields including apiVersionCustomization
   return !!(
     flowState.selectedApiKey &&

@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization, Base64File } from '@/types/videoFlow';
+import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization, Base64File, SubtitleCustomization } from '@/types/videoFlow';
 
 export interface VideoConfigData {
   id: string;
@@ -12,6 +12,7 @@ export interface VideoConfigData {
   style_data: VideoStyle | null;
   presenter_customization: PresenterCustomization | null;
   card_customization: CardCustomization | null;
+  subtitle_customization: SubtitleCustomization | null;
   generated_script: string | null;
   current_step: FlowState['step'];
   created_at: string;
@@ -82,6 +83,7 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       style_data: flowState.selectedStyle ? JSON.parse(JSON.stringify(flowState.selectedStyle)) : null,
       presenter_customization: flowState.presenterCustomization ? JSON.parse(JSON.stringify(flowState.presenterCustomization)) : null,
       card_customization: flowState.cardCustomization ? JSON.parse(JSON.stringify(flowState.cardCustomization)) : null,
+      subtitle_customization: flowState.subtitleCustomization ? JSON.parse(JSON.stringify(flowState.subtitleCustomization)) : null,
       generated_script: flowState.generatedScript || null,
       current_step: flowState.step,
       manual_customization: manualCustomizationData,
@@ -199,6 +201,7 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
       selectedAvatar: data.avatar_data ? data.avatar_data as unknown as Avatar : null,
       selectedVoice: data.voice_data ? data.voice_data as unknown as Voice : null,
       selectedStyle: data.style_data ? data.style_data as unknown as VideoStyle : null,
+      subtitleCustomization: data.subtitle_customization ? data.subtitle_customization as unknown as SubtitleCustomization : null,
       generatedScript: data.generated_script,
       cardCustomization: data.card_customization ? data.card_customization as unknown as CardCustomization : null,
       presenterCustomization: data.presenter_customization ? data.presenter_customization as unknown as PresenterCustomization : null,

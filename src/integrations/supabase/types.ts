@@ -184,6 +184,7 @@ export type Database = {
           manual_customization: Json | null
           presenter_customization: Json | null
           style_data: Json | null
+          subtitle_customization: Json | null
           updated_at: string
           user_id: string
           voice_data: Json | null
@@ -199,6 +200,7 @@ export type Database = {
           manual_customization?: Json | null
           presenter_customization?: Json | null
           style_data?: Json | null
+          subtitle_customization?: Json | null
           updated_at?: string
           user_id: string
           voice_data?: Json | null
@@ -214,6 +216,7 @@ export type Database = {
           manual_customization?: Json | null
           presenter_customization?: Json | null
           style_data?: Json | null
+          subtitle_customization?: Json | null
           updated_at?: string
           user_id?: string
           voice_data?: Json | null

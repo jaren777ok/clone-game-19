@@ -93,7 +93,13 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   }, [customization.subtitleEffect, customization.placementEffect]);
 
   const handleContinue = () => {
-    onSelectCustomization(customization);
+    // Asegurar que los valores calculados están presentes
+    const finalCustomization = {
+      ...customization,
+      Tamañofuente: getFontWeight(customization.fontFamily),
+      "Fixed size": getFixedSize(customization.fontFamily)
+    };
+    onSelectCustomization(finalCustomization);
   };
 
   const getPreviewClasses = () => {
