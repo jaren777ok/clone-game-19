@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, CheckCircle2 } from 'lucide-react';
@@ -24,6 +24,7 @@ const VideoStyleCard: React.FC<Props> = ({
   onVideoEnded,
   onVideoRef
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
   const getStyleRequirements = (styleId: string) => {
     if (styleId === 'style-5' || styleId === 'style-6') {
       // Estilo Manual y Estilo Manual 2 - requieren archivos propios
@@ -100,7 +101,13 @@ const VideoStyleCard: React.FC<Props> = ({
           />
           
           {/* Play/Pause overlay */}
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 transition-opacity">
+          <div 
+            className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 ${
+              !isPlaying || isHovered ? 'opacity-100' : 'opacity-0'
+            }`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
             <button
               onClick={(e) => onTogglePlay(style.id, e)}
               className="w-12 sm:w-16 h-12 sm:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors"
