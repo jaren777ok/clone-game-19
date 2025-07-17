@@ -34,6 +34,7 @@ const SUBTITLE_EFFECTS = [
   { id: 'bounce', name: 'Bounce', description: 'Entrada con zoom suave' },
   { id: 'slide', name: 'Slide', description: 'Entrada desde arriba' },
   { id: 'highlight', name: 'Highlight', description: 'Destacado palabra por palabra' },
+  { id: 'karaoke', name: 'Karaoke', description: 'Efecto karaoke palabra por palabra' },
 ] as const;
 
 const PLACEMENT_EFFECTS = [
@@ -99,14 +100,24 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     setCurrentWordInGroup(0);
   }, [customization.subtitleEffect, customization.placementEffect]);
 
-  // Auto-manage hasBackgroundColor for highlight effect
+  // Auto-manage hasBackgroundColor for highlight and karaoke effects
   useEffect(() => {
-    if (customization.subtitleEffect === 'highlight') {
-      // Force hasBackgroundColor to false for highlight effect
+    if (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') {
+      // Force hasBackgroundColor to false for highlight and karaoke effects
       setCustomization(prev => ({
         ...prev,
         hasBackgroundColor: false,
         fill: prev.fill || '#ffffff' // Ensure fill has a default value
+      }));
+    }
+  }, [customization.subtitleEffect]);
+
+  // Auto-select "static" placement effect for highlight and karaoke
+  useEffect(() => {
+    if (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') {
+      setCustomization(prev => ({
+        ...prev,
+        placementEffect: 'static'
       }));
     }
   }, [customization.subtitleEffect]);
@@ -128,9 +139,9 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     }
   }, [sampleText, animationKey]);
 
-  // Auto-cycle for highlight + static effect: groups of 3 words with sequential highlighting
+  // Auto-cycle for highlight + static and karaoke + static effects: groups of 3 words with sequential highlighting
   useEffect(() => {
-    if (customization.subtitleEffect === 'highlight' && customization.placementEffect === 'static') {
+    if ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') && customization.placementEffect === 'static') {
       const words = sampleText.split(' ');
       const groups = [];
       for (let i = 0; i < words.length; i += 3) {
@@ -160,8 +171,8 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
   // Helper function to sanitize backgroundColor
   const sanitizeBackgroundColor = (customization: SubtitleCustomization): string => {
-    // Para efecto highlight: siempre ""
-    if (customization.subtitleEffect === 'highlight') {
+    // Para efectos highlight y karaoke: siempre ""
+    if (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') {
       return "";
     }
     
@@ -186,8 +197,8 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     // Base font sizes - reduced for better fit
     let classes = `text-xl md:text-2xl lg:text-3xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
     
-    // Special smaller size for highlight + static combination to fit 3 words in one line
-    if (customization.subtitleEffect === 'highlight' && customization.placementEffect === 'static') {
+    // Special smaller size for highlight + static and karaoke + static combinations to fit 3 words in one line
+    if ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') && customization.placementEffect === 'static') {
       classes = `text-lg md:text-xl lg:text-2xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
     }
     
@@ -210,6 +221,19 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
         display: 'inline-block',
         position: 'relative' as const,
         animation: 'highlightGlow 1.5s ease-in-out infinite',
+      };
+    }
+
+    // Special handling for karaoke effect (only color change, no background)
+    if (customization.subtitleEffect === 'karaoke') {
+      return {
+        color: customization.fill || '#ffffff',
+        backgroundColor: 'transparent',
+        padding: '8px 16px',
+        borderRadius: '8px',
+        display: 'inline-block',
+        position: 'relative' as const,
+        transition: 'color 0.3s ease-in-out',
       };
     }
 
@@ -248,9 +272,9 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     
     const currentGroup = groups[currentGroupIndex] || [];
     
-    // Special handling for highlight effect
-    if (customization.subtitleEffect === 'highlight') {
-      // For highlight + static: sequential word-by-word highlighting in groups of 3
+    // Special handling for highlight and karaoke effects
+    if (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') {
+      // For highlight/karaoke + static: sequential word-by-word highlighting/karaoke in groups of 3
       if (customization.placementEffect === 'static') {
         const words = sampleText.split(' ');
         const groups = [];
@@ -260,34 +284,64 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
         
         const currentGroup = groups[currentGroupIndex] || [];
         
-        return (
-          <div className="inline-flex flex-wrap gap-2">
-            {currentGroup.map((word, index) => {
-              // Only the word with the current index within the group is highlighted
-              const isHighlighted = index === currentWordInGroup;
-              
-              return (
-                <div
-                  key={`${animationKey}-group-${currentGroupIndex}-word-${index}`}
-                  style={{
-                    color: customization.fill || '#ffffff', // Always use user's chosen text color
-                    backgroundColor: isHighlighted ? customization.textColor : 'transparent',
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    transition: 'all 0.3s ease-in-out',
-                    display: 'inline-block',
-                  }}
-                  className={getPreviewClasses()}
-                >
-                  {word}
-                </div>
-              );
-            })}
-          </div>
-        );
+        // Different rendering for highlight vs karaoke
+        if (customization.subtitleEffect === 'highlight') {
+          return (
+            <div className="inline-flex flex-wrap gap-2">
+              {currentGroup.map((word, index) => {
+                // Only the word with the current index within the group is highlighted
+                const isHighlighted = index === currentWordInGroup;
+                
+                return (
+                  <div
+                    key={`${animationKey}-group-${currentGroupIndex}-word-${index}`}
+                    style={{
+                      color: customization.fill || '#ffffff', // Always use user's chosen text color
+                      backgroundColor: isHighlighted ? customization.textColor : 'transparent',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      transition: 'all 0.3s ease-in-out',
+                      display: 'inline-block',
+                    }}
+                    className={getPreviewClasses()}
+                  >
+                    {word}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        } else if (customization.subtitleEffect === 'karaoke') {
+          // Karaoke effect: cumulative color change from left to right
+          return (
+            <div className="inline-flex flex-wrap gap-2">
+              {currentGroup.map((word, index) => {
+                // Words up to and including current word get karaoke color (textColor)
+                const isKaraokeActive = index <= currentWordInGroup;
+                
+                return (
+                  <div
+                    key={`${animationKey}-group-${currentGroupIndex}-word-${index}`}
+                    style={{
+                      color: isKaraokeActive ? customization.textColor : (customization.fill || '#ffffff'),
+                      backgroundColor: 'transparent', // No background for karaoke
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      transition: 'color 0.3s ease-in-out',
+                      display: 'inline-block',
+                    }}
+                    className={getPreviewClasses()}
+                  >
+                    {word}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
       }
       
-      // For other highlight effects: show word by word with highlight animation
+      // For other highlight/karaoke effects: show word by word with respective animation
       return (
         <div className="inline-flex flex-wrap gap-2">
           {currentGroup.map((word, index) => (
@@ -561,10 +615,11 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                   <div className="flex items-center gap-2">
                     <Palette className="w-4 h-4 text-primary" />
                     <h4 className="font-semibold">
-                      {customization.subtitleEffect === 'highlight' ? 'Fondo Nuevo Color' : 'Color de Fondo'}
+                      {customization.subtitleEffect === 'highlight' ? 'Fondo Nuevo Color' : 
+                       customization.subtitleEffect === 'karaoke' ? 'Karaoke Nuevo Color' : 'Color de Fondo'}
                     </h4>
                   </div>
-                  {customization.subtitleEffect !== 'highlight' && (
+                  {customization.subtitleEffect !== 'highlight' && customization.subtitleEffect !== 'karaoke' && (
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={customization.hasBackgroundColor}
@@ -583,19 +638,19 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                   )}
                 </div>
                 
-                {/* Show color selection for highlight OR when background is enabled */}
-                {(customization.subtitleEffect === 'highlight' || customization.hasBackgroundColor) ? (
+                {/* Show color selection for highlight, karaoke OR when background is enabled */}
+                {(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke' || customization.hasBackgroundColor) ? (
                   <div className="space-y-3 animate-fade-in">
                     <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
                       {COLOR_PALETTE.map((color) => (
                         <button
                           key={color}
                           onClick={() => setCustomization(prev => ({ ...prev, 
-                            textColor: customization.subtitleEffect === 'highlight' ? color : prev.textColor,
-                            backgroundColor: customization.subtitleEffect === 'highlight' ? prev.backgroundColor : color
+                            textColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? color : prev.textColor,
+                            backgroundColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? prev.backgroundColor : color
                           }))}
                           className={`w-8 h-8 rounded border-2 transition-all ${
-                            (customization.subtitleEffect === 'highlight' ? customization.textColor : customization.backgroundColor) === color
+                            ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? customization.textColor : customization.backgroundColor) === color
                               ? 'border-primary scale-110'
                               : 'border-border hover:border-primary/50'
                           }`}
@@ -605,10 +660,10 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                     </div>
                     <input
                       type="color"
-                      value={customization.subtitleEffect === 'highlight' ? customization.textColor : customization.backgroundColor}
+                      value={(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? customization.textColor : customization.backgroundColor}
                       onChange={(e) => setCustomization(prev => ({ ...prev, 
-                        textColor: customization.subtitleEffect === 'highlight' ? e.target.value : prev.textColor,
-                        backgroundColor: customization.subtitleEffect === 'highlight' ? prev.backgroundColor : e.target.value
+                        textColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? e.target.value : prev.textColor,
+                        backgroundColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? prev.backgroundColor : e.target.value
                       }))}
                       className="w-full h-8 rounded border border-border"
                     />
@@ -625,10 +680,10 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <Palette className="w-4 h-4 text-primary" />
                   <h4 className="font-semibold">
-                    {customization.subtitleEffect === 'highlight' ? 'Letra Nueva Color' : 'Color de Letra'}
+                    {(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? 'Letra Nueva Color' : 'Color de Letra'}
                   </h4>
                 </div>
-                {customization.subtitleEffect !== 'highlight' ? (
+                {customization.subtitleEffect !== 'highlight' && customization.subtitleEffect !== 'karaoke' ? (
                   <>
                     <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
                       {COLOR_PALETTE.map((color) => (
@@ -652,7 +707,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                     />
                   </>
                 ) : (
-                  /* Special selector for highlight fill color */
+                  /* Special selector for highlight and karaoke fill color */
                   <>
                     <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
                       {COLOR_PALETTE.map((color) => (

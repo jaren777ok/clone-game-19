@@ -55,7 +55,7 @@ export interface ManualCustomization {
 
 export interface SubtitleCustomization {
   fontFamily: string;
-  subtitleEffect: 'color' | 'fade' | 'bounce' | 'slide' | 'highlight';
+  subtitleEffect: 'color' | 'fade' | 'bounce' | 'slide' | 'highlight' | 'karaoke';
   placementEffect: 'animate' | 'align' | 'static';
   textTransform: 'uppercase' | 'capitalize' | 'lowercase';
   hasBackgroundColor: boolean;
