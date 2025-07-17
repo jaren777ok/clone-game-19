@@ -85,12 +85,31 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   });
 
   const [animationKey, setAnimationKey] = useState(0);
-  const sampleText = "Cuatro instrumentos musicales revolucionan la industria";
+  const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
+  const sampleText = "La Mente Humana es muy Rara";
 
   // Trigger animation when effects change
   useEffect(() => {
     setAnimationKey(prev => prev + 1);
+    setCurrentGroupIndex(0);
   }, [customization.subtitleEffect, customization.placementEffect]);
+
+  // Auto-cycle through word groups for preview
+  useEffect(() => {
+    const words = sampleText.split(' ');
+    const groups = [];
+    for (let i = 0; i < words.length; i += 3) {
+      groups.push(words.slice(i, i + 3));
+    }
+    
+    if (groups.length > 1) {
+      const timer = setInterval(() => {
+        setCurrentGroupIndex(prev => (prev + 1) % groups.length);
+      }, 3000); // Change group every 3 seconds
+      
+      return () => clearInterval(timer);
+    }
+  }, [sampleText, animationKey]);
 
   const handleContinue = () => {
     // Asegurar que los valores calculados están presentes
@@ -142,29 +161,68 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   };
 
   const renderWordByWord = () => {
-    if (customization.placementEffect !== 'align') {
+    const words = sampleText.split(' ');
+    const groups = [];
+    for (let i = 0; i < words.length; i += 3) {
+      groups.push(words.slice(i, i + 3));
+    }
+    
+    const currentGroup = groups[currentGroupIndex] || [];
+    
+    // For "align" effect: show words one by one within the group
+    if (customization.placementEffect === 'align') {
       return (
-        <div style={getAnimationStyles()} className={getPreviewClasses()}>
-          {sampleText}
+        <div className="inline-flex flex-wrap gap-2">
+          {currentGroup.map((word, index) => (
+            <div
+              key={`${animationKey}-${currentGroupIndex}-${index}`}
+              style={{
+                ...getAnimationStyles(),
+                animationDelay: `${index * 0.3}s`,
+              }}
+              className={getPreviewClasses()}
+            >
+              {word}
+            </div>
+          ))}
         </div>
       );
     }
-
-    const words = sampleText.split(' ');
+    
+    // For other effects: show the group as a unit with combined effects
+    const groupText = currentGroup.join(' ');
+    const baseStyles = getAnimationStyles();
+    
+    // Combine subtitle effect with animate (pop) effect if selected
+    let combinedAnimation = '';
+    if (customization.subtitleEffect === 'fade') {
+      combinedAnimation = customization.placementEffect === 'animate' 
+        ? 'fadeInPop 0.8s ease-out' 
+        : 'fadeIn 0.8s ease-out';
+    } else if (customization.subtitleEffect === 'bounce') {
+      combinedAnimation = customization.placementEffect === 'animate' 
+        ? 'bounceInPop 0.6s ease-out' 
+        : 'bounceIn 0.6s ease-out';
+    } else if (customization.subtitleEffect === 'slide') {
+      combinedAnimation = customization.placementEffect === 'animate' 
+        ? 'slideDownPop 0.7s ease-out' 
+        : 'slideDown 0.7s ease-out';
+    } else {
+      combinedAnimation = customization.placementEffect === 'animate' 
+        ? 'popOnly 0.4s ease-out' 
+        : 'none';
+    }
+    
     return (
-      <div className="inline-flex flex-wrap gap-2">
-        {words.map((word, index) => (
-          <div
-            key={`${animationKey}-${index}`}
-            style={{
-              ...getAnimationStyles(),
-              animationDelay: `${index * 0.2}s`,
-            }}
-            className={getPreviewClasses()}
-          >
-            {word}
-          </div>
-        ))}
+      <div 
+        key={`${animationKey}-${currentGroupIndex}`}
+        style={{
+          ...baseStyles,
+          animation: combinedAnimation,
+        }} 
+        className={getPreviewClasses()}
+      >
+        {groupText}
       </div>
     );
   };
@@ -185,6 +243,27 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
         @keyframes slideDown {
           from { opacity: 0; transform: translateY(-20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInPop {
+          0% { opacity: 0; transform: scale(0.9); }
+          70% { opacity: 1; transform: scale(1.05); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes bounceInPop {
+          0% { opacity: 0; transform: scale(0.7); }
+          40% { transform: scale(1.1); }
+          70% { transform: scale(0.95); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideDownPop {
+          0% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+          60% { opacity: 1; transform: translateY(0) scale(1.05); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes popOnly {
+          0% { transform: scale(0.95); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
         }
       `}</style>
 
