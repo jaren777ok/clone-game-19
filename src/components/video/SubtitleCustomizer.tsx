@@ -89,12 +89,14 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
   const [animationKey, setAnimationKey] = useState(0);
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const sampleText = "La Mente Humana es muy Rara";
 
   // Trigger animation when effects change
   useEffect(() => {
     setAnimationKey(prev => prev + 1);
     setCurrentGroupIndex(0);
+    setCurrentWordIndex(0);
   }, [customization.subtitleEffect, customization.placementEffect]);
 
   // Auto-manage hasBackgroundColor for highlight effect
@@ -125,6 +127,18 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       return () => clearInterval(timer);
     }
   }, [sampleText, animationKey]);
+
+  // Auto-cycle through individual words for highlight + static effect
+  useEffect(() => {
+    if (customization.subtitleEffect === 'highlight' && customization.placementEffect === 'static') {
+      const words = sampleText.split(' ');
+      const timer = setInterval(() => {
+        setCurrentWordIndex(prev => (prev + 1) % words.length);
+      }, 800); // Change word every 800ms
+      
+      return () => clearInterval(timer);
+    }
+  }, [customization.subtitleEffect, customization.placementEffect, sampleText]);
 
   // Helper function to sanitize backgroundColor
   const sanitizeBackgroundColor = (customization: SubtitleCustomization): string => {
@@ -216,8 +230,39 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     
     const currentGroup = groups[currentGroupIndex] || [];
     
-    // Special handling for highlight effect - show word by word with highlight animation
+    // Special handling for highlight effect
     if (customization.subtitleEffect === 'highlight') {
+      // For highlight + static: sequential word-by-word highlighting
+      if (customization.placementEffect === 'static') {
+        const words = sampleText.split(' ');
+        return (
+          <div className="inline-flex flex-wrap gap-2">
+            {words.map((word, index) => {
+              // Only the word with the current index is highlighted
+              const isHighlighted = index === (currentWordIndex % words.length);
+              
+              return (
+                <div
+                  key={`${animationKey}-word-${index}`}
+                  style={{
+                    color: isHighlighted ? (customization.fill || '#ffffff') : customization.textColor,
+                    backgroundColor: isHighlighted ? customization.textColor : 'transparent',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    transition: 'all 0.3s ease-in-out',
+                    display: 'inline-block',
+                  }}
+                  className={getPreviewClasses()}
+                >
+                  {word}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+      
+      // For other highlight effects: show word by word with highlight animation
       return (
         <div className="inline-flex flex-wrap gap-2">
           {currentGroup.map((word, index) => (
