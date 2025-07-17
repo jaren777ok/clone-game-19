@@ -150,24 +150,21 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       
       const timer = setInterval(() => {
         setCurrentWordInGroup(prev => {
-          setCurrentGroupIndex(currentIdx => {
-            const currentGroup = groups[currentIdx] || [];
-            if (prev + 1 >= currentGroup.length) {
-              // Move to next group when current word cycle completes
-              return (currentIdx + 1) % groups.length;
-            }
-            return currentIdx; // Keep same group
-          });
-          
-          // Reset word index when moving to next group, otherwise increment
           const currentGroup = groups[currentGroupIndex] || [];
-          return (prev + 1 >= currentGroup.length) ? 0 : prev + 1;
+          
+          if (prev + 1 >= currentGroup.length) {
+            // Move to next group when current word cycle completes
+            setCurrentGroupIndex(prevGroup => (prevGroup + 1) % groups.length);
+            return 0; // Reset to first word of new group
+          }
+          
+          return prev + 1; // Next word in same group
         });
-      }, 800); // Change word every 800ms
+      }, 1200); // Increased timing to 1.2 seconds for better visualization
       
       return () => clearInterval(timer);
     }
-  }, [customization.subtitleEffect, customization.placementEffect, sampleText]);
+  }, [customization.subtitleEffect, customization.placementEffect, sampleText, currentGroupIndex]);
 
   // Helper function to sanitize backgroundColor
   const sanitizeBackgroundColor = (customization: SubtitleCustomization): string => {
@@ -300,7 +297,8 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                       backgroundColor: isHighlighted ? customization.textColor : 'transparent',
                       padding: '8px 16px',
                       borderRadius: '8px',
-                      transition: 'all 0.3s ease-in-out',
+                      transition: 'all 0.5s ease-in-out',
+                      transform: isHighlighted ? 'scale(1.05)' : 'scale(1)',
                       display: 'inline-block',
                     }}
                     className={getPreviewClasses()}
@@ -327,7 +325,8 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                       backgroundColor: 'transparent', // No background for karaoke
                       padding: '8px 16px',
                       borderRadius: '8px',
-                      transition: 'color 0.3s ease-in-out',
+                      transition: 'color 0.5s ease-in-out',
+                      transform: isKaraokeActive ? 'scale(1.05)' : 'scale(1)',
                       display: 'inline-block',
                     }}
                     className={getPreviewClasses()}
