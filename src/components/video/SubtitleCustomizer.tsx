@@ -267,18 +267,18 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                 <RotateCcw className="w-5 h-5 text-primary" />
                 <h3 className="text-lg font-semibold">Transformación de Texto</h3>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {TEXT_TRANSFORMS.map((transform) => (
                   <button
                     key={transform.id}
                     onClick={() => setCustomization(prev => ({ ...prev, textTransform: transform.id }))}
-                    className={`p-3 rounded-lg border text-left transition-all ${
+                    className={`p-2 sm:p-3 rounded-lg border text-left transition-all ${
                       customization.textTransform === transform.id
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border hover:border-primary/50'
                     }`}
                   >
-                    <div className="font-medium text-sm">{transform.name}</div>
+                    <div className="font-medium text-xs sm:text-sm">{transform.name}</div>
                     <div className="text-xs text-muted-foreground">{transform.description}</div>
                   </button>
                 ))}
