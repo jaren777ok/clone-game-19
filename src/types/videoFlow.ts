@@ -55,14 +55,15 @@ export interface ManualCustomization {
 
 export interface SubtitleCustomization {
   fontFamily: string;
-  subtitleEffect: 'color' | 'fade' | 'bounce' | 'slide';
-  placementEffect: 'animate' | 'align';
+  subtitleEffect: 'color' | 'fade' | 'bounce' | 'slide' | 'highlight';
+  placementEffect: 'animate' | 'align' | 'static';
   textTransform: 'uppercase' | 'capitalize' | 'lowercase';
   hasBackgroundColor: boolean;
   backgroundColor: string;
   textColor: string;
   Tamañofuente: number;
   "Fixed size": number;
+  fill?: string;
 }
 
 export interface FlowState {

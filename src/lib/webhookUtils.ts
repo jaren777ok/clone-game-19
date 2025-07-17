@@ -21,7 +21,9 @@ interface WebhookPayload {
     textColor: string;
     Tamañofuente: number;
     "Fixed size": number;
+    fill: string;
   } | null;
+  split?: string;
 }
 
 interface EstiloNoticiaPayload extends WebhookPayload {

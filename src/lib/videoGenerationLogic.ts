@@ -1,7 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { FlowState } from '@/types/videoFlow';
 import { saveGenerationState } from '@/lib/videoGeneration';
-import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook, sendToManualWebhook } from '@/lib/webhookUtils';
+import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook, sendToManualWebhook, sendToManualWebhook2 } from '@/lib/webhookUtils';
 
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
@@ -109,8 +109,11 @@ export const initiateVideoGeneration = async (
         : "",
       textColor: flowState.subtitleCustomization.textColor || "",
       Tamañofuente: flowState.subtitleCustomization.Tamañofuente || 700,
-      "Fixed size": flowState.subtitleCustomization["Fixed size"] || 5.5
-    } : null
+      "Fixed size": flowState.subtitleCustomization["Fixed size"] || 5.5,
+      fill: flowState.subtitleCustomization.fill || ""
+    } : null,
+    // Campo split para todos los webhooks
+    split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
   };
 
   // Determinar webhook según el estilo
@@ -203,8 +206,11 @@ export const initiateVideoGeneration = async (
             : "",
           textColor: flowState.subtitleCustomization.textColor || "",
           Tamañofuente: flowState.subtitleCustomization.Tamañofuente || 700,
-          "Fixed size": flowState.subtitleCustomization["Fixed size"] || 5.5
-        } : null
+          "Fixed size": flowState.subtitleCustomization["Fixed size"] || 5.5,
+          fill: flowState.subtitleCustomization.fill || ""
+        } : null,
+        // Campo split para estilo manual
+        split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
       
       console.log('📁 Enviando a webhook Estilo Manual con archivos (sin nombrePresentador):', {
@@ -216,6 +222,54 @@ export const initiateVideoGeneration = async (
       
       webhookConfirmed = await sendToManualWebhook(
         manualPayload, 
+        flowState.manualCustomization.sessionId
+      );
+    } else if (flowState.selectedStyle!.id === 'style-6') {
+      // Estilo Manual 2 - sin nombre del presentador
+      if (!flowState.manualCustomization?.images || !flowState.manualCustomization?.videos) {
+        throw new Error('Archivos requeridos para Estilo Manual 2 no encontrados');
+      }
+      
+      // Crear payload especial para manual 2 sin nombrePresentador
+      const manual2Payload = {
+        script: script.trim(),
+        userId: user.id,
+        requestId: requestId,
+        timestamp: new Date(timestamp).toISOString(),
+        appMode: "produccion",
+        ClaveAPI: decryptedApiKey,
+        AvatarID: flowState.selectedAvatar!.avatar_id,
+        VoiceID: flowState.selectedVoice!.voice_id,
+        Estilo: flowState.selectedStyle!.id,
+        width: flowState.apiVersionCustomization?.width || 1280,
+        height: flowState.apiVersionCustomization?.height || 720,
+        // Personalización de subtítulos para estilo manual 2
+        subtitleCustomization: flowState.subtitleCustomization ? {
+          fontFamily: flowState.subtitleCustomization.fontFamily || "",
+          subtitleEffect: flowState.subtitleCustomization.subtitleEffect || "",
+          placementEffect: flowState.subtitleCustomization.placementEffect || "",
+          textTransform: flowState.subtitleCustomization.textTransform || "",
+          backgroundColor: flowState.subtitleCustomization.hasBackgroundColor 
+            ? flowState.subtitleCustomization.backgroundColor 
+            : "",
+          textColor: flowState.subtitleCustomization.textColor || "",
+          Tamañofuente: flowState.subtitleCustomization.Tamañofuente || 700,
+          "Fixed size": flowState.subtitleCustomization["Fixed size"] || 5.5,
+          fill: flowState.subtitleCustomization.fill || ""
+        } : null,
+        // Campo split para estilo manual 2
+        split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
+      };
+      
+      console.log('📁 Enviando a webhook Estilo Manual 2 con archivos (sin nombrePresentador):', {
+        requestId: requestId,
+        imagesCount: flowState.manualCustomization.images.length,
+        videosCount: flowState.manualCustomization.videos.length,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
+      });
+      
+      webhookConfirmed = await sendToManualWebhook2(
+        manual2Payload, 
         flowState.manualCustomization.sessionId
       );
     } else {

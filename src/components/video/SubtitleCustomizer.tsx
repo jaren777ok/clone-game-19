@@ -33,11 +33,13 @@ const SUBTITLE_EFFECTS = [
   { id: 'fade', name: 'Fade', description: 'Entrada con desvanecimiento' },
   { id: 'bounce', name: 'Bounce', description: 'Entrada con zoom suave' },
   { id: 'slide', name: 'Slide', description: 'Entrada desde arriba' },
+  { id: 'highlight', name: 'Highlight', description: 'Destacado palabra por palabra' },
 ] as const;
 
 const PLACEMENT_EFFECTS = [
   { id: 'animate', name: 'Animate', description: 'Efecto pop animado' },
   { id: 'align', name: 'Align', description: 'Palabra por palabra' },
+  { id: 'static', name: 'Static', description: 'Textos lineales sin animación' },
 ] as const;
 
 const TEXT_TRANSFORMS = [
@@ -81,7 +83,8 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     backgroundColor: '#421010',
     textColor: '#ffffff',
     Tamañofuente: getFontWeight('Montserrat'),
-    "Fixed size": getFixedSize('Montserrat')
+    "Fixed size": getFixedSize('Montserrat'),
+    fill: ''
   });
 
   const [animationKey, setAnimationKey] = useState(0);
@@ -93,6 +96,18 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     setAnimationKey(prev => prev + 1);
     setCurrentGroupIndex(0);
   }, [customization.subtitleEffect, customization.placementEffect]);
+
+  // Auto-manage hasBackgroundColor for highlight effect
+  useEffect(() => {
+    if (customization.subtitleEffect === 'highlight') {
+      // Force hasBackgroundColor to false for highlight effect
+      setCustomization(prev => ({
+        ...prev,
+        hasBackgroundColor: false,
+        fill: prev.fill || '#ffffff' // Ensure fill has a default value
+      }));
+    }
+  }, [customization.subtitleEffect]);
 
   // Auto-cycle through word groups for preview
   useEffect(() => {
@@ -111,12 +126,24 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     }
   }, [sampleText, animationKey]);
 
+  // Helper function to sanitize backgroundColor
+  const sanitizeBackgroundColor = (customization: SubtitleCustomization): string => {
+    // Para efecto highlight: siempre ""
+    if (customization.subtitleEffect === 'highlight') {
+      return "";
+    }
+    
+    // Para otros efectos: "" si no está activado, valor hexadecimal si está activado
+    return customization.hasBackgroundColor ? customization.backgroundColor : "";
+  };
+
   const handleContinue = () => {
     // Asegurar que los valores calculados están presentes
     const finalCustomization = {
       ...customization,
       Tamañofuente: getFontWeight(customization.fontFamily),
-      "Fixed size": getFixedSize(customization.fontFamily)
+      "Fixed size": getFixedSize(customization.fontFamily),
+      backgroundColor: sanitizeBackgroundColor(customization)
     };
     onSelectCustomization(finalCustomization);
   };
@@ -133,14 +160,27 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     return classes;
   };
 
-  const getAnimationStyles = () => {
+  const getAnimationStyles = (): React.CSSProperties => {
+    // Special handling for highlight effect
+    if (customization.subtitleEffect === 'highlight') {
+      return {
+        color: customization.fill || '#ffffff',
+        backgroundColor: customization.textColor,
+        padding: '8px 16px',
+        borderRadius: '8px',
+        display: 'inline-block',
+        position: 'relative' as const,
+        animation: 'highlightGlow 1.5s ease-in-out infinite',
+      };
+    }
+
     const styles: React.CSSProperties = {
       color: customization.textColor,
       backgroundColor: customization.hasBackgroundColor ? customization.backgroundColor : 'transparent',
       padding: '8px 16px',
       borderRadius: '8px',
       display: 'inline-block',
-      position: 'relative',
+      position: 'relative' as const,
     };
 
     // Add subtitle effects
@@ -152,7 +192,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       styles.animation = 'slideDown 0.7s ease-out';
     }
 
-    // Add placement effects
+    // Add placement effects (not for static)
     if (customization.placementEffect === 'animate') {
       styles.transform = 'scale(1.02)';
     }
@@ -168,6 +208,26 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     }
     
     const currentGroup = groups[currentGroupIndex] || [];
+    
+    // Special handling for highlight effect - show word by word with highlight animation
+    if (customization.subtitleEffect === 'highlight') {
+      return (
+        <div className="inline-flex flex-wrap gap-2">
+          {currentGroup.map((word, index) => (
+            <div
+              key={`${animationKey}-${currentGroupIndex}-${index}`}
+              style={{
+                ...getAnimationStyles(),
+                animationDelay: `${index * 0.4}s`,
+              }}
+              className={getPreviewClasses()}
+            >
+              {word}
+            </div>
+          ))}
+        </div>
+      );
+    }
     
     // For "align" effect: show words one by one within the group
     if (customization.placementEffect === 'align') {
@@ -185,6 +245,20 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
               {word}
             </div>
           ))}
+        </div>
+      );
+    }
+    
+    // For static effect: show without animations
+    if (customization.placementEffect === 'static') {
+      const groupText = currentGroup.join(' ');
+      return (
+        <div 
+          key={`${animationKey}-${currentGroupIndex}`}
+          style={getAnimationStyles()} 
+          className={getPreviewClasses()}
+        >
+          {groupText}
         </div>
       );
     }
@@ -264,6 +338,16 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
           0% { transform: scale(0.95); }
           50% { transform: scale(1.05); }
           100% { transform: scale(1); }
+        }
+        @keyframes highlightGlow {
+          0%, 100% { 
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+            transform: scale(1);
+          }
+          50% { 
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            transform: scale(1.02);
+          }
         }
       `}</style>
 
@@ -394,39 +478,47 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
             {/* Colors */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Background Color */}
+              {/* Background Color - Logic changes for Highlight */}
               <Card className="p-4 border-cyber-glow/20 bg-card/50 backdrop-blur">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Palette className="w-4 h-4 text-primary" />
-                    <h4 className="font-semibold">Color de Fondo</h4>
+                    <h4 className="font-semibold">
+                      {customization.subtitleEffect === 'highlight' ? 'Fondo Nuevo Color' : 'Color de Fondo'}
+                    </h4>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={customization.hasBackgroundColor}
-                      onCheckedChange={(checked) => {
-                        setCustomization(prev => ({ 
-                          ...prev, 
-                          hasBackgroundColor: checked,
-                          backgroundColor: checked ? (prev.backgroundColor || '#421010') : prev.backgroundColor
-                        }));
-                      }}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {customization.hasBackgroundColor ? 'Activado' : 'Desactivado'}
-                    </span>
-                  </div>
+                  {customization.subtitleEffect !== 'highlight' && (
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={customization.hasBackgroundColor}
+                        onCheckedChange={(checked) => {
+                          setCustomization(prev => ({ 
+                            ...prev, 
+                            hasBackgroundColor: checked,
+                            backgroundColor: checked ? (prev.backgroundColor || '#421010') : prev.backgroundColor
+                          }));
+                        }}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {customization.hasBackgroundColor ? 'Activado' : 'Desactivado'}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
-                {customization.hasBackgroundColor ? (
+                {/* Show color selection for highlight OR when background is enabled */}
+                {(customization.subtitleEffect === 'highlight' || customization.hasBackgroundColor) ? (
                   <div className="space-y-3 animate-fade-in">
                     <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
                       {COLOR_PALETTE.map((color) => (
                         <button
                           key={color}
-                          onClick={() => setCustomization(prev => ({ ...prev, backgroundColor: color }))}
+                          onClick={() => setCustomization(prev => ({ ...prev, 
+                            textColor: customization.subtitleEffect === 'highlight' ? color : prev.textColor,
+                            backgroundColor: customization.subtitleEffect === 'highlight' ? prev.backgroundColor : color
+                          }))}
                           className={`w-8 h-8 rounded border-2 transition-all ${
-                            customization.backgroundColor === color
+                            (customization.subtitleEffect === 'highlight' ? customization.textColor : customization.backgroundColor) === color
                               ? 'border-primary scale-110'
                               : 'border-border hover:border-primary/50'
                           }`}
@@ -436,8 +528,11 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                     </div>
                     <input
                       type="color"
-                      value={customization.backgroundColor}
-                      onChange={(e) => setCustomization(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                      value={customization.subtitleEffect === 'highlight' ? customization.textColor : customization.backgroundColor}
+                      onChange={(e) => setCustomization(prev => ({ ...prev, 
+                        textColor: customization.subtitleEffect === 'highlight' ? e.target.value : prev.textColor,
+                        backgroundColor: customization.subtitleEffect === 'highlight' ? prev.backgroundColor : e.target.value
+                      }))}
                       className="w-full h-8 rounded border border-border"
                     />
                   </div>
@@ -448,32 +543,62 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                 )}
               </Card>
 
-              {/* Text Color */}
+              {/* Text Color / Letra Nueva Color for Highlight */}
               <Card className="p-4 border-cyber-glow/20 bg-card/50 backdrop-blur">
                 <div className="flex items-center gap-2 mb-3">
                   <Palette className="w-4 h-4 text-primary" />
-                  <h4 className="font-semibold">Color de Letra</h4>
+                  <h4 className="font-semibold">
+                    {customization.subtitleEffect === 'highlight' ? 'Letra Nueva Color' : 'Color de Letra'}
+                  </h4>
                 </div>
-                <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
-                  {COLOR_PALETTE.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setCustomization(prev => ({ ...prev, textColor: color }))}
-                      className={`w-8 h-8 rounded border-2 transition-all ${
-                        customization.textColor === color
-                          ? 'border-primary scale-110'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      style={{ backgroundColor: color }}
+                {customization.subtitleEffect !== 'highlight' ? (
+                  <>
+                    <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
+                      {COLOR_PALETTE.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCustomization(prev => ({ ...prev, textColor: color }))}
+                          className={`w-8 h-8 rounded border-2 transition-all ${
+                            customization.textColor === color
+                              ? 'border-primary scale-110'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <input
+                      type="color"
+                      value={customization.textColor}
+                      onChange={(e) => setCustomization(prev => ({ ...prev, textColor: e.target.value }))}
+                      className="w-full h-8 rounded border border-border"
                     />
-                  ))}
-                </div>
-                <input
-                  type="color"
-                  value={customization.textColor}
-                  onChange={(e) => setCustomization(prev => ({ ...prev, textColor: e.target.value }))}
-                  className="w-full h-8 rounded border border-border"
-                />
+                  </>
+                ) : (
+                  /* Special selector for highlight fill color */
+                  <>
+                    <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
+                      {COLOR_PALETTE.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCustomization(prev => ({ ...prev, fill: color }))}
+                          className={`w-8 h-8 rounded border-2 transition-all ${
+                            customization.fill === color
+                              ? 'border-primary scale-110'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <input
+                      type="color"
+                      value={customization.fill || '#ffffff'}
+                      onChange={(e) => setCustomization(prev => ({ ...prev, fill: e.target.value }))}
+                      className="w-full h-8 rounded border border-border"
+                    />
+                  </>
+                )}
               </Card>
             </div>
           </div>
