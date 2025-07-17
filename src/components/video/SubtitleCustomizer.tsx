@@ -131,14 +131,14 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   // Auto-cycle for highlight + static effect: groups of 3 words with sequential highlighting
   useEffect(() => {
     if (customization.subtitleEffect === 'highlight' && customization.placementEffect === 'static') {
+      const words = sampleText.split(' ');
+      const groups = [];
+      for (let i = 0; i < words.length; i += 3) {
+        groups.push(words.slice(i, i + 3));
+      }
+      
       const timer = setInterval(() => {
         setCurrentWordInGroup(prev => {
-          const words = sampleText.split(' ');
-          const groups = [];
-          for (let i = 0; i < words.length; i += 3) {
-            groups.push(words.slice(i, i + 3));
-          }
-          
           setCurrentGroupIndex(currentIdx => {
             const currentGroup = groups[currentIdx] || [];
             if (prev + 1 >= currentGroup.length) {
@@ -149,12 +149,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
           });
           
           // Reset word index when moving to next group, otherwise increment
-          const words_check = sampleText.split(' ');
-          const groups_check = [];
-          for (let i = 0; i < words_check.length; i += 3) {
-            groups_check.push(words_check.slice(i, i + 3));
-          }
-          const currentGroup = groups_check[currentGroupIndex] || [];
+          const currentGroup = groups[currentGroupIndex] || [];
           return (prev + 1 >= currentGroup.length) ? 0 : prev + 1;
         });
       }, 800); // Change word every 800ms
