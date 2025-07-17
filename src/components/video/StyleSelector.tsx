@@ -87,7 +87,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     
     // For other styles, check if they need customization
     const needsCardCustomization = ['style-1', 'style-2'].includes(style.id);
-    const needsPresenterCustomization = ['style-3', 'style-4'].includes(style.id);
+    const needsPresenterCustomization = ['style-2'].includes(style.id);
 
     if (needsCardCustomization) {
       setShowCustomizeModal(true);

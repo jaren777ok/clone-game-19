@@ -126,6 +126,8 @@ export const initiateVideoGeneration = async (
     webhookType = 'EDUCATIVO_2';
   } else if (flowState.selectedStyle!.id === 'style-5') {
     webhookType = 'MANUAL';
+  } else if (flowState.selectedStyle!.id === 'style-2') {
+    webhookType = 'veroia';
   } else if (flowState.selectedStyle!.id === 'style-6') {
     webhookType = 'MANUAL2';
   }
@@ -272,9 +274,17 @@ export const initiateVideoGeneration = async (
         manual2Payload, 
         flowState.manualCustomization.sessionId
       );
+    } else if (flowState.selectedStyle!.id === 'style-2') {
+      // Estilo Noticiero - webhook estándar
+      console.log('🎥 Enviando a webhook estándar (Estilo Noticiero):', {
+        requestId: requestId,
+        presenterName: basePayload.nombrePresentador,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
+      });
+      webhookConfirmed = await sendToWebhook(basePayload);
     } else {
-      // Webhook estándar (Estilo Noticiero y otros)
-      console.log('🎥 Enviando a webhook estándar:', {
+      // Fallback para otros estilos no definidos
+      console.log('🎥 Enviando a webhook estándar (fallback):', {
         requestId: requestId,
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
