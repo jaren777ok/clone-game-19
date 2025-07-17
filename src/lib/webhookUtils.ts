@@ -12,6 +12,16 @@ interface WebhookPayload {
   nombrePresentador?: string;
   width?: number;
   height?: number;
+  subtitleCustomization?: {
+    fontFamily: string;
+    subtitleEffect: string;
+    placementEffect: string;
+    textTransform: string;
+    backgroundColor: string;
+    textColor: string;
+    Tamañofuente: number;
+    "Fixed size": number;
+  } | null;
 }
 
 interface EstiloNoticiaPayload extends WebhookPayload {

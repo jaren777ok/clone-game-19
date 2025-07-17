@@ -98,7 +98,7 @@ export const initiateVideoGeneration = async (
     nombrePresentador: flowState.presenterCustomization?.nombrePresentador || flowState.selectedAvatar!.avatar_name,
     width: flowState.apiVersionCustomization?.width || 1280,
     height: flowState.apiVersionCustomization?.height || 720,
-    // Personalización de subtítulos (solo para style-1)
+    // Personalización de subtítulos (para todos los estilos)
     subtitleCustomization: flowState.subtitleCustomization ? {
       fontFamily: flowState.subtitleCustomization.fontFamily || "",
       subtitleEffect: flowState.subtitleCustomization.subtitleEffect || "",
@@ -191,7 +191,20 @@ export const initiateVideoGeneration = async (
         VoiceID: flowState.selectedVoice!.voice_id,
         Estilo: flowState.selectedStyle!.id,
         width: flowState.apiVersionCustomization?.width || 1280,
-        height: flowState.apiVersionCustomization?.height || 720
+        height: flowState.apiVersionCustomization?.height || 720,
+        // Personalización de subtítulos para estilo manual
+        subtitleCustomization: flowState.subtitleCustomization ? {
+          fontFamily: flowState.subtitleCustomization.fontFamily || "",
+          subtitleEffect: flowState.subtitleCustomization.subtitleEffect || "",
+          placementEffect: flowState.subtitleCustomization.placementEffect || "",
+          textTransform: flowState.subtitleCustomization.textTransform || "",
+          backgroundColor: flowState.subtitleCustomization.hasBackgroundColor 
+            ? flowState.subtitleCustomization.backgroundColor 
+            : "",
+          textColor: flowState.subtitleCustomization.textColor || "",
+          Tamañofuente: flowState.subtitleCustomization.Tamañofuente || 700,
+          "Fixed size": flowState.subtitleCustomization["Fixed size"] || 5.5
+        } : null
       };
       
       console.log('📁 Enviando a webhook Estilo Manual con archivos (sin nombrePresentador):', {
