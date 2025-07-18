@@ -1,4 +1,3 @@
-
 interface WebhookPayload {
   script: string;
   userId: string;
@@ -229,10 +228,19 @@ export const sendToManualWebhook = async (
   // Create FormData for the webhook
   const formData = new FormData();
   
-  // Add all payload fields
+  // Add all payload fields with special handling for subtitleCustomization
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
+      if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // Expand subtitleCustomization object into individual fields
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          if (subValue !== null && subValue !== undefined) {
+            formData.append(subKey, String(subValue));
+          }
+        });
+      } else {
+        formData.append(key, String(value));
+      }
     }
   });
   
@@ -384,10 +392,19 @@ export const sendDirectToManualWebhook = async (
   // Create FormData for the webhook
   const formData = new FormData();
   
-  // Add all payload fields
+  // Add all payload fields with special handling for subtitleCustomization
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
+      if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // Expand subtitleCustomization object into individual fields
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          if (subValue !== null && subValue !== undefined) {
+            formData.append(subKey, String(subValue));
+          }
+        });
+      } else {
+        formData.append(key, String(value));
+      }
     }
   });
   
@@ -523,10 +540,19 @@ export const sendToManualWebhook2 = async (
   // Create FormData for the webhook
   const formData = new FormData();
   
-  // Add all payload fields
+  // Add all payload fields with special handling for subtitleCustomization
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
+      if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // Expand subtitleCustomization object into individual fields
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          if (subValue !== null && subValue !== undefined) {
+            formData.append(subKey, String(subValue));
+          }
+        });
+      } else {
+        formData.append(key, String(value));
+      }
     }
   });
   
@@ -592,10 +618,19 @@ export const sendDirectToManualWebhook2 = async (
   // Create FormData for the webhook
   const formData = new FormData();
   
-  // Add all payload fields
+  // Add all payload fields with special handling for subtitleCustomization
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
+      if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // Expand subtitleCustomization object into individual fields
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          if (subValue !== null && subValue !== undefined) {
+            formData.append(subKey, String(subValue));
+          }
+        });
+      } else {
+        formData.append(key, String(value));
+      }
     }
   });
   
@@ -649,7 +684,6 @@ export const sendDirectToManualWebhook2 = async (
   }
 };
 
-// Nueva función para enviar con URLs a webhook MANUAL2
 export const sendDirectToManualWebhook2WithUrls = async (
   payload: WebhookPayload,
   driveUrls: DriveUrlsResponse
