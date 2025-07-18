@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -210,8 +211,16 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
+    flowState: FlowState,
     onProgress?: (current: number, total: number, type: 'image') => void
   ) => {
+    console.log('🔍 DEBUG - handleGenerateVideoWithFiles called with flowState:', {
+      hasFlowState: !!flowState,
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization,
+      styleId: flowState?.selectedStyle?.id
+    });
+
     // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
       toast({
@@ -231,7 +240,6 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       throw new Error("Guion requerido");
     }
 
-    const flowState = props?.flowState;
     if (!validateFlowState(flowState)) {
       toast({ 
         title: "Configuración incompleta", 
@@ -269,8 +277,32 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         VoiceID: flowState!.selectedVoice?.voice_id,
         Estilo: flowState!.selectedStyle?.id,
         width: apiVersionCustomization?.width || 1280,
-        height: apiVersionCustomization?.height || 720
+        height: apiVersionCustomization?.height || 720,
+        // 🔍 CRÍTICO: Incluir subtitleCustomization completo
+        subtitleCustomization: flowState!.subtitleCustomization ? {
+          fontFamily: flowState!.subtitleCustomization.fontFamily || "",
+          subtitleEffect: flowState!.subtitleCustomization.subtitleEffect || "",
+          placementEffect: flowState!.subtitleCustomization.placementEffect || "",
+          textTransform: flowState!.subtitleCustomization.textTransform || "",
+          backgroundColor: flowState!.subtitleCustomization.hasBackgroundColor 
+            ? flowState!.subtitleCustomization.backgroundColor 
+            : "",
+          textColor: flowState!.subtitleCustomization.textColor || "",
+          Tamañofuente: flowState!.subtitleCustomization.Tamañofuente || 700,
+          "Fixed size": flowState!.subtitleCustomization["Fixed size"] || 5.5,
+          fill: flowState!.subtitleCustomization.fill || ""
+        } : null,
+        // Campo split
+        split: flowState!.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
+
+      console.log('🔍 DEBUG - Payload con subtitleCustomization:', {
+        requestId,
+        hasSubtitleCustomization: !!payload.subtitleCustomization,
+        subtitleCustomizationData: payload.subtitleCustomization,
+        split: payload.split,
+        styleId: payload.Estilo
+      });
 
       // Send directly to webhook with files FIRST, with progress callback
       // Use different webhook based on style
@@ -312,8 +344,16 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
 
   const handleGenerateVideoWithUrls = async (
     driveUrls: any,
-    apiVersionCustomization: ApiVersionCustomization
+    apiVersionCustomization: ApiVersionCustomization,
+    flowState: FlowState
   ) => {
+    console.log('🔍 DEBUG - handleGenerateVideoWithUrls called with flowState:', {
+      hasFlowState: !!flowState,
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization,
+      styleId: flowState?.selectedStyle?.id
+    });
+
     // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
       toast({
@@ -333,7 +373,6 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       throw new Error("Guion requerido");
     }
 
-    const flowState = props?.flowState;
     if (!validateFlowState(flowState)) {
       toast({ 
         title: "Configuración incompleta", 
@@ -371,8 +410,32 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         VoiceID: flowState!.selectedVoice?.voice_id,
         Estilo: flowState!.selectedStyle?.id,
         width: apiVersionCustomization?.width || 1280,
-        height: apiVersionCustomization?.height || 720
+        height: apiVersionCustomization?.height || 720,
+        // 🔍 CRÍTICO: Incluir subtitleCustomization completo
+        subtitleCustomization: flowState!.subtitleCustomization ? {
+          fontFamily: flowState!.subtitleCustomization.fontFamily || "",
+          subtitleEffect: flowState!.subtitleCustomization.subtitleEffect || "",
+          placementEffect: flowState!.subtitleCustomization.placementEffect || "",
+          textTransform: flowState!.subtitleCustomization.textTransform || "",
+          backgroundColor: flowState!.subtitleCustomization.hasBackgroundColor 
+            ? flowState!.subtitleCustomization.backgroundColor 
+            : "",
+          textColor: flowState!.subtitleCustomization.textColor || "",
+          Tamañofuente: flowState!.subtitleCustomization.Tamañofuente || 700,
+          "Fixed size": flowState!.subtitleCustomization["Fixed size"] || 5.5,
+          fill: flowState!.subtitleCustomization.fill || ""
+        } : null,
+        // Campo split
+        split: flowState!.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
+
+      console.log('🔍 DEBUG - Payload con subtitleCustomization (URLs):', {
+        requestId,
+        hasSubtitleCustomization: !!payload.subtitleCustomization,
+        subtitleCustomizationData: payload.subtitleCustomization,
+        split: payload.split,
+        styleId: payload.Estilo
+      });
 
       // Send to webhook with Drive URLs instead of files
       // Use different webhook based on style

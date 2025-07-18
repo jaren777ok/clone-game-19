@@ -21,11 +21,13 @@ interface ScriptFormProps {
     images: File[], 
     videos: File[], 
     apiVersionCustomization: ApiVersionCustomization,
+    flowState: FlowState,
     onProgress?: (current: number, total: number, type: 'image') => void
   ) => Promise<void>;
   onGenerateWithUrls?: (
     driveUrls: any,
-    apiVersionCustomization: ApiVersionCustomization
+    apiVersionCustomization: ApiVersionCustomization,
+    flowState: FlowState
   ) => Promise<void>;
 }
 
@@ -53,23 +55,28 @@ const ScriptForm = ({
   // Check if this is manual style
   const isManualStyle = flowState?.selectedStyle?.id === 'style-5' || flowState?.selectedStyle?.id === 'style-6';
 
-  // DEBUG: Log flowState and manual style detection
-  console.log('🐛 DEBUG ScriptForm - flowState:', {
+  // 🔍 DEBUG: Log flowState and subtitle customization
+  console.log('🔍 DEBUG ScriptForm - flowState completo:', {
     flowState: flowState,
     selectedStyle: flowState?.selectedStyle,
     selectedStyleId: flowState?.selectedStyle?.id,
     isManualStyle: isManualStyle,
+    hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+    subtitleCustomizationData: flowState?.subtitleCustomization,
     hasOnGenerateWithFiles: !!onGenerateWithFiles
   });
 
   const handleGenerateClick = () => {
-    console.log('🐛 DEBUG handleGenerateClick - isManualStyle:', isManualStyle);
+    console.log('🔍 DEBUG handleGenerateClick - isManualStyle:', isManualStyle);
     
     if (isManualStyle) {
-      console.log('🐛 DEBUG - Opening manual modal');
+      console.log('🔍 DEBUG - Opening manual modal with flowState:', {
+        hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+        subtitleData: flowState?.subtitleCustomization
+      });
       setShowManualModal(true);
     } else {
-      console.log('🐛 DEBUG - Calling onSubmit for regular style');
+      console.log('🔍 DEBUG - Calling onSubmit for regular style');
       onSubmit();
     }
   };
@@ -80,18 +87,30 @@ const ScriptForm = ({
     apiVersionCustomization: ApiVersionCustomization,
     onProgress?: (current: number, total: number, type: 'image') => void
   ) => {
+    console.log('🔍 DEBUG - handleManualModalConfirm called with flowState:', {
+      hasFlowState: !!flowState,
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization,
+      styleId: flowState?.selectedStyle?.id
+    });
+
+    if (!flowState) {
+      console.error('❌ ERROR - No flowState available for manual confirmation');
+      return;
+    }
+
     // Use different handlers based on style
     if (flowState?.selectedStyle?.id === 'style-6') {
       // For style-6, we would need the new handler (not implemented yet in this interface)
       // For now, fallback to regular handler
       if (onGenerateWithFiles) {
-        await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
+        await onGenerateWithFiles(images, videos, apiVersionCustomization, flowState, onProgress);
         setShowManualModal(false);
       }
     } else {
       // For style-5 (original manual)
       if (onGenerateWithFiles) {
-        await onGenerateWithFiles(images, videos, apiVersionCustomization, onProgress);
+        await onGenerateWithFiles(images, videos, apiVersionCustomization, flowState, onProgress);
         setShowManualModal(false);
       }
     }
@@ -101,18 +120,30 @@ const ScriptForm = ({
     driveUrls: any,
     apiVersionCustomization: ApiVersionCustomization
   ) => {
+    console.log('🔍 DEBUG - handleManualModalConfirmWithUrls called with flowState:', {
+      hasFlowState: !!flowState,
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization,
+      styleId: flowState?.selectedStyle?.id
+    });
+
+    if (!flowState) {
+      console.error('❌ ERROR - No flowState available for manual confirmation with URLs');
+      return;
+    }
+
     // Use different handlers based on style
     if (flowState?.selectedStyle?.id === 'style-6') {
       // For style-6, we would need the new handler (not implemented yet in this interface)
       // For now, fallback to regular handler
       if (onGenerateWithUrls) {
-        await onGenerateWithUrls(driveUrls, apiVersionCustomization);
+        await onGenerateWithUrls(driveUrls, apiVersionCustomization, flowState);
         setShowManualModal(false);
       }
     } else {
       // For style-5 (original manual)
       if (onGenerateWithUrls) {
-        await onGenerateWithUrls(driveUrls, apiVersionCustomization);
+        await onGenerateWithUrls(driveUrls, apiVersionCustomization, flowState);
         setShowManualModal(false);
       }
     }
@@ -121,16 +152,6 @@ const ScriptForm = ({
   return (
     <div className="bg-card cyber-border rounded-2xl p-8 hover:cyber-glow transition-all duration-500 mb-8">
       <div className="space-y-6">
-        {/* DEBUG: Visual indicator for manual style detection - Hidden from UI */}
-        {/* 
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-          <p className="text-blue-300 text-xs font-mono">
-            DEBUG: flowState?.selectedStyle?.id = {flowState?.selectedStyle?.id || 'undefined'} | 
-            isManualStyle = {isManualStyle ? 'TRUE' : 'FALSE'}
-          </p>
-        </div>
-        */}
-        
         {/* Estado de generación activa */}
         {isGenerating && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">

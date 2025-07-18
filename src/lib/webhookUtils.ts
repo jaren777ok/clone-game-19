@@ -409,6 +409,13 @@ export const sendDirectToManualWebhook = async (
   console.log('🖼️ Images:', images.length);
   console.log('🎥 Videos:', videos.length);
 
+  // 🔍 CRÍTICO DEBUG: Verificar subtitleCustomization antes de procesamiento
+  console.log('🔍 CRÍTICO - Payload completo con subtitleCustomization:', {
+    hasSubtitleCustomization: !!payload.subtitleCustomization,
+    subtitleCustomizationFull: payload.subtitleCustomization,
+    payloadKeys: Object.keys(payload)
+  });
+
   const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL';
   
   // Create FormData for the webhook
@@ -418,9 +425,16 @@ export const sendDirectToManualWebhook = async (
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // 🔍 CRÍTICO DEBUG: Expandir subtitleCustomization
+        console.log('🔍 CRÍTICO - Expandiendo subtitleCustomization:', {
+          originalValue: value,
+          entries: Object.entries(value)
+        });
+        
         // Expand subtitleCustomization object into individual fields
         Object.entries(value).forEach(([subKey, subValue]) => {
           if (subValue !== null && subValue !== undefined) {
+            console.log(`🔍 CRÍTICO - Agregando campo: ${subKey} = ${subValue}`);
             formData.append(subKey, String(subValue));
           }
         });
@@ -429,6 +443,12 @@ export const sendDirectToManualWebhook = async (
       }
     }
   });
+
+  // 🔍 CRÍTICO DEBUG: Verificar FormData completo
+  console.log('🔍 CRÍTICO - FormData keys después de procesamiento:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}: ${value}`);
+  }
   
   try {
     // Process images with progress reporting (convert to base64)
@@ -450,6 +470,8 @@ export const sendDirectToManualWebhook = async (
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // Reduced to 30 second timeout
 
+    console.log('📤 Enviando DIRECT MANUAL webhook con FormData completo...');
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       body: formData,
@@ -461,6 +483,7 @@ export const sendDirectToManualWebhook = async (
     if (response.ok) {
       console.log('✅ DIRECT MANUAL webhook sent successfully');
       console.log('📊 Sent:', `${images.length} images (base64) + ${videos.length} videos (binary)`);
+      console.log('🔍 CRÍTICO - Webhook exitoso con subtitleCustomization incluido');
       return payload.requestId; // Return requestId for tracking
     } else {
       console.error('❌ DIRECT MANUAL webhook failed:', response.status, response.statusText);
@@ -486,15 +509,38 @@ export const sendDirectToManualWebhookWithUrls = async (
   console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
   console.log('🔗 Drive URLs:', Object.keys(driveUrls).length);
 
+  // 🔍 CRÍTICO DEBUG: Verificar subtitleCustomization antes de procesamiento
+  console.log('🔍 CRÍTICO - Payload con URLs y subtitleCustomization:', {
+    hasSubtitleCustomization: !!payload.subtitleCustomization,
+    subtitleCustomizationFull: payload.subtitleCustomization,
+    payloadKeys: Object.keys(payload)
+  });
+
   const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL';
   
   // Create FormData for the webhook
   const formData = new FormData();
   
-  // Add all payload fields
+  // Add all payload fields with special handling for subtitleCustomization
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
-      formData.append(key, String(value));
+      if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // 🔍 CRÍTICO DEBUG: Expandir subtitleCustomization
+        console.log('🔍 CRÍTICO - Expandiendo subtitleCustomization (URLs):', {
+          originalValue: value,
+          entries: Object.entries(value)
+        });
+        
+        // Expand subtitleCustomization object into individual fields
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          if (subValue !== null && subValue !== undefined) {
+            console.log(`🔍 CRÍTICO - Agregando campo (URLs): ${subKey} = ${subValue}`);
+            formData.append(subKey, String(subValue));
+          }
+        });
+      } else {
+        formData.append(key, String(value));
+      }
     }
   });
   
@@ -503,9 +549,17 @@ export const sendDirectToManualWebhookWithUrls = async (
     formData.append(key, url);
   });
 
+  // 🔍 CRÍTICO DEBUG: Verificar FormData completo con URLs
+  console.log('🔍 CRÍTICO - FormData completo con URLs:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}: ${value}`);
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    console.log('📤 Enviando MANUAL webhook con URLs y subtitleCustomization...');
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -518,6 +572,7 @@ export const sendDirectToManualWebhookWithUrls = async (
     if (response.ok) {
       console.log('✅ MANUAL webhook with URLs sent successfully');
       console.log('📊 Sent URLs for:', Object.keys(driveUrls).join(', '));
+      console.log('🔍 CRÍTICO - Webhook con URLs exitoso con subtitleCustomization incluido');
       return payload.requestId; // Return requestId for tracking
     } else {
       console.error('❌ MANUAL webhook with URLs failed:', response.status, response.statusText);
@@ -598,7 +653,6 @@ export const sendToManualWebhook2 = async (
     console.log(`  ${key}: ${value}`);
   }
   
-  // Convert files to base64 and add to FormData
   try {
     // Process images
     for (let i = 0; i < imageFiles.length; i++) {
@@ -655,6 +709,13 @@ export const sendDirectToManualWebhook2 = async (
   console.log('🖼️ Images to send:', images.length);
   console.log('🎥 Videos to send:', videos.length);
 
+  // 🔍 CRÍTICO DEBUG: Verificar subtitleCustomization para MANUAL2
+  console.log('🔍 CRÍTICO - MANUAL2 Payload con subtitleCustomization:', {
+    hasSubtitleCustomization: !!payload.subtitleCustomization,
+    subtitleCustomizationFull: payload.subtitleCustomization,
+    payloadKeys: Object.keys(payload)
+  });
+
   const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
   
   // Create FormData for the webhook
@@ -664,9 +725,16 @@ export const sendDirectToManualWebhook2 = async (
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // 🔍 CRÍTICO DEBUG: Expandir subtitleCustomization para MANUAL2
+        console.log('🔍 CRÍTICO - MANUAL2 expandiendo subtitleCustomization:', {
+          originalValue: value,
+          entries: Object.entries(value)
+        });
+        
         // Expand subtitleCustomization object into individual fields
         Object.entries(value).forEach(([subKey, subValue]) => {
           if (subValue !== null && subValue !== undefined) {
+            console.log(`🔍 CRÍTICO - MANUAL2 agregando campo: ${subKey} = ${subValue}`);
             formData.append(subKey, String(subValue));
           }
         });
@@ -675,6 +743,12 @@ export const sendDirectToManualWebhook2 = async (
       }
     }
   });
+
+  // 🔍 CRÍTICO DEBUG: Verificar FormData completo para MANUAL2
+  console.log('🔍 CRÍTICO - MANUAL2 FormData keys después de procesamiento:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}: ${value}`);
+  }
   
   // Convert images to base64 and add to FormData
   try {
@@ -714,6 +788,7 @@ export const sendDirectToManualWebhook2 = async (
 
     if (response.ok) {
       console.log('✅ MANUAL2 webhook accepted files successfully');
+      console.log('🔍 CRÍTICO - MANUAL2 webhook exitoso con subtitleCustomization incluido');
       return payload.requestId;
     } else {
       const errorText = await response.text();
@@ -734,13 +809,28 @@ export const sendDirectToManualWebhook2WithUrls = async (
   console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
   console.log('🔗 Drive URLs:', driveUrls);
 
+  // 🔍 CRÍTICO DEBUG: Verificar subtitleCustomization para MANUAL2 con URLs
+  console.log('🔍 CRÍTICO - MANUAL2 con URLs y subtitleCustomization:', {
+    hasSubtitleCustomization: !!payload.subtitleCustomization,
+    subtitleCustomizationFull: payload.subtitleCustomization,
+    payloadKeys: Object.keys(payload)
+  });
+
   const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
   
-  // Prepare the full payload with URLs
+  // Prepare the full payload with URLs and subtitleCustomization
   const fullPayload = {
     ...payload,
     driveUrls: driveUrls
   };
+
+  // 🔍 CRÍTICO DEBUG: Verificar payload completo para MANUAL2
+  console.log('🔍 CRÍTICO - MANUAL2 payload completo:', {
+    hasSubtitleCustomization: !!fullPayload.subtitleCustomization,
+    subtitleCustomizationFull: fullPayload.subtitleCustomization,
+    hasDriveUrls: !!fullPayload.driveUrls,
+    payloadKeys: Object.keys(fullPayload)
+  });
   
   try {
     console.log('📤 Sending MANUAL2 webhook with Drive URLs...');
@@ -763,6 +853,7 @@ export const sendDirectToManualWebhook2WithUrls = async (
 
     if (response.ok) {
       console.log('✅ MANUAL2 webhook with URLs sent successfully');
+      console.log('🔍 CRÍTICO - MANUAL2 con URLs exitoso con subtitleCustomization incluido');
       return payload.requestId;
     } else {
       const errorText = await response.text();
