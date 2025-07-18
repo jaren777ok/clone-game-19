@@ -209,6 +209,13 @@ export const sendToManualWebhook = async (
   console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
   console.log('🗂️ SessionId:', sessionId);
 
+  // 🔍 DEBUG: Verificar subtítulos en payload antes de procesamiento
+  console.log('🔍 DEBUG - MANUAL webhook payload subtítulos:', {
+    hasSubtitleCustomization: !!payload.subtitleCustomization,
+    subtitleCustomizationData: payload.subtitleCustomization,
+    payloadKeys: Object.keys(payload)
+  });
+
   // Dynamic import to avoid circular dependency
   const { loadFilesFromLocal, clearLocalFiles } = await import('./fileStorage');
 
@@ -232,9 +239,16 @@ export const sendToManualWebhook = async (
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // 🔍 DEBUG: Expandir subtitleCustomization
+        console.log('🔍 DEBUG - Expandiendo subtitleCustomization:', {
+          originalValue: value,
+          entries: Object.entries(value)
+        });
+        
         // Expand subtitleCustomization object into individual fields
         Object.entries(value).forEach(([subKey, subValue]) => {
           if (subValue !== null && subValue !== undefined) {
+            console.log(`🔍 DEBUG - Agregando campo: ${subKey} = ${subValue}`);
             formData.append(subKey, String(subValue));
           }
         });
@@ -243,6 +257,12 @@ export const sendToManualWebhook = async (
       }
     }
   });
+
+  // 🔍 DEBUG: Verificar FormData completo
+  console.log('🔍 DEBUG - FormData keys después de procesamiento:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}: ${value}`);
+  }
   
   // Convert files to base64 and add to FormData
   try {
@@ -268,6 +288,8 @@ export const sendToManualWebhook = async (
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    console.log('📤 Enviando MANUAL webhook con FormData completo...');
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -521,6 +543,13 @@ export const sendToManualWebhook2 = async (
   console.log('📦 Payload:', { ...payload, script: payload.script?.substring(0, 100) + '...' });
   console.log('🗂️ SessionId:', sessionId);
 
+  // 🔍 DEBUG: Verificar subtítulos en payload para MANUAL2
+  console.log('🔍 DEBUG - MANUAL2 webhook payload subtítulos:', {
+    hasSubtitleCustomization: !!payload.subtitleCustomization,
+    subtitleCustomizationData: payload.subtitleCustomization,
+    payloadKeys: Object.keys(payload)
+  });
+
   // Dynamic import to avoid circular dependency
   const { loadFilesFromLocal, clearLocalFiles } = await import('./fileStorage');
 
@@ -544,9 +573,16 @@ export const sendToManualWebhook2 = async (
   Object.entries(payload).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       if (key === 'subtitleCustomization' && typeof value === 'object' && value !== null) {
+        // 🔍 DEBUG: Expandir subtitleCustomization para MANUAL2
+        console.log('🔍 DEBUG - MANUAL2 expandiendo subtitleCustomization:', {
+          originalValue: value,
+          entries: Object.entries(value)
+        });
+        
         // Expand subtitleCustomization object into individual fields
         Object.entries(value).forEach(([subKey, subValue]) => {
           if (subValue !== null && subValue !== undefined) {
+            console.log(`🔍 DEBUG - MANUAL2 agregando campo: ${subKey} = ${subValue}`);
             formData.append(subKey, String(subValue));
           }
         });
@@ -555,6 +591,12 @@ export const sendToManualWebhook2 = async (
       }
     }
   });
+
+  // 🔍 DEBUG: Verificar FormData completo para MANUAL2
+  console.log('🔍 DEBUG - MANUAL2 FormData keys después de procesamiento:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}: ${value}`);
+  }
   
   // Convert files to base64 and add to FormData
   try {

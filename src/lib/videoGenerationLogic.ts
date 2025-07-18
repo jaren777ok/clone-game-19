@@ -36,6 +36,24 @@ export const initiateVideoGeneration = async (
     throw new Error('Usuario no autenticado');
   }
 
+  // 🔍 DEBUG: Verificar subtítulos al inicio de generación
+  console.log('🔍 DEBUG - initiateVideoGeneration START:', {
+    userId: user.id,
+    selectedStyle: flowState.selectedStyle?.id,
+    hasSubtitleCustomization: !!flowState.subtitleCustomization,
+    subtitleCustomizationFull: flowState.subtitleCustomization,
+    subtitleCustomizationPreview: flowState.subtitleCustomization ? {
+      fontFamily: flowState.subtitleCustomization.fontFamily,
+      subtitleEffect: flowState.subtitleCustomization.subtitleEffect,
+      textColor: flowState.subtitleCustomization.textColor,
+      backgroundColor: flowState.subtitleCustomization.backgroundColor,
+      hasBackgroundColor: flowState.subtitleCustomization.hasBackgroundColor,
+      Tamañofuente: flowState.subtitleCustomization.Tamañofuente,
+      'Fixed size': flowState.subtitleCustomization['Fixed size'],
+      fill: flowState.subtitleCustomization.fill
+    } : null
+  });
+
   // Generar requestId único basado en timestamp + random
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
@@ -73,15 +91,9 @@ export const initiateVideoGeneration = async (
     selectedStyle: flowState.selectedStyle?.name,
     presenterName: flowState.presenterCustomization?.nombrePresentador,
     cardCustomization: flowState.cardCustomization,
-    apiKeyDecrypted: true
-  });
-
-  // Guardar estado de generación en localStorage (solo para UI)
-  saveGenerationState({
-    requestId,
-    script: script.trim(),
-    timestamp,
-    status: 'pending'
+    apiKeyDecrypted: true,
+    // 🔍 DEBUG: Verificar subtítulos en el log principal
+    hasSubtitleCustomization: !!flowState.subtitleCustomization
   });
 
   // Preparar payload base con clave API desencriptada
@@ -116,6 +128,23 @@ export const initiateVideoGeneration = async (
     split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
   };
 
+  // 🔍 DEBUG: Verificar payload completo antes de enviar
+  console.log('🔍 DEBUG - Payload completo preparado:', {
+    requestId: requestId,
+    hasSubtitleCustomization: !!basePayload.subtitleCustomization,
+    subtitleCustomizationPayload: basePayload.subtitleCustomization,
+    Estilo: basePayload.Estilo,
+    split: basePayload.split
+  });
+
+  // Guardar estado de generación en localStorage (solo para UI)
+  saveGenerationState({
+    requestId,
+    script: script.trim(),
+    timestamp,
+    status: 'pending'
+  });
+
   // Determinar webhook según el estilo
   let webhookType = 'veroia'; // default
   if (flowState.selectedStyle!.id === 'style-1') {
@@ -137,7 +166,10 @@ export const initiateVideoGeneration = async (
     webhook: webhookType,
     payloadSize: JSON.stringify(basePayload).length,
     presenterName: basePayload.nombrePresentador,
-    apiKeyUsed: decryptedApiKey.substring(0, 8) + '...'
+    apiKeyUsed: decryptedApiKey.substring(0, 8) + '...',
+    // 🔍 DEBUG: Verificar subtítulos antes de envío
+    hasSubtitleCustomization: !!basePayload.subtitleCustomization,
+    subtitleFields: basePayload.subtitleCustomization ? Object.keys(basePayload.subtitleCustomization) : []
   });
 
   try {
@@ -197,7 +229,7 @@ export const initiateVideoGeneration = async (
         Estilo: flowState.selectedStyle!.id,
         width: flowState.apiVersionCustomization?.width || 1280,
         height: flowState.apiVersionCustomization?.height || 720,
-        // Personalización de subtítulos para estilo manual
+        // 🔍 DEBUG: CRÍTICO - Personalización de subtítulos para estilo manual
         subtitleCustomization: flowState.subtitleCustomization ? {
           fontFamily: flowState.subtitleCustomization.fontFamily || "",
           subtitleEffect: flowState.subtitleCustomization.subtitleEffect || "",
@@ -214,12 +246,26 @@ export const initiateVideoGeneration = async (
         // Campo split para estilo manual
         split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
+
+      // 🔍 DEBUG: Verificar payload manual específicamente
+      console.log('🔍 DEBUG - MANUAL Payload antes de enviar:', {
+        requestId: requestId,
+        hasSubtitleCustomization: !!manualPayload.subtitleCustomization,
+        subtitleCustomizationComplete: manualPayload.subtitleCustomization,
+        split: manualPayload.split,
+        payloadKeys: Object.keys(manualPayload)
+      });
       
       console.log('📁 Enviando a webhook Estilo Manual con archivos (sin nombrePresentador):', {
         requestId: requestId,
         imagesCount: flowState.manualCustomization.images.length,
         videosCount: flowState.manualCustomization.videos.length,
-        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...',
+        // 🔍 DEBUG: Confirmar subtítulos en el log
+        hasSubtitleCustomization: !!manualPayload.subtitleCustomization,
+        subtitleEffect: manualPayload.subtitleCustomization?.subtitleEffect,
+        fontFamily: manualPayload.subtitleCustomization?.fontFamily,
+        textColor: manualPayload.subtitleCustomization?.textColor
       });
       
       webhookConfirmed = await sendToManualWebhook(

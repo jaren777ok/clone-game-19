@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload } from "lucide-react";
@@ -36,6 +37,14 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   onConfirm,
   onConfirmWithUrls
 }) => {
+  // 🔍 DEBUG: Verificar flowState en ManualUploadModal
+  console.log('🔍 DEBUG - ManualUploadModal recibió flowState:', {
+    hasFlowState: !!flowState,
+    hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+    subtitleCustomizationData: flowState?.subtitleCustomization,
+    selectedStyle: flowState?.selectedStyle?.id
+  });
+
   const {
     currentStep,
     images,
@@ -53,7 +62,13 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     resetAndClose,
     isNextDisabled,
     getStepTitle
-  } = useManualUploadFlow({ onConfirm, onConfirmWithUrls, onClose });
+  } = useManualUploadFlow({ 
+    onConfirm, 
+    onConfirmWithUrls, 
+    onClose,
+    // 🔍 DEBUG: Pasar flowState al hook para preservar subtítulos
+    flowState 
+  });
 
   return (
     <Dialog open={open} onOpenChange={resetAndClose}>

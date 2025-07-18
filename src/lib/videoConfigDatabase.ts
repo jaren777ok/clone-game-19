@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization, Base64File, SubtitleCustomization } from '@/types/videoFlow';
@@ -32,7 +31,16 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
     hasAvatar: !!flowState.selectedAvatar,
     hasVoice: !!flowState.selectedVoice,
     hasStyle: !!flowState.selectedStyle,
-    hasScript: !!flowState.generatedScript
+    hasScript: !!flowState.generatedScript,
+    // 🔍 DEBUG: Agregar logs detallados de subtítulos
+    hasSubtitleCustomization: !!flowState.subtitleCustomization,
+    subtitleCustomizationDetails: flowState.subtitleCustomization ? {
+      fontFamily: flowState.subtitleCustomization.fontFamily,
+      subtitleEffect: flowState.subtitleCustomization.subtitleEffect,
+      textColor: flowState.subtitleCustomization.textColor,
+      backgroundColor: flowState.subtitleCustomization.backgroundColor,
+      hasBackgroundColor: flowState.subtitleCustomization.hasBackgroundColor
+    } : null
   });
 
   try {
@@ -50,7 +58,9 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
         base64DataPreview: {
           firstImageSize: flowState.manualCustomization.images[0]?.data.length || 0,
           firstVideoSize: flowState.manualCustomization.videos[0]?.data.length || 0
-        }
+        },
+        // 🔍 DEBUG: Verificar que subtítulos se mantengan con manual customization
+        subtitleStillExists: !!flowState.subtitleCustomization
       });
 
       manualCustomizationData = {
@@ -90,9 +100,22 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       updated_at: new Date().toISOString()
     };
 
+    // 🔍 DEBUG: Verificar datos antes de guardar
+    console.log('🔍 DEBUG - Datos a guardar en Supabase:', {
+      subtitle_customization_exists: !!configData.subtitle_customization,
+      subtitle_customization_preview: configData.subtitle_customization ? {
+        fontFamily: (configData.subtitle_customization as any).fontFamily,
+        subtitleEffect: (configData.subtitle_customization as any).subtitleEffect,
+        textColor: (configData.subtitle_customization as any).textColor
+      } : null,
+      current_step: configData.current_step,
+      has_manual_customization: !!configData.manual_customization
+    });
+
     console.log('🔄 Ejecutando upsert en Supabase...', {
       has_manual_customization: !!configData.manual_customization,
-      current_step: configData.current_step
+      current_step: configData.current_step,
+      has_subtitle_customization: !!configData.subtitle_customization
     });
     
     const { data, error } = await supabase
@@ -113,7 +136,8 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
           imagesCount: configData.manual_customization.images?.length,
           videosCount: configData.manual_customization.videos?.length,
           firstImageDataLength: configData.manual_customization.images?.[0]?.data?.length
-        } : null
+        } : null,
+        subtitle_customization_debug: configData.subtitle_customization
       });
       throw error;
     }
@@ -122,10 +146,17 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       id: data?.id,
       current_step: data?.current_step,
       has_manual_customization: !!data?.manual_customization,
+      has_subtitle_customization: !!data?.subtitle_customization,
       manual_customization_preview: data?.manual_customization ? {
         sessionId: (data.manual_customization as any)?.sessionId,
         imagesCount: (data.manual_customization as any)?.images?.length,
         videosCount: (data.manual_customization as any)?.videos?.length
+      } : null,
+      // 🔍 DEBUG: Verificar que subtítulos se guardaron
+      subtitle_customization_saved: data?.subtitle_customization ? {
+        fontFamily: (data.subtitle_customization as any)?.fontFamily,
+        subtitleEffect: (data.subtitle_customization as any)?.subtitleEffect,
+        textColor: (data.subtitle_customization as any)?.textColor
       } : null
     });
   } catch (error) {
@@ -169,13 +200,33 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
       return null;
     }
 
+    // 🔍 DEBUG: Verificar datos cargados desde Supabase
+    console.log('🔍 DEBUG - Datos cargados desde Supabase:', {
+      step: data.current_step,
+      hasApiKey: !!data.heygen_api_keys,
+      hasAvatar: !!data.avatar_data,
+      hasVoice: !!data.voice_data,
+      hasStyle: !!data.style_data,
+      hasManualCustomization: !!data.manual_customization,
+      hasSubtitleCustomization: !!data.subtitle_customization,
+      subtitleCustomizationRaw: data.subtitle_customization,
+      subtitleCustomizationPreview: data.subtitle_customization ? {
+        fontFamily: (data.subtitle_customization as any)?.fontFamily,
+        subtitleEffect: (data.subtitle_customization as any)?.subtitleEffect,
+        textColor: (data.subtitle_customization as any)?.textColor,
+        backgroundColor: (data.subtitle_customization as any)?.backgroundColor,
+        hasBackgroundColor: (data.subtitle_customization as any)?.hasBackgroundColor
+      } : null
+    });
+
     console.log('✅ Configuración cargada exitosamente:', {
       step: data.current_step,
       hasApiKey: !!data.heygen_api_keys,
       hasAvatar: !!data.avatar_data,
       hasVoice: !!data.voice_data,
       hasStyle: !!data.style_data,
-      hasManualCustomization: !!data.manual_customization
+      hasManualCustomization: !!data.manual_customization,
+      hasSubtitleCustomization: !!data.subtitle_customization
     });
 
     // Reconstruct manual customization with base64 files from Supabase
@@ -187,7 +238,22 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
         videos: manualData.videos || [],
         sessionId: manualData.sessionId
       };
+
+      // 🔍 DEBUG: Verificar archivos manuales cargados
+      console.log('🔍 DEBUG - Manual customization cargada:', {
+        sessionId: manualCustomization.sessionId,
+        imagesCount: manualCustomization.images.length,
+        videosCount: manualCustomization.videos.length
+      });
     }
+
+    // 🔍 DEBUG: Verificar subtitle customization antes de crear FlowState
+    const subtitleCustomization = data.subtitle_customization ? data.subtitle_customization as unknown as SubtitleCustomization : null;
+    
+    console.log('🔍 DEBUG - Subtitle customization convertida:', {
+      exists: !!subtitleCustomization,
+      data: subtitleCustomization
+    });
 
     // Reconstruir el FlowState desde los datos de la DB
     const flowState: FlowState = {
@@ -201,13 +267,21 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
       selectedAvatar: data.avatar_data ? data.avatar_data as unknown as Avatar : null,
       selectedVoice: data.voice_data ? data.voice_data as unknown as Voice : null,
       selectedStyle: data.style_data ? data.style_data as unknown as VideoStyle : null,
-      subtitleCustomization: data.subtitle_customization ? data.subtitle_customization as unknown as SubtitleCustomization : null,
+      subtitleCustomization: subtitleCustomization,
       generatedScript: data.generated_script,
       cardCustomization: data.card_customization ? data.card_customization as unknown as CardCustomization : null,
       presenterCustomization: data.presenter_customization ? data.presenter_customization as unknown as PresenterCustomization : null,
       apiVersionCustomization: null, // Not persisted in DB, only in localStorage
       manualCustomization
     };
+
+    // 🔍 DEBUG: Verificar FlowState final
+    console.log('🔍 DEBUG - FlowState final construido:', {
+      step: flowState.step,
+      hasSubtitleCustomization: !!flowState.subtitleCustomization,
+      subtitleCustomizationFinal: flowState.subtitleCustomization,
+      hasManualCustomization: !!flowState.manualCustomization
+    });
 
     return flowState;
   } catch (error) {

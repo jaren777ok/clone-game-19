@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from "sonner";
 import { ApiVersionCustomization } from "@/types/videoFlow";
@@ -17,9 +18,11 @@ interface UseManualUploadFlowProps {
     apiVersionCustomization: ApiVersionCustomization
   ) => Promise<void>;
   onClose: () => void;
+  // 🔍 DEBUG: Agregar flowState para preservar subtítulos
+  flowState?: any;
 }
 
-export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: UseManualUploadFlowProps) => {
+export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flowState }: UseManualUploadFlowProps) => {
   const [currentStep, setCurrentStep] = useState<UploadStep>('images');
   const [images, setImages] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
@@ -30,7 +33,21 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
   const [conversionProgress, setConversionProgress] = useState('');
   const [convertedUrls, setConvertedUrls] = useState<any>(null);
 
+  // 🔍 DEBUG: Verificar que flowState contiene subtítulos al inicializar
+  console.log('🔍 DEBUG - useManualUploadFlow initialized:', {
+    hasFlowState: !!flowState,
+    hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+    subtitleCustomizationData: flowState?.subtitleCustomization
+  });
+
   const handleNext = () => {
+    // 🔍 DEBUG: Verificar que subtítulos se mantienen en cada paso
+    console.log('🔍 DEBUG - handleNext called:', {
+      currentStep,
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization
+    });
+
     if (currentStep === 'images' && images.length === 14) {
       setCurrentStep('videos');
     } else if (currentStep === 'videos' && videos.length === 5) {
@@ -41,6 +58,12 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
   };
 
   const handleBack = () => {
+    // 🔍 DEBUG: Verificar que subtítulos se mantienen al retroceder
+    console.log('🔍 DEBUG - handleBack called:', {
+      currentStep,
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization
+    });
+
     if (currentStep === 'videos') {
       setCurrentStep('images');
     } else if (currentStep === 'convert-files') {
@@ -56,6 +79,14 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
       return;
     }
 
+    // 🔍 DEBUG: Verificar subtítulos antes de conversión
+    console.log('🔍 DEBUG - handleConvertFiles:', {
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization,
+      imagesCount: images.length,
+      videosCount: videos.length
+    });
+
     setIsConverting(true);
     setConversionProgress('Preparando archivos...');
     
@@ -70,6 +101,12 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
       setConversionProgress('¡Conversión completada!');
       
       toast.success("Archivos convertidos exitosamente");
+
+      // 🔍 DEBUG: Verificar que subtítulos siguen existiendo después de conversión
+      console.log('🔍 DEBUG - Después de conversión:', {
+        hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+        convertedUrls: urls
+      });
       
       setTimeout(() => {
         setCurrentStep('api-version');
@@ -90,6 +127,13 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
   };
 
   const handleApiVersionConfirm = (customization: ApiVersionCustomization) => {
+    // 🔍 DEBUG: Verificar subtítulos al confirmar API version
+    console.log('🔍 DEBUG - handleApiVersionConfirm:', {
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization,
+      apiCustomization: customization
+    });
+
     setApiVersionCustomization(customization);
     handleGenerateVideo(customization);
   };
@@ -105,6 +149,14 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
       return;
     }
 
+    // 🔍 DEBUG: Verificar subtítulos antes de generar video
+    console.log('🔍 DEBUG - handleGenerateVideo:', {
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
+      subtitleData: flowState?.subtitleCustomization,
+      hasConvertedUrls: !!convertedUrls,
+      customization: customization || apiVersionCustomization
+    });
+
     setIsProcessing(true);
     setProcessingProgress({ current: 0, total: 0, type: '' });
     
@@ -112,8 +164,16 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
       toast.info("Procesando archivos...");
 
       if (convertedUrls && onConfirmWithUrls) {
+        // 🔍 DEBUG: Usar URLs convertidas
+        console.log('🔍 DEBUG - Usando URLs convertidas con subtítulos:', {
+          hasSubtitleCustomization: !!flowState?.subtitleCustomization
+        });
         await onConfirmWithUrls(convertedUrls, customization || apiVersionCustomization!);
       } else {
+        // 🔍 DEBUG: Usar archivos directos
+        console.log('🔍 DEBUG - Usando archivos directos con subtítulos:', {
+          hasSubtitleCustomization: !!flowState?.subtitleCustomization
+        });
         await onConfirm(images, videos, customization || apiVersionCustomization!, (current, total, type) => {
           setProcessingProgress({ current, total, type });
         });
@@ -155,6 +215,12 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose }: U
 
   const resetAndClose = () => {
     if (isProcessing) return;
+
+    // 🔍 DEBUG: Verificar subtítulos al cerrar
+    console.log('🔍 DEBUG - resetAndClose:', {
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization
+    });
+
     setCurrentStep('images');
     setImages([]);
     setVideos([]);
