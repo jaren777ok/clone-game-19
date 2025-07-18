@@ -86,7 +86,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     }
     
     // For other styles, check if they need customization
-    const needsCardCustomization = ['style-1', 'style-2'].includes(style.id);
+    const needsCardCustomization = ['style-1'].includes(style.id);
     const needsPresenterCustomization = ['style-2'].includes(style.id);
 
     if (needsCardCustomization) {

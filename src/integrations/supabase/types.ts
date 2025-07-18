@@ -172,6 +172,24 @@ export type Database = {
           },
         ]
       }
+      n8n_clonegame: {
+        Row: {
+          id: number
+          message: Json
+          session_id: string
+        }
+        Insert: {
+          id?: number
+          message: Json
+          session_id: string
+        }
+        Update: {
+          id?: number
+          message?: Json
+          session_id?: string
+        }
+        Relationships: []
+      }
       user_video_configs: {
         Row: {
           api_key_id: string | null
