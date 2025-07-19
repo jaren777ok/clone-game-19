@@ -31,8 +31,8 @@ const VideoStyleCard: React.FC<Props> = ({
       return (
         <div className="space-y-1">
           <p className="font-medium text-yellow-400">Requisitos:</p>
-          <p className="text-muted-foreground">1. Se requiere subir 14 imágenes</p>
-          <p className="text-muted-foreground">2. Se requiere subir 5 videos</p>
+          <p className="text-muted-foreground">1. Se requiere subir 14 imágenes (horizontal o cuadrado)</p>
+          <p className="text-muted-foreground">2. Se requiere subir 5 videos (horizontal o cuadrado)</p>
           <p className="text-muted-foreground">3. Se requiere Avatar Horizontal</p>
         </div>
       );
