@@ -90,6 +90,13 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       return;
     }
     
+    // For Multi-Avatar style (style-7), show API version modal first
+    if (style.id === 'style-7') {
+      setShowApiVersionModal(true);
+      setPendingStyle(style);
+      return;
+    }
+    
     // For other styles, check if they need customization
     const needsCardCustomization = ['style-1'].includes(style.id);
     const needsPresenterCustomization = ['style-2'].includes(style.id);
@@ -101,8 +108,9 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
       setShowPresenterModal(true);
       setPendingStyle(style);
     } else {
-      // No customization needed
-      onSelectStyle(style);
+      // No customization needed, but still need API version for remaining styles
+      setShowApiVersionModal(true);
+      setPendingStyle(style);
     }
   };
 
