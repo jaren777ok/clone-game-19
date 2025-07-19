@@ -36,10 +36,8 @@ const VideoStyleCard: React.FC<Props> = ({
       case 'style-7':
         return <div className="space-y-1">
             <p className="font-medium text-yellow-400">Requisitos:</p>
-            <p className="text-muted-foreground">1. Se requiere Fondo Verde</p>
-            <p className="text-muted-foreground">2. Se requieren 2 Avatars Horizontales: (EL PRIMERO NORMAL Y EL SEGUNDO CON FONDO VERDE)
-
-          </p>
+            <p className="text-muted-foreground">1. UN AVATAR normal</p>
+            <p className="text-muted-foreground">2. El segundo AVATAR con FONDO VERDE</p>
             <p className="text-muted-foreground">
               <a href="https://drive.google.com/file/d/1PJhJJMJAPT8BO1FPk6MKbwKOhQckLZvx/view?usp=drive_link" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                 Descargar Fondo Verde
