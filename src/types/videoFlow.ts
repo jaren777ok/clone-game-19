@@ -67,9 +67,10 @@ export interface SubtitleCustomization {
 }
 
 export interface FlowState {
-  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'subtitle-customization' | 'neurocopy' | 'generator';
+  step: 'loading' | 'api-key' | 'avatar' | 'voice' | 'style' | 'multi-avatar' | 'subtitle-customization' | 'neurocopy' | 'generator';
   selectedApiKey: HeyGenApiKey | null;
   selectedAvatar: Avatar | null;
+  selectedSecondAvatar: Avatar | null;
   selectedVoice: Voice | null;
   selectedStyle: VideoStyle | null;
   subtitleCustomization?: SubtitleCustomization | null;

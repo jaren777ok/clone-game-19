@@ -5,6 +5,7 @@ import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import { useAuth } from '@/hooks/useAuth';
 import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
 import AvatarSelector from '@/components/video/AvatarSelector';
+import SecondAvatarSelector from '@/components/video/SecondAvatarSelector';
 import VoiceSelector from '@/components/video/VoiceSelector';
 import StyleSelector from '@/components/video/StyleSelector';
 import NeuroCopyGenerator from '@/components/video/NeuroCopyGenerator';
@@ -20,6 +21,7 @@ const VideoCreationFlow = () => {
     loadApiKeys,
     selectApiKey,
     selectAvatar,
+    selectSecondAvatar,
     selectVoice,
     selectStyle,
     selectSubtitleCustomization,
@@ -34,8 +36,15 @@ const VideoCreationFlow = () => {
       case 'avatar':
         goToStep('api-key');
         break;
-      case 'voice':
+      case 'multi-avatar':
         goToStep('avatar');
+        break;
+      case 'voice':
+        if (flowState.selectedSecondAvatar) {
+          goToStep('multi-avatar');
+        } else {
+          goToStep('avatar');
+        }
         break;
       case 'style':
         goToStep('voice');
@@ -44,11 +53,10 @@ const VideoCreationFlow = () => {
         goToStep('style');
         break;
       case 'neurocopy':
-        // Check if we came from subtitle customization or directly from style
-        if (flowState.selectedStyle?.id === 'style-1') {
-          goToStep('subtitle-customization');
-        } else {
+        if (flowState.selectedStyle?.id === 'style-5' || flowState.selectedStyle?.id === 'style-6') {
           goToStep('style');
+        } else {
+          goToStep('subtitle-customization');
         }
         break;
       case 'generator':
@@ -140,6 +148,16 @@ const VideoCreationFlow = () => {
         <AvatarSelector
           selectedApiKey={flowState.selectedApiKey}
           onSelectAvatar={selectAvatar}
+          onBack={handleBack}
+        />
+      );
+
+    case 'multi-avatar':
+      return (
+        <SecondAvatarSelector
+          selectedApiKey={flowState.selectedApiKey}
+          selectedFirstAvatar={flowState.selectedAvatar!}
+          onSelectSecondAvatar={selectSecondAvatar}
           onBack={handleBack}
         />
       );

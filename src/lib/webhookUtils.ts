@@ -6,6 +6,8 @@ interface WebhookPayload {
   appMode: string;
   ClaveAPI?: string;
   AvatarID?: string;
+  'AvatarID-1'?: string;
+  'AvatarID-2'?: string;
   VoiceID?: string;
   Estilo?: string;
   nombrePresentador?: string;
@@ -863,5 +865,45 @@ export const sendDirectToManualWebhook2WithUrls = async (
   } catch (error) {
     console.error('❌ Error sending to MANUAL2 webhook with URLs:', error);
     throw error;
+  }
+};
+
+// Nueva función para webhook Multi-Avatar
+export const sendToMultiAvatarWebhook = async (payload: WebhookPayload): Promise<boolean> => {
+  try {
+    console.log('Enviando datos a webhook Multi-Avatar...');
+    console.log('Payload completo Multi-Avatar:', payload);
+    
+    // Set a 30-second timeout for webhook confirmation
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
+    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/MultiAvatar', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`Webhook Multi-Avatar respondió con error: ${response.status}`);
+      return false;
+    }
+
+    const data = await response.json();
+    console.log('✅ Webhook Multi-Avatar confirmó recepción:', data);
+    
+    return true;
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('⏰ Timeout esperando confirmación del webhook Multi-Avatar (30s)');
+    } else {
+      console.error('❌ Error enviando a webhook Multi-Avatar:', err);
+    }
+    return false;
   }
 };

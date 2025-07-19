@@ -9,6 +9,7 @@ export const STYLE_ID_MAPPING: Record<string, string> = {
   'style-4': 'd9a3c058-b6f9-4e03-c2d5-af4f9e8b7c3d', // Estilo Educativo 2
   'style-5': 'manual-style', // Estilo Manual
   'style-6': 'manual-style-2', // Estilo Manual 2
+  'style-7': 'multi-avatar-style', // Estilo Multi-Avatar
 };
 
 // Función para obtener el ID interno del estilo

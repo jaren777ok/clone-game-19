@@ -26,52 +26,78 @@ const VideoStyleCard: React.FC<Props> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const getStyleRequirements = (styleId: string) => {
-    if (styleId === 'style-5' || styleId === 'style-6') {
-      // Estilo Manual y Estilo Manual 2 - requieren archivos propios
-      return (
-        <div className="space-y-1">
-          <p className="font-medium text-yellow-400">Requisitos:</p>
-          <p className="text-muted-foreground">1. Se requiere subir 14 imágenes (horizontal o cuadrado)</p>
-          <p className="text-muted-foreground">2. Se requiere subir 5 videos (horizontal o cuadrado)</p>
-          <p className="text-muted-foreground">3. Se requiere Avatar Horizontal</p>
-        </div>
-      );
-    } else if (styleId === 'style-4') {
-      // Estilo Educativo 2 - solo avatar horizontal
-      return (
-        <div className="space-y-1">
-          <p className="font-medium text-yellow-400">Requisitos:</p>
-          <p className="text-muted-foreground">Se requiere Avatar Horizontal</p>
-        </div>
-      );
-    } else if (['style-1', 'style-2', 'style-3'].includes(styleId)) {
-      // Primeros 3 estilos - fondo verde con enlace de descarga
-      return (
-        <div className="space-y-1">
-          <p className="font-medium text-yellow-400">Requisitos:</p>
-          <p className="text-muted-foreground">1. Se requiere <strong>Fondo Verde</strong></p>
-          <p className="text-muted-foreground">
-            <a 
-              href="https://drive.google.com/uc?id=1CkXfUEhw23bDhVmqSWrCMzHhr3IK6oVE&export=download"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fuchsia-400 font-semibold hover:text-fuchsia-300 underline"
-            >
-              Descargar Fondo
-            </a>
-          </p>
-          <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
-        </div>
-      );
-    } else {
-      // Otros estilos - requisitos originales
-      return (
-        <div className="space-y-1">
-          <p className="font-medium text-yellow-400">Requisitos:</p>
-          <p className="text-muted-foreground">1. Se requiere Avatar en Fondo Total Negro</p>
-          <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
-        </div>
-      );
+    switch (styleId) {
+      case 'style-5':
+      case 'style-6':
+        // Estilo Manual y Estilo Manual 2 - requieren archivos propios
+        return (
+          <div className="space-y-1">
+            <p className="font-medium text-yellow-400">Requisitos:</p>
+            <p className="text-muted-foreground">1. Se requiere subir 14 imágenes (horizontal o cuadrado)</p>
+            <p className="text-muted-foreground">2. Se requiere subir 5 videos (horizontal o cuadrado)</p>
+            <p className="text-muted-foreground">3. Se requiere Avatar Horizontal</p>
+          </div>
+        );
+      
+      case 'style-7':
+        return (
+          <div className="space-y-1">
+            <p className="font-medium text-yellow-400">Requisitos:</p>
+            <p className="text-muted-foreground">1. Se requiere Fondo Verde</p>
+            <p className="text-muted-foreground">2. Se requieren 2 Avatars Horizontales</p>
+            <p className="text-muted-foreground">
+              <a 
+                href="https://drive.google.com/file/d/1PJhJJMJAPT8BO1FPk6MKbwKOhQckLZvx/view?usp=drive_link" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Descargar Fondo Verde
+              </a>
+            </p>
+          </div>
+        );
+
+      case 'style-4':
+        // Estilo Educativo 2 - solo avatar horizontal
+        return (
+          <div className="space-y-1">
+            <p className="font-medium text-yellow-400">Requisitos:</p>
+            <p className="text-muted-foreground">Se requiere Avatar Horizontal</p>
+          </div>
+        );
+
+      case 'style-1':
+      case 'style-2':
+      case 'style-3':
+        // Primeros 3 estilos - fondo verde con enlace de descarga
+        return (
+          <div className="space-y-1">
+            <p className="font-medium text-yellow-400">Requisitos:</p>
+            <p className="text-muted-foreground">1. Se requiere <strong>Fondo Verde</strong></p>
+            <p className="text-muted-foreground">
+              <a 
+                href="https://drive.google.com/uc?id=1CkXfUEhw23bDhVmqSWrCMzHhr3IK6oVE&export=download"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-fuchsia-400 font-semibold hover:text-fuchsia-300 underline"
+              >
+                Descargar Fondo
+              </a>
+            </p>
+            <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
+          </div>
+        );
+
+      default:
+        // Otros estilos - requisitos originales
+        return (
+          <div className="space-y-1">
+            <p className="font-medium text-yellow-400">Requisitos:</p>
+            <p className="text-muted-foreground">1. Se requiere Avatar en Fondo Total Negro</p>
+            <p className="text-muted-foreground">2. Se requiere Avatar Horizontal</p>
+          </div>
+        );
     }
   };
 

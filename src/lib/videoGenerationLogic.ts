@@ -1,7 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { FlowState } from '@/types/videoFlow';
 import { saveGenerationState } from '@/lib/videoGeneration';
-import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook, sendToManualWebhook, sendToManualWebhook2 } from '@/lib/webhookUtils';
+import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook, sendToManualWebhook, sendToManualWebhook2, sendToMultiAvatarWebhook } from '@/lib/webhookUtils';
 
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
@@ -16,7 +16,19 @@ export const validateFlowState = (flowState?: FlowState): boolean => {
     );
   }
   
-  // All styles now require subtitleCustomization
+  // For multi-avatar style (style-7), require both avatars
+  if (flowState.selectedStyle?.id === 'style-7') {
+    return !!(
+      flowState.selectedApiKey &&
+      flowState.selectedAvatar &&
+      flowState.selectedSecondAvatar &&
+      flowState.selectedVoice &&
+      flowState.selectedStyle &&
+      flowState.subtitleCustomization
+    );
+  }
+  
+  // All other styles require subtitleCustomization
   return !!(
     flowState.selectedApiKey &&
     flowState.selectedAvatar &&
@@ -159,6 +171,8 @@ export const initiateVideoGeneration = async (
     webhookType = 'veroia';
   } else if (flowState.selectedStyle!.id === 'style-6') {
     webhookType = 'MANUAL2';
+  } else if (flowState.selectedStyle!.id === 'style-7') {
+    webhookType = 'MultiAvatar';
   }
 
   console.log('📤 Enviando payload al webhook (esperando confirmación):', {
@@ -320,6 +334,26 @@ export const initiateVideoGeneration = async (
         manual2Payload, 
         flowState.manualCustomization.sessionId
       );
+    } else if (flowState.selectedStyle!.id === 'style-7') {
+      // Estilo Multi-Avatar
+      console.log('👥 Enviando a webhook Estilo Multi-Avatar:', {
+        requestId: requestId,
+        firstAvatar: flowState.selectedAvatar!.avatar_name,
+        secondAvatar: flowState.selectedSecondAvatar!.avatar_name,
+        apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
+      });
+      
+      // Crear payload especial para multi-avatar
+      const multiAvatarPayload = {
+        ...basePayload,
+        'AvatarID-1': flowState.selectedAvatar!.avatar_id,
+        'AvatarID-2': flowState.selectedSecondAvatar!.avatar_id
+      };
+      
+      // Remover el AvatarID original ya que enviamos AvatarID-1 y AvatarID-2
+      delete multiAvatarPayload.AvatarID;
+      
+      webhookConfirmed = await sendToMultiAvatarWebhook(multiAvatarPayload);
     } else if (flowState.selectedStyle!.id === 'style-2') {
       // Estilo Noticiero - webhook estándar
       console.log('🎥 Enviando a webhook estándar (Estilo Noticiero):', {

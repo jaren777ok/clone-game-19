@@ -201,6 +201,7 @@ export type Database = {
           id: string
           manual_customization: Json | null
           presenter_customization: Json | null
+          second_avatar_data: Json | null
           style_data: Json | null
           subtitle_customization: Json | null
           updated_at: string
@@ -217,6 +218,7 @@ export type Database = {
           id?: string
           manual_customization?: Json | null
           presenter_customization?: Json | null
+          second_avatar_data?: Json | null
           style_data?: Json | null
           subtitle_customization?: Json | null
           updated_at?: string
@@ -233,6 +235,7 @@ export type Database = {
           id?: string
           manual_customization?: Json | null
           presenter_customization?: Json | null
+          second_avatar_data?: Json | null
           style_data?: Json | null
           subtitle_customization?: Json | null
           updated_at?: string

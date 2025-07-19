@@ -89,6 +89,7 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       user_id: user.id,
       api_key_id: flowState.selectedApiKey?.id || null,
       avatar_data: flowState.selectedAvatar ? JSON.parse(JSON.stringify(flowState.selectedAvatar)) : null,
+      second_avatar_data: flowState.selectedSecondAvatar ? JSON.parse(JSON.stringify(flowState.selectedSecondAvatar)) : null,
       voice_data: flowState.selectedVoice ? JSON.parse(JSON.stringify(flowState.selectedVoice)) : null,
       style_data: flowState.selectedStyle ? JSON.parse(JSON.stringify(flowState.selectedStyle)) : null,
       presenter_customization: flowState.presenterCustomization ? JSON.parse(JSON.stringify(flowState.presenterCustomization)) : null,
@@ -265,6 +266,7 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
         created_at: data.heygen_api_keys.created_at
       } : null,
       selectedAvatar: data.avatar_data ? data.avatar_data as unknown as Avatar : null,
+      selectedSecondAvatar: data.second_avatar_data ? data.second_avatar_data as unknown as Avatar : null,
       selectedVoice: data.voice_data ? data.voice_data as unknown as Voice : null,
       selectedStyle: data.style_data ? data.style_data as unknown as VideoStyle : null,
       subtitleCustomization: subtitleCustomization,

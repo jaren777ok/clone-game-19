@@ -18,6 +18,7 @@ export const useVideoCreationFlow = () => {
     step: 'loading',
     selectedApiKey: null,
     selectedAvatar: null,
+    selectedSecondAvatar: null,
     selectedVoice: null,
     selectedStyle: null,
     subtitleCustomization: null,
@@ -85,6 +86,7 @@ export const useVideoCreationFlow = () => {
       selectedApiKey: apiKey,
       step: 'avatar',
       selectedAvatar: null,
+      selectedSecondAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
       subtitleCustomization: null,
@@ -117,8 +119,18 @@ export const useVideoCreationFlow = () => {
   const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
     
-    // All styles now require subtitle customization
-    const needsSubtitleCustomization = true;
+    let nextStep: FlowState['step'];
+    
+    if (style.id === 'style-7') {
+      // Estilo Multi-Avatar - ir a selección del segundo avatar
+      nextStep = 'multi-avatar';
+    } else if (style.id === 'style-5' || style.id === 'style-6') {
+      // Estilos Manual - ir directo a neurocopy
+      nextStep = 'neurocopy';
+    } else {
+      // Otros estilos - ir a personalización de subtítulos
+      nextStep = 'subtitle-customization';
+    }
     
     setFlowState(prev => ({
       ...prev,
@@ -127,7 +139,16 @@ export const useVideoCreationFlow = () => {
       presenterCustomization: presenterCustomization || null,
       apiVersionCustomization: apiVersionCustomization || null,
       manualCustomization: manualCustomization || null,
-      step: needsSubtitleCustomization ? 'subtitle-customization' : 'neurocopy'
+      step: nextStep
+    }));
+  }, []);
+
+  const selectSecondAvatar = useCallback((avatar: Avatar) => {
+    console.log('👤 Seleccionando Segundo Avatar:', avatar.avatar_name);
+    setFlowState(prev => ({
+      ...prev,
+      selectedSecondAvatar: avatar,
+      step: 'voice'
     }));
   }, []);
 
@@ -177,6 +198,7 @@ export const useVideoCreationFlow = () => {
       step: 'api-key',
       selectedApiKey: null,
       selectedAvatar: null,
+      selectedSecondAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
       subtitleCustomization: null,
@@ -197,6 +219,7 @@ export const useVideoCreationFlow = () => {
     loadApiKeys,
     selectApiKey,
     selectAvatar,
+    selectSecondAvatar,
     selectVoice,
     selectStyle,
     selectSubtitleCustomization,
