@@ -31,6 +31,76 @@ export const determineInitialStep = (
     const savedKeyExists = availableKeys.some(key => key.id === savedState.selectedApiKey?.id);
     
     if (savedKeyExists) {
+      console.log('🔍 Analizando estado guardado:', {
+        selectedStyle: savedState.selectedStyle?.id,
+        hasFirstAvatar: !!savedState.selectedAvatar,
+        hasSecondAvatar: !!savedState.selectedSecondAvatar,
+        hasVoice: !!savedState.selectedVoice,
+        hasSubtitleCustomization: !!savedState.subtitleCustomization,
+        hasGeneratedScript: !!savedState.generatedScript
+      });
+
+      // Manejo especial para style-7 (Multi-Avatar)
+      if (savedState.selectedStyle?.id === 'style-7') {
+        console.log('🎭 Detectado estilo Multi-Avatar (style-7)');
+        
+        // Si tiene primer avatar, voz, estilo pero NO segundo avatar → ir a multi-avatar
+        if (savedState.selectedAvatar && 
+            savedState.selectedVoice && 
+            savedState.selectedStyle && 
+            !savedState.selectedSecondAvatar) {
+          console.log('➡️ Multi-Avatar: Falta segundo avatar, dirigiendo a multi-avatar');
+          return {
+            ...savedState,
+            step: 'multi-avatar',
+            generatedScript: null
+          };
+        }
+        
+        // Si tiene ambos avatares pero no personalización de subtítulos
+        if (savedState.selectedAvatar && 
+            savedState.selectedSecondAvatar && 
+            savedState.selectedVoice && 
+            savedState.selectedStyle && 
+            !savedState.subtitleCustomization) {
+          console.log('➡️ Multi-Avatar: Ambos avatares presentes, dirigiendo a subtitle-customization');
+          return {
+            ...savedState,
+            step: 'subtitle-customization',
+            generatedScript: null
+          };
+        }
+        
+        // Si tiene todo incluyendo personalización de subtítulos pero no script
+        if (savedState.selectedAvatar && 
+            savedState.selectedSecondAvatar && 
+            savedState.selectedVoice && 
+            savedState.selectedStyle && 
+            savedState.subtitleCustomization && 
+            !savedState.generatedScript) {
+          console.log('➡️ Multi-Avatar: Todo configurado, dirigiendo a neurocopy');
+          return {
+            ...savedState,
+            step: 'neurocopy',
+            generatedScript: null
+          };
+        }
+        
+        // Si tiene todo incluyendo script generado → ir a generator
+        if (savedState.selectedAvatar && 
+            savedState.selectedSecondAvatar && 
+            savedState.selectedVoice && 
+            savedState.selectedStyle && 
+            savedState.subtitleCustomization && 
+            savedState.generatedScript) {
+          console.log('➡️ Multi-Avatar: Configuración completa, dirigiendo a generator');
+          return {
+            ...savedState,
+            step: 'generator'
+          };
+        }
+      }
+      
       // For manual styles (style-5 and style-6), check if manual customization is complete
       if ((savedState.selectedStyle?.id === 'style-5' || savedState.selectedStyle?.id === 'style-6') && savedState.manualCustomization && savedState.apiVersionCustomization) {
         console.log('📦 Found saved manual customization, checking local files...');
@@ -65,8 +135,8 @@ export const determineInitialStep = (
         }
       }
       
-      // For non-manual styles
-      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle) {
+      // For non-manual styles (excluding style-7 which is handled above)
+      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle && savedState.selectedStyle.id !== 'style-7') {
         // If has all selections including generated script, go to generator
         if (savedState.generatedScript) {
           return {

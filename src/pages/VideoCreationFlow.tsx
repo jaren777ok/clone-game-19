@@ -37,25 +37,32 @@ const VideoCreationFlow = () => {
         goToStep('api-key');
         break;
       case 'multi-avatar':
-        goToStep('avatar');
+        // Para Multi-Avatar, regresar a style selection
+        console.log('🔄 Multi-Avatar: Regresando a style desde multi-avatar');
+        goToStep('style');
         break;
       case 'voice':
-        if (flowState.selectedSecondAvatar) {
-          goToStep('multi-avatar');
-        } else {
-          goToStep('avatar');
-        }
+        goToStep('avatar');
         break;
       case 'style':
         goToStep('voice');
         break;
       case 'subtitle-customization':
-        goToStep('style');
+        // Si es Multi-Avatar y tiene segundo avatar, regresar a multi-avatar
+        if (flowState.selectedStyle?.id === 'style-7' && flowState.selectedSecondAvatar) {
+          console.log('🔄 Multi-Avatar: Regresando a multi-avatar desde subtitle-customization');
+          goToStep('multi-avatar');
+        } else {
+          // Para otros estilos, regresar a style
+          goToStep('style');
+        }
         break;
       case 'neurocopy':
         if (flowState.selectedStyle?.id === 'style-5' || flowState.selectedStyle?.id === 'style-6') {
+          // Estilos manuales van directo desde style
           goToStep('style');
         } else {
+          // Otros estilos vienen desde subtitle-customization
           goToStep('subtitle-customization');
         }
         break;
@@ -70,7 +77,11 @@ const VideoCreationFlow = () => {
 
   const handleProceedToGenerator = () => {
     // Validar que tenemos todas las selecciones necesarias incluyendo el script
-    if (flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle && flowState.generatedScript) {
+    const isValidForMultiAvatar = flowState.selectedStyle?.id === 'style-7' 
+      ? !!(flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedSecondAvatar && flowState.selectedVoice && flowState.selectedStyle && flowState.generatedScript)
+      : !!(flowState.selectedApiKey && flowState.selectedAvatar && flowState.selectedVoice && flowState.selectedStyle && flowState.generatedScript);
+
+    if (isValidForMultiAvatar) {
       console.log('✅ Navegando al generador con configuración completa');
       // Navegar directamente pasando el estado via location
       navigate('/crear-video-generator', { 

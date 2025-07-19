@@ -46,6 +46,7 @@ export const useVideoCreationFlow = () => {
           step: initialState.step,
           hasApiKey: !!initialState.selectedApiKey,
           hasAvatar: !!initialState.selectedAvatar,
+          hasSecondAvatar: !!initialState.selectedSecondAvatar,
           hasVoice: !!initialState.selectedVoice,
           hasStyle: !!initialState.selectedStyle,
           hasScript: !!initialState.generatedScript
@@ -109,10 +110,11 @@ export const useVideoCreationFlow = () => {
 
   const selectSecondAvatar = useCallback((avatar: Avatar) => {
     console.log('👤 Seleccionando Segundo Avatar:', avatar.avatar_name);
+    console.log('🔄 Multi-Avatar: Navegando directamente a subtitle-customization');
     setFlowState(prev => ({
       ...prev,
       selectedSecondAvatar: avatar,
-      step: 'voice'
+      step: 'subtitle-customization'
     }));
   }, []);
 
@@ -132,6 +134,7 @@ export const useVideoCreationFlow = () => {
     
     if (style.id === 'style-7') {
       // Estilo Multi-Avatar - ir a selección del segundo avatar
+      console.log('🔄 Multi-Avatar detectado: navegando a multi-avatar');
       nextStep = 'multi-avatar';
     } else if (style.id === 'style-5' || style.id === 'style-6') {
       // Estilos Manual - ir directo a neurocopy
@@ -151,7 +154,6 @@ export const useVideoCreationFlow = () => {
       step: nextStep
     }));
   }, []);
-
 
   const selectSubtitleCustomization = useCallback((subtitleCustomization: SubtitleCustomization) => {
     console.log('📝 Seleccionando personalización de subtítulos:', subtitleCustomization);
@@ -184,7 +186,6 @@ export const useVideoCreationFlow = () => {
     console.log('🔄 Navegando a paso:', step);
     setFlowState(prev => ({ ...prev, step }));
   }, []);
-
 
   const resetFlow = useCallback(async () => {
     console.log('🔄 Reiniciando flujo completo...');
