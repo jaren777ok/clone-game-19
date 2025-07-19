@@ -107,6 +107,15 @@ export const useVideoCreationFlow = () => {
     }));
   }, []);
 
+  const selectSecondAvatar = useCallback((avatar: Avatar) => {
+    console.log('👤 Seleccionando Segundo Avatar:', avatar.avatar_name);
+    setFlowState(prev => ({
+      ...prev,
+      selectedSecondAvatar: avatar,
+      step: 'voice'
+    }));
+  }, []);
+
   const selectVoice = useCallback((voice: Voice) => {
     console.log('🎤 Seleccionando Voz:', voice.voice_name);
     setFlowState(prev => ({
@@ -143,14 +152,6 @@ export const useVideoCreationFlow = () => {
     }));
   }, []);
 
-  const selectSecondAvatar = useCallback((avatar: Avatar) => {
-    console.log('👤 Seleccionando Segundo Avatar:', avatar.avatar_name);
-    setFlowState(prev => ({
-      ...prev,
-      selectedSecondAvatar: avatar,
-      step: 'voice'
-    }));
-  }, []);
 
   const selectSubtitleCustomization = useCallback((subtitleCustomization: SubtitleCustomization) => {
     console.log('📝 Seleccionando personalización de subtítulos:', subtitleCustomization);
