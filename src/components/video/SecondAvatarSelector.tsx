@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -151,11 +152,11 @@ const SecondAvatarSelector: React.FC<Props> = ({
         </div>
 
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight px-4">
+          <div className="text-center mb-8 sm:mb-12 space-y-4 sm:space-y-6 px-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight pb-2">
               Selecciona el Segundo Avatar
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4 leading-relaxed">
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto leading-relaxed">
               Elige el segundo avatar para el estilo Multi-Avatar
             </p>
             {totalAvatars > 0 && (
