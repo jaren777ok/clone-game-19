@@ -91,6 +91,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   const [animationKey, setAnimationKey] = useState(0);
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
   const [currentWordInGroup, setCurrentWordInGroup] = useState(0);
+  const [currentWordCount, setCurrentWordCount] = useState(1); // Para efecto align
   const sampleText = "La Mente Humana es muy Rara";
 
   // Trigger animation when effects change
@@ -98,6 +99,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     setAnimationKey(prev => prev + 1);
     setCurrentGroupIndex(0);
     setCurrentWordInGroup(0);
+    setCurrentWordCount(1);
   }, [customization.subtitleEffect, customization.placementEffect]);
 
   // Auto-manage hasBackgroundColor for highlight and karaoke effects
@@ -130,6 +132,24 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       groups.push(words.slice(i, i + 3));
     }
     
+    // Special logic for "align" effect - sequential word appearance
+    if (customization.placementEffect === 'align') {
+      const timer = setInterval(() => {
+        if (currentWordCount < 3) {
+          setCurrentWordCount(prev => prev + 1);
+        } else {
+          // Move to next group and reset word count
+          const nextGroupIndex = (currentGroupIndex + 1) % groups.length;
+          setCurrentGroupIndex(nextGroupIndex);
+          setCurrentWordCount(1);
+          setAnimationKey(Date.now());
+        }
+      }, 800); // 0.8 seconds per word
+      
+      return () => clearInterval(timer);
+    }
+    
+    // Original logic for other effects
     if (groups.length > 1) {
       const timer = setInterval(() => {
         setCurrentGroupIndex(prev => (prev + 1) % groups.length);
@@ -137,7 +157,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       
       return () => clearInterval(timer);
     }
-  }, [sampleText, animationKey]);
+  }, [sampleText, animationKey, customization.placementEffect, currentWordCount, currentGroupIndex]);
 
   // Auto-cycle for highlight + static and karaoke + static effects: groups of 3 words with sequential highlighting
   useEffect(() => {
@@ -359,22 +379,22 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       );
     }
     
-    // For "align" effect: show words one by one within the group
+    // For "align" effect: show words sequentially (1 → 2 → 3) and center them
     if (customization.placementEffect === 'align') {
+      const wordsToShow = currentGroup.slice(0, currentWordCount);
       return (
-        <div className="inline-flex flex-wrap gap-2">
-          {currentGroup.map((word, index) => (
-            <div
-              key={`${animationKey}-${currentGroupIndex}-${index}`}
-              style={{
-                ...getAnimationStyles(),
-                animationDelay: `${index * 0.3}s`,
-              }}
-              className={getPreviewClasses()}
-            >
-              {word}
-            </div>
-          ))}
+        <div className="flex justify-center items-center">
+          <div className="inline-flex gap-2 justify-center text-center">
+            {wordsToShow.map((word, index) => (
+              <div
+                key={`align-${currentGroupIndex}-${index}-${animationKey}`}
+                style={getAnimationStyles()}
+                className={`${getPreviewClasses()} animate-fade-in`}
+              >
+                {word}
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
