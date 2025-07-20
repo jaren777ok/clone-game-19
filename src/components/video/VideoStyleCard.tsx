@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,7 @@ const VideoStyleCard: React.FC<Props> = ({
             <p className="text-muted-foreground">1. UN AVATAR normal</p>
             <p className="text-muted-foreground">2. El segundo AVATAR con FONDO VERDE</p>
             <p className="text-muted-foreground">
-              <a href="https://drive.google.com/file/d/1PJhJJMJAPT8BO1FPk6MKbwKOhQckLZvx/view?usp=drive_link" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              <a href="https://drive.google.com/uc?id=1Fq2RtxL9J4hYkhYBsmLOGQbb1dd2N3TD&export=download" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                 Descargar Fondo Verde
               </a>
             </p>
