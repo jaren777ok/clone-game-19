@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { FlowState } from '@/types/videoFlow';
 import { clearFlowState } from '@/utils/videoFlowUtils';
 import { hasReachedPollingTime } from '@/lib/countdownUtils';
+import { useVideoVerification } from '@/hooks/useVideoVerification';
 
 const VideoGeneratorFinal = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const VideoGeneratorFinal = () => {
   const { flowState: currentFlowState, goToStep } = useVideoCreationFlow();
   const [effectiveFlowState, setEffectiveFlowState] = useState<FlowState | null>(null);
   const { state, handlers } = useVideoGenerator({ flowState: effectiveFlowState });
+  const { forceVideoCheck } = useVideoVerification();
 
   // Determine effective flow state
   useEffect(() => {
@@ -70,6 +72,40 @@ const VideoGeneratorFinal = () => {
     }
   }, [effectiveFlowState?.generatedScript, state.script, handlers]);
 
+  // CRITICAL: Real-time automatic video detection while generating
+  useEffect(() => {
+    let realTimeCheckInterval: NodeJS.Timeout | null = null;
+    
+    if (state.isGenerating && !state.videoResult) {
+      console.log('🚨 INICIANDO VERIFICACIÓN AUTOMÁTICA EN TIEMPO REAL - Cada 30 segundos');
+      
+      const realTimeCheck = async () => {
+        if (!state.isGenerating || state.videoResult) return;
+        
+        console.log('🔍 Verificación automática en tiempo real ejecutándose...');
+        const success = await forceVideoCheck(handlers.setVideoResult, handlers.setIsGenerating);
+        
+        if (success) {
+          console.log('🎉 VIDEO ENCONTRADO CON VERIFICACIÓN AUTOMÁTICA EN TIEMPO REAL');
+          if (realTimeCheckInterval) {
+            clearInterval(realTimeCheckInterval);
+            realTimeCheckInterval = null;
+          }
+        }
+      };
+      
+      // Start checking immediately and then every 30 seconds
+      realTimeCheck();
+      realTimeCheckInterval = setInterval(realTimeCheck, 30 * 1000);
+    }
+    
+    return () => {
+      if (realTimeCheckInterval) {
+        clearInterval(realTimeCheckInterval);
+      }
+    };
+  }, [state.isGenerating, state.videoResult, forceVideoCheck, handlers]);
+
   const handleBack = () => {
     goToStep('neurocopy');
     navigate('/crear-video');
@@ -85,7 +121,7 @@ const VideoGeneratorFinal = () => {
   // CRITICAL EFFECT: Clean configuration when video is ready
   useEffect(() => {
     if (state.videoResult) {
-      console.log('🎉 VideoGeneratorFinal - Video completado detectado:', {
+      console.log('🎉 VideoGeneratorFinal - Video completado detectado AUTOMÁTICAMENTE:', {
         videoUrl: state.videoResult,
         isGenerating: state.isGenerating,
         timestamp: new Date().toISOString()
@@ -95,7 +131,7 @@ const VideoGeneratorFinal = () => {
   }, [state.videoResult]);
 
   // Enhanced state logging
-  console.log('🔍 VideoGeneratorFinal - Estado CRÍTICO:', {
+  console.log('🔍 VideoGeneratorFinal - Estado CRÍTICO MEJORADO:', {
     hasVideoResult: !!state.videoResult,
     videoResult: state.videoResult,
     isGenerating: state.isGenerating,
@@ -104,7 +140,7 @@ const VideoGeneratorFinal = () => {
     selectedStyle: effectiveFlowState?.selectedStyle,
     selectedStyleId: effectiveFlowState?.selectedStyle?.id,
     hasHandleGenerateVideoWithFiles: !!handlers.handleGenerateVideoWithFiles,
-    renderDecision: state.videoResult ? 'SUCCESS_SCREEN' : (state.isGenerating ? 'PROCESSING_SCREEN' : 'SCRIPT_SCREEN')
+    renderDecision: state.videoResult ? 'SUCCESS_SCREEN_AUTO' : (state.isGenerating ? 'PROCESSING_SCREEN' : 'SCRIPT_SCREEN')
   });
 
   // If no effective configuration yet, show loading
@@ -121,9 +157,9 @@ const VideoGeneratorFinal = () => {
     );
   }
 
-  // CRITICAL PRIORITY: If videoResult exists, show success screen IMMEDIATELY
+  // CRITICAL PRIORITY: If videoResult exists, show success screen IMMEDIATELY AND AUTOMATICALLY
   if (state.videoResult) {
-    console.log('🎉 VideoGeneratorFinal - MOSTRANDO PANTALLA DE ÉXITO INMEDIATAMENTE con video:', state.videoResult);
+    console.log('🎉 VideoGeneratorFinal - MOSTRANDO PANTALLA DE ÉXITO AUTOMÁTICAMENTE con video:', state.videoResult);
     return (
       <VideoResult 
         videoUrl={state.videoResult} 
@@ -134,7 +170,7 @@ const VideoGeneratorFinal = () => {
 
   // Secondary check: If generating, show processing screen
   if (state.isGenerating) {
-    console.log('🔄 VideoGeneratorFinal - Mostrando pantalla de procesamiento');
+    console.log('🔄 VideoGeneratorFinal - Mostrando pantalla de procesamiento con verificación automática activa');
     
     // Determine if we should show manual check button (during intensive verification phase)
     const startTime = Date.now() - (state.totalTime - state.timeRemaining) * 1000;

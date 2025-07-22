@@ -50,7 +50,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
 
   // Enhanced wrapper functions with multi-strategy verification
   const startCountdown = (requestId: string, setVideoResultParam: (result: string) => void, setIsGeneratingParam: (generating: boolean) => void, customStartTime?: number) => {
-    console.log('🚀 useVideoGenerator - Iniciando countdown MEJORADO con verificación multi-estrategia:', {
+    console.log('🚀 useVideoGenerator - Iniciando countdown MEJORADO con verificación automática:', {
       requestId,
       customStartTime,
       hasSetVideoResult: !!setVideoResultParam,
@@ -59,7 +59,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     baseStartCountdown(requestId, setVideoResultParam, setIsGeneratingParam, customStartTime);
   };
 
-  const startPeriodicChecking = (requestId: string) => {
+  const startPeriodicChecking = () => {
     baseStartPeriodicChecking();
   };
 
@@ -88,10 +88,10 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     );
   };
 
-  // Critical effect to monitor videoResult changes
+  // CRITICAL: Enhanced effect to monitor videoResult changes
   useEffect(() => {
     if (videoResult) {
-      console.log('🎉 useVideoGenerator - videoResult actualizado (CRÍTICO):', {
+      console.log('🎉 useVideoGenerator - videoResult actualizado (CRÍTICO - AUTO DISPLAY):', {
         videoUrl: videoResult,
         isGenerating: isGenerating,
         timestamp: new Date().toISOString()
@@ -105,21 +105,21 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   }, [videoResult, isGenerating]);
 
-  // Enhanced effect to periodically check for completed videos during generation
+  // CRITICAL: Enhanced background checking with improved timing
   useEffect(() => {
     let backgroundCheckInterval: NodeJS.Timeout | null = null;
     
     if (isGenerating && currentRequestId && !videoResult) {
-      console.log('🔄 Iniciando verificación de fondo cada 30 segundos para detectar videos completados');
+      console.log('🔄 Iniciando verificación de fondo MEJORADA cada 30 segundos para detectar videos completados');
       
       const backgroundCheck = async () => {
         if (!isGenerating || videoResult) return;
         
-        console.log('🔍 Verificación de fondo ejecutándose...');
+        console.log('🔍 Verificación de fondo CRÍTICA ejecutándose...');
         const success = await forceVideoCheck(setVideoResult, setIsGenerating);
         
         if (success) {
-          console.log('✅ Video encontrado en verificación de fondo');
+          console.log('✅ Video encontrado en verificación de fondo CRÍTICA');
           if (backgroundCheckInterval) {
             clearInterval(backgroundCheckInterval);
             backgroundCheckInterval = null;
@@ -127,13 +127,13 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         }
       };
       
-      // Start background checking after 5 minutes
+      // Start background checking after 3 minutes (earlier than before)
       setTimeout(() => {
         if (isGenerating && !videoResult) {
           backgroundCheck();
           backgroundCheckInterval = setInterval(backgroundCheck, 30 * 1000);
         }
-      }, 5 * 60 * 1000);
+      }, 3 * 60 * 1000);
     }
     
     return () => {
@@ -532,7 +532,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   };
 
   // Enhanced logging
-  console.log('🔍 useVideoGenerator - Estado MEJORADO:', {
+  console.log('🔍 useVideoGenerator - Estado CRÍTICO MEJORADO:', {
     isGenerating,
     hasVideoResult: !!videoResult,
     videoResultUrl: videoResult,

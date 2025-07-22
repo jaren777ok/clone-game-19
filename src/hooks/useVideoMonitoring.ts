@@ -17,6 +17,7 @@ export const useVideoMonitoring = () => {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const recoveryIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const intensiveCheckRef = useRef<NodeJS.Timeout | null>(null);
+  const backgroundCheckRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(false);
 
   const updateTimeRemaining = useCallback((remaining: number) => {
@@ -25,7 +26,7 @@ export const useVideoMonitoring = () => {
 
   const clearAllIntervals = useCallback(() => {
     console.log('🧹 Limpiando todos los intervalos de monitoreo');
-    [pollingIntervalRef, countdownIntervalRef, recoveryIntervalRef, intensiveCheckRef].forEach(ref => {
+    [pollingIntervalRef, countdownIntervalRef, recoveryIntervalRef, intensiveCheckRef, backgroundCheckRef].forEach(ref => {
       if (ref.current) {
         clearInterval(ref.current);
         ref.current = null;
@@ -34,7 +35,7 @@ export const useVideoMonitoring = () => {
   }, []);
 
   const videoDetected = useCallback(async (videoData: any, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void) => {
-    console.log('🎉 VIDEO DETECTADO - FORZANDO ACTUALIZACIÓN INMEDIATA:', {
+    console.log('🎉 VIDEO DETECTADO - ACTUALIZANDO UI INMEDIATAMENTE:', {
       videoUrl: videoData.video_url,
       title: videoData.title,
       requestId: videoData.request_id,
@@ -63,7 +64,7 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🎯 VERIFICACIÓN FINAL MEJORADA - Timer llegó a 00:00');
+    console.log('🎯 VERIFICACIÓN FINAL CRÍTICA - Timer llegó a 00:00');
     
     try {
       // Use multi-strategy verification
@@ -80,7 +81,7 @@ export const useVideoMonitoring = () => {
       handleVideoNotFound(setVideoResult, setIsGenerating);
       
     } catch (error) {
-      console.error('❌ Error en verificación final mejorada:', error);
+      console.error('❌ Error en verificación final:', error);
       handleVideoNotFound(setVideoResult, setIsGenerating);
     }
   }, [checkRecentCompletedVideos, videoDetected]);
@@ -102,7 +103,7 @@ export const useVideoMonitoring = () => {
     });
   }, [toast]);
 
-  // Enhanced countdown with intensive checking in final minutes
+  // CRITICAL: Enhanced countdown with automatic verification
   const startCountdown = useCallback((
     requestId: string, 
     setVideoResult: (result: string) => void,
@@ -111,7 +112,7 @@ export const useVideoMonitoring = () => {
     isRecovering?: boolean
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando monitoreo MEJORADO con verificación intensiva:', {
+    console.log('🚀 INICIANDO MONITOREO AUTOMÁTICO MEJORADO:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
       userId: user?.id,
@@ -121,7 +122,7 @@ export const useVideoMonitoring = () => {
     setGenerationStartTime(startTime);
     isActiveRef.current = true;
     
-    // Main countdown timer
+    // CRITICAL: Main countdown timer with guaranteed final verification
     const updateCountdown = async () => {
       if (!isActiveRef.current) return;
       
@@ -129,9 +130,9 @@ export const useVideoMonitoring = () => {
       const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
       updateTimeRemaining(remaining);
       
-      // When timer reaches 00:00 - execute enhanced final verification
+      // When timer reaches 00:00 - GUARANTEED final verification
       if (remaining <= 0) {
-        console.log('⏰ TIMER LLEGÓ A 00:00 - EJECUTANDO VERIFICACIÓN FINAL MEJORADA');
+        console.log('🚨 TIMER LLEGÓ A 00:00 - EJECUTANDO VERIFICACIÓN FINAL GARANTIZADA');
         
         if (countdownIntervalRef.current) {
           clearInterval(countdownIntervalRef.current);
@@ -146,7 +147,30 @@ export const useVideoMonitoring = () => {
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-    // Intensive checking in the last 2 minutes (every 10 seconds)
+    // CRITICAL: Background verification every 30 seconds from minute 5
+    setTimeout(() => {
+      if (!isActiveRef.current) return;
+      
+      console.log('🔄 INICIANDO VERIFICACIÓN DE FONDO - Cada 30 segundos desde minuto 5');
+      
+      const backgroundCheck = async () => {
+        if (!isActiveRef.current) return;
+        
+        console.log('🔍 Verificación de fondo ejecutándose...');
+        const videoData = await checkRecentCompletedVideos();
+        
+        if (videoData && isActiveRef.current) {
+          console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN DE FONDO:', videoData);
+          await videoDetected(videoData, setVideoResult, setIsGenerating);
+        }
+      };
+      
+      backgroundCheck();
+      backgroundCheckRef.current = setInterval(backgroundCheck, 30 * 1000); // Every 30 seconds
+      
+    }, 5 * 60 * 1000); // Start after 5 minutes
+
+    // CRITICAL: Intensive checking in the last 2 minutes (every 10 seconds)
     setTimeout(() => {
       if (!isActiveRef.current) return;
       
