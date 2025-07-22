@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { FlowState, VideoStyle, Avatar, Voice, ApiVersionCustomization, SubtitleCustomization } from '@/types/videoFlow';
+import { FlowState, VideoStyle, Avatar, Voice, ApiVersionCustomization, SubtitleCustomization, HeyGenApiKey } from '@/types/videoFlow';
 import { getStyleInternalId } from '@/utils/styleMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,39 +46,72 @@ const defaultVideoStyles: VideoStyle[] = [
 
 export const useVideoCreationFlow = () => {
   const [flowState, setFlowState] = useState<FlowState>({
-    step: 'api-key',
-    videoStyles: defaultVideoStyles,
-    apiKey: '',
+    step: 'loading',
+    selectedApiKey: null,
     selectedAvatar: null,
+    selectedSecondAvatar: null,
     selectedVoice: null,
     selectedStyle: null,
-    videoScript: '',
     subtitleCustomization: null,
-    manualCustomization: null,
-    selectedSecondAvatar: null
+    generatedScript: null,
+    cardCustomization: null,
+    presenterCustomization: null,
+    apiVersionCustomization: null,
+    manualCustomization: null
   });
+
+  const [apiKeys, setApiKeys] = useState<HeyGenApiKey[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const loadApiKeys = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('heygen_api_keys')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setApiKeys(data || []);
+    } catch (error) {
+      console.error('Error loading API keys:', error);
+    }
+  };
+
   useEffect(() => {
-    const loadSavedConfiguration = async () => {
-      if (!user?.id) return;
+    const initializeFlow = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
 
       try {
-        console.log('🔄 Cargando configuración guardada para usuario:', user.id);
+        console.log('🔄 Inicializando flujo para usuario:', user.id);
         
+        // Cargar API keys
+        await loadApiKeys();
+        
+        // Cargar configuración guardada
         const { data: savedConfig, error } = await supabase
-          .from('video_configurations')
-          .select('*')
+          .from('user_video_configs')
+          .select(`
+            *,
+            heygen_api_keys:api_key_id (
+              id,
+              api_key_name,
+              api_key_encrypted,
+              created_at
+            )
+          `)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (error) {
-          if (error.code === 'PGRST116') {
-            console.log('📝 No hay configuración guardada, iniciando desde cero');
-            return;
-          }
+        if (error && error.code !== 'PGRST116') {
           throw error;
         }
 
@@ -86,16 +120,23 @@ export const useVideoCreationFlow = () => {
           
           // Reconstruir el estado desde la configuración guardada
           const newFlowState: FlowState = {
-            step: savedConfig.current_step || 'api-key',
-            videoStyles: defaultVideoStyles,
-            apiKey: '', // No guardar API key por seguridad
-            selectedAvatar: savedConfig.selected_avatar || null,
-            selectedVoice: savedConfig.selected_voice || null,
-            selectedStyle: savedConfig.selected_style || null,
-            videoScript: savedConfig.video_script || '',
-            subtitleCustomization: savedConfig.subtitle_customization_saved || null,
-            manualCustomization: savedConfig.manual_customization_preview || null,
-            selectedSecondAvatar: savedConfig.selected_second_avatar || null
+            step: (savedConfig.current_step as FlowState['step']) || 'api-key',
+            selectedApiKey: savedConfig.heygen_api_keys ? {
+              id: savedConfig.heygen_api_keys.id,
+              api_key_name: savedConfig.heygen_api_keys.api_key_name,
+              api_key_encrypted: savedConfig.heygen_api_keys.api_key_encrypted,
+              created_at: savedConfig.heygen_api_keys.created_at
+            } : null,
+            selectedAvatar: savedConfig.avatar_data || null,
+            selectedSecondAvatar: savedConfig.second_avatar_data || null,
+            selectedVoice: savedConfig.voice_data || null,
+            selectedStyle: savedConfig.style_data || null,
+            subtitleCustomization: savedConfig.subtitle_customization || null,
+            generatedScript: savedConfig.generated_script || null,
+            cardCustomization: savedConfig.card_customization || null,
+            presenterCustomization: savedConfig.presenter_customization || null,
+            apiVersionCustomization: null,
+            manualCustomization: savedConfig.manual_customization || null
           };
 
           setFlowState(newFlowState);
@@ -108,13 +149,19 @@ export const useVideoCreationFlow = () => {
               duration: 3000
             });
           }
+        } else {
+          console.log('📝 No hay configuración guardada, iniciando desde api-key');
+          setFlowState(prev => ({ ...prev, step: 'api-key' }));
         }
       } catch (error) {
-        console.error('❌ Error cargando configuración:', error);
+        console.error('❌ Error inicializando flujo:', error);
+        setFlowState(prev => ({ ...prev, step: 'api-key' }));
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadSavedConfiguration();
+    initializeFlow();
   }, [user?.id, toast]);
 
   const saveConfiguration = async (state: FlowState) => {
@@ -123,51 +170,33 @@ export const useVideoCreationFlow = () => {
     try {
       const configData = {
         user_id: user.id,
+        api_key_id: state.selectedApiKey?.id || null,
+        avatar_data: state.selectedAvatar,
+        second_avatar_data: state.selectedSecondAvatar,
+        voice_data: state.selectedVoice,
+        style_data: state.selectedStyle,
+        presenter_customization: state.presenterCustomization,
+        card_customization: state.cardCustomization,
+        subtitle_customization: state.subtitleCustomization,
+        generated_script: state.generatedScript,
         current_step: state.step,
-        selected_avatar: state.selectedAvatar,
-        selected_voice: state.selectedVoice,
-        selected_style: state.selectedStyle,
-        video_script: state.videoScript,
-        subtitle_customization_saved: state.subtitleCustomization,
-        manual_customization_preview: state.manualCustomization,
-        selected_second_avatar: state.selectedSecondAvatar,
-        has_subtitle_customization: !!state.subtitleCustomization,
-        has_manual_customization: !!state.manualCustomization
+        manual_customization: state.manualCustomization,
+        updated_at: new Date().toISOString()
       };
 
-      console.log('💾 Guardando configuración de video en Supabase:', {
+      console.log('💾 Guardando configuración:', {
         userId: user.id,
         step: state.step,
-        hasApiKey: !!state.apiKey,
+        hasApiKey: !!state.selectedApiKey,
         hasAvatar: !!state.selectedAvatar,
         hasVoice: !!state.selectedVoice,
         hasStyle: !!state.selectedStyle,
-        hasScript: !!state.videoScript,
-        hasSubtitleCustomization: !!state.subtitleCustomization,
-        subtitleCustomizationDetails: state.subtitleCustomization
-      });
-
-      const debugData = {
-        subtitle_customization_exists: !!state.subtitleCustomization,
-        subtitle_customization_preview: state.subtitleCustomization ? {
-          fontFamily: state.subtitleCustomization.fontFamily,
-          subtitleEffect: state.subtitleCustomization.subtitleEffect,
-          textColor: state.subtitleCustomization.textColor
-        } : null,
-        current_step: state.step,
-        has_manual_customization: !!state.manualCustomization
-      };
-      
-      console.log('🔍 DEBUG - Datos a guardar en Supabase:', debugData);
-
-      console.log('🔄 Ejecutando upsert en Supabase...', {
-        has_manual_customization: !!state.manualCustomization,
-        current_step: state.step,
-        has_subtitle_customization: !!state.subtitleCustomization
+        hasScript: !!state.generatedScript,
+        hasSubtitleCustomization: !!state.subtitleCustomization
       });
 
       const { data, error } = await supabase
-        .from('video_configurations')
+        .from('user_video_configs')
         .upsert(configData, { 
           onConflict: 'user_id',
           ignoreDuplicates: false
@@ -177,35 +206,53 @@ export const useVideoCreationFlow = () => {
 
       if (error) throw error;
       
-      console.log('✅ Configuración de video guardada exitosamente:', data);
+      console.log('✅ Configuración guardada exitosamente:', data);
     } catch (error) {
       console.error('❌ Error guardando configuración:', error);
     }
   };
 
-  const navigateToStep = (step: FlowState['step']) => {
+  const goToStep = (step: FlowState['step']) => {
     console.log('🔄 Navegando a paso:', step);
     const newState = { ...flowState, step };
     setFlowState(newState);
     saveConfiguration(newState);
   };
 
-  const setApiKey = (apiKey: string) => {
-    const newState = { ...flowState, apiKey };
+  const selectApiKey = (apiKey: HeyGenApiKey) => {
+    const newState = { ...flowState, selectedApiKey: apiKey };
     setFlowState(newState);
-    // No guardamos la API key por seguridad
+    saveConfiguration(newState);
+    
+    // Navegar automáticamente al siguiente paso
+    setTimeout(() => goToStep('avatar'), 100);
   };
 
   const selectAvatar = (avatar: Avatar) => {
     const newState = { ...flowState, selectedAvatar: avatar };
     setFlowState(newState);
     saveConfiguration(newState);
+    
+    // Navegar automáticamente al siguiente paso
+    setTimeout(() => goToStep('voice'), 100);
+  };
+
+  const selectSecondAvatar = (avatar: Avatar) => {
+    const newState = { ...flowState, selectedSecondAvatar: avatar };
+    setFlowState(newState);
+    saveConfiguration(newState);
+    
+    // Navegar automáticamente al siguiente paso
+    setTimeout(() => goToStep('subtitle-customization'), 100);
   };
 
   const selectVoice = (voice: Voice) => {
     const newState = { ...flowState, selectedVoice: voice };
     setFlowState(newState);
     saveConfiguration(newState);
+    
+    // Navegar automáticamente al siguiente paso
+    setTimeout(() => goToStep('style'), 100);
   };
 
   const selectStyle = (style: VideoStyle) => {
@@ -213,114 +260,82 @@ export const useVideoCreationFlow = () => {
     const newState = { ...flowState, selectedStyle: style };
     setFlowState(newState);
     saveConfiguration(newState);
+    
+    // Determinar el siguiente paso según el estilo
+    setTimeout(() => {
+      if (style.id === 'style-7') {
+        // Multi Avatar requiere selección de segundo avatar
+        goToStep('multi-avatar');
+      } else if (style.id === 'style-5' || style.id === 'style-6') {
+        // Estilos manuales van directo a neurocopy
+        goToStep('neurocopy');
+      } else {
+        // Otros estilos van a subtitle customization
+        goToStep('subtitle-customization');
+      }
+    }, 100);
   };
 
-  const setVideoScript = (script: string) => {
-    const newState = { ...flowState, videoScript: script };
-    setFlowState(newState);
-    saveConfiguration(newState);
-  };
-
-  const setSubtitleCustomization = (customization: SubtitleCustomization | null) => {
+  const selectSubtitleCustomization = (customization: SubtitleCustomization | null) => {
     console.log('🎨 Configuración de subtítulos actualizada:', customization);
     const newState = { ...flowState, subtitleCustomization: customization };
     setFlowState(newState);
     saveConfiguration(newState);
+    
+    // Navegar automáticamente al siguiente paso
+    setTimeout(() => goToStep('neurocopy'), 100);
   };
 
-  const setManualCustomization = (customization: any) => {
+  const selectManualCustomization = (customization: any) => {
     console.log('📝 Configuración manual actualizada:', customization);
     const newState = { ...flowState, manualCustomization: customization };
     setFlowState(newState);
     saveConfiguration(newState);
   };
 
-  const selectSecondAvatar = (avatar: Avatar) => {
-    const newState = { ...flowState, selectedSecondAvatar: avatar };
+  const selectGeneratedScript = (script: string) => {
+    console.log('📝 Script generado seleccionado:', script?.substring(0, 100) + '...');
+    const newState = { ...flowState, generatedScript: script };
     setFlowState(newState);
     saveConfiguration(newState);
-  };
-
-  const goBack = () => {
-    const currentStep = flowState.step;
-    console.log('⬅️ Retrocediendo desde:', currentStep);
     
-    // Multi-Avatar: Manejar retroceso específico
-    if (currentStep === 'multi-avatar') {
-      console.log('🔄 Multi-Avatar: Regresando a subtitle-customization desde multi-avatar');
-      navigateToStep('subtitle-customization');
-      return;
-    }
-    
-    // Subtitle Customization: Retroceder según el estilo
-    if (currentStep === 'subtitle-customization') {
-      console.log('🔄 Multi-Avatar: Regresando a multi-avatar desde subtitle-customization');
-      navigateToStep('multi-avatar'); // Cambiado: siempre va a multi-avatar
-      return;
-    }
-
-    // Resto de casos existentes
-    const stepOrder: FlowState['step'][] = [
-      'api-key',
-      'avatar',
-      'voice', 
-      'style',
-      'subtitle-customization',
-      'multi-avatar',
-      'script'
-    ];
-    
-    const currentIndex = stepOrder.indexOf(currentStep);
-    if (currentIndex > 0) {
-      navigateToStep(stepOrder[currentIndex - 1]);
-    }
+    // Navegar automáticamente al generador
+    setTimeout(() => goToStep('generator'), 100);
   };
 
   const resetFlow = () => {
     const newState: FlowState = {
       step: 'api-key',
-      videoStyles: defaultVideoStyles,
-      apiKey: '',
+      selectedApiKey: null,
       selectedAvatar: null,
+      selectedSecondAvatar: null,
       selectedVoice: null,
       selectedStyle: null,
-      videoScript: '',
       subtitleCustomization: null,
-      manualCustomization: null,
-      selectedSecondAvatar: null
+      generatedScript: null,
+      cardCustomization: null,
+      presenterCustomization: null,
+      apiVersionCustomization: null,
+      manualCustomization: null
     };
     setFlowState(newState);
     saveConfiguration(newState);
   };
 
-  const canProceedToScript = () => {
-    const { apiKey, selectedAvatar, selectedVoice, selectedStyle, subtitleCustomization, selectedSecondAvatar } = flowState;
-    
-    const hasBasics = !!(apiKey && selectedAvatar && selectedVoice && selectedStyle);
-    
-    // Para estilos que requieren segundo avatar
-    if (selectedStyle?.id === 'style-7') {
-      return hasBasics && !!selectedSecondAvatar && !!subtitleCustomization;
-    }
-    
-    // Para otros estilos
-    return hasBasics && !!subtitleCustomization;
-  };
-
   return {
     flowState,
-    navigateToStep,
-    setApiKey,
+    apiKeys,
+    loading,
+    loadApiKeys,
+    selectApiKey,
     selectAvatar,
+    selectSecondAvatar,
     selectVoice,
     selectStyle,
-    setVideoScript,
-    setSubtitleCustomization,
-    setManualCustomization,
-    selectSecondAvatar,
-    goBack,
-    resetFlow,
-    canProceedToScript,
-    getStyleInternalId: (style: VideoStyle) => getStyleInternalId(style)
+    selectSubtitleCustomization,
+    selectManualCustomization,
+    selectGeneratedScript,
+    goToStep,
+    resetFlow
   };
 };
