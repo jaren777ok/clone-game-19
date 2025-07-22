@@ -35,11 +35,12 @@ export const verifyVideoExists = async (user: User | null, requestId: string) =>
         videoUrl: video.video_url,
         title: video.title,
         requestId: video.request_id,
-        createdAt: video.created_at
+        createdAt: video.created_at,
+        note: 'NO se auto-actualiza tracking aquí - se hace después de mostrar pantalla de éxito'
       });
 
-      // ⭐ AUTO-ACTUALIZAR TRACKING A COMPLETED
-      await updateTrackingToCompleted(user, requestId);
+      // ⭐ CAMBIO CRÍTICO: NO actualizar tracking aquí - se hará después de mostrar la pantalla de éxito
+      // await updateTrackingToCompleted(user, requestId); // REMOVIDO
       
       return {
         video_url: video.video_url,
@@ -58,10 +59,10 @@ export const verifyVideoExists = async (user: User | null, requestId: string) =>
   }
 };
 
-// ⭐ FUNCIÓN: Auto-actualizar tracking a completed
-const updateTrackingToCompleted = async (user: User, requestId: string) => {
+// ⭐ FUNCIÓN: Auto-actualizar tracking a completed (ahora se llama desde videoDetected)
+export const updateTrackingToCompleted = async (user: User, requestId: string) => {
   try {
-    console.log('🔄 Auto-actualizando tracking a COMPLETED:', { userId: user.id, requestId });
+    console.log('🔄 Actualizando tracking a COMPLETED:', { userId: user.id, requestId });
     
     const { error } = await supabase
       .from('video_generation_tracking')

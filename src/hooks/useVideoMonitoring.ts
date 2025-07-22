@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
-import { verifyVideoExists, recoverLostVideo, checkFinalVideoResult } from '@/lib/databaseUtils';
+import { verifyVideoExists, recoverLostVideo, checkFinalVideoResult, updateTrackingToCompleted } from '@/lib/databaseUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
 
 export const useVideoMonitoring = () => {
@@ -36,8 +36,8 @@ export const useVideoMonitoring = () => {
     }
   }, []);
 
-  const videoDetected = useCallback((videoData: any, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void) => {
-    console.log('🎉 VIDEO DETECTADO - Limpiando estado:', {
+  const videoDetected = useCallback(async (videoData: any, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void) => {
+    console.log('🎉 VIDEO DETECTADO - Actualizando UI primero:', {
       videoUrl: videoData.video_url,
       title: videoData.title,
       requestId: videoData.request_id
@@ -46,15 +46,23 @@ export const useVideoMonitoring = () => {
     isActiveRef.current = false;
     clearAllIntervals();
     
+    // ⭐ PRIMERO: Actualizar la UI y mostrar pantalla de éxito
     setVideoResult(videoData.video_url);
     setIsGenerating(false);
     clearGenerationState();
     
+    // ⭐ SEGUNDO: Mostrar toast de éxito
     toast({
       title: "¡Video completado!",
       description: videoData.title || "Tu video ha sido generado exitosamente.",
     });
-  }, [clearAllIntervals, toast]);
+    
+    // ⭐ TERCERO: AHORA actualizar el tracking a completed (después de mostrar la pantalla)
+    if (user && videoData.request_id) {
+      console.log('🔄 Actualizando tracking DESPUÉS de mostrar pantalla de éxito');
+      await updateTrackingToCompleted(user, videoData.request_id);
+    }
+  }, [clearAllIntervals, toast, user]);
 
   // ⭐ NUEVA FUNCIÓN: Verificación final directa con requestId
   const checkFinalResultWithRequestId = useCallback(async (
