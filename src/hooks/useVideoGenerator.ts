@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -260,7 +261,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       // Start countdown with enhanced functions
       console.log('🎯 useVideoGenerator - Iniciando countdown MEJORADO');
       startCountdown(requestId, setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId);
+      startPeriodicChecking();
 
       toast({
         title: "Video en procesamiento",
@@ -386,7 +387,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       }
 
       startCountdown(requestId, setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId);
+      startPeriodicChecking();
 
       toast({
         title: "Video en procesamiento",
@@ -501,7 +502,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       }
 
       startCountdown(requestId, setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId);
+      startPeriodicChecking();
 
       toast({
         title: "Video en procesamiento",
@@ -556,6 +557,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     },
     handlers: {
       setScript,
+      setVideoResult,
+      setIsGenerating,
       handleGenerateVideo,
       handleGenerateVideoWithFiles,
       handleGenerateVideoWithUrls,
