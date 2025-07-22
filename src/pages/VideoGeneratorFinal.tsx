@@ -121,6 +121,8 @@ const VideoGeneratorFinal = () => {
         timeRemaining={state.timeRemaining}
         totalTime={state.totalTime}
         isRecovering={state.isRecovering}
+        onManualCheck={handlers.checkVideoManually}
+        debugInfo={state.debugInfo}
       />
     );
   }

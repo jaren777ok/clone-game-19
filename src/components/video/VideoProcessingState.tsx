@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Video, Wifi, AlertTriangle, Clock, RefreshCw, Globe, Play } from 'lucide-react';
+import { Video, Wifi, AlertTriangle, Clock, RefreshCw, Globe, Play, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
 import { hasReachedPollingTime } from '@/lib/countdownUtils';
@@ -61,6 +61,28 @@ const VideoProcessingState = ({
             </p>
           </div>
 
+          {/* BOTÓN MANUAL PROMINENTE - SIEMPRE VISIBLE */}
+          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Zap className="w-6 h-6 text-green-400 animate-pulse" />
+              <h3 className="text-xl font-semibold text-green-300">Verificación Manual</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              ¿Quieres verificar si tu video ya está listo? Usa el botón manual para una verificación instantánea.
+            </p>
+            <Button
+              onClick={onManualCheck}
+              size="lg"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 animate-pulse"
+            >
+              <Play className="w-5 h-5 mr-3" />
+              🔍 Verificar Video Manualmente
+            </Button>
+            <p className="text-xs text-green-400">
+              ✨ Disponible en cualquier momento - Verificación instantánea
+            </p>
+          </div>
+
           {/* Debug Information */}
           {debugInfo && (
             <div className="bg-card/30 border border-blue-500/30 rounded-lg p-4">
@@ -77,20 +99,6 @@ const VideoProcessingState = ({
 
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
-
-          {/* Manual Check Button - Always visible for testing */}
-          {onManualCheck && (
-            <div className="flex justify-center space-x-4">
-              <Button
-                onClick={onManualCheck}
-                variant="outline"
-                className="bg-green-500/10 border-green-500/30 hover:bg-green-500/20 hover:border-green-500/50 transition-all duration-300"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Verificar Manualmente
-              </Button>
-            </div>
-          )}
 
           {/* Phase-specific Information */}
           <div className="bg-card/50 cyber-border border-amber-500/30 rounded-xl p-6">
