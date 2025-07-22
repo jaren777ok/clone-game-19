@@ -37,8 +37,6 @@ const VideoProcessingState = ({
             <div className="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto animate-cyber-pulse">
               {isRecovering ? (
                 <Wifi className="w-12 h-12 text-background" />
-              ) : isInPollingPhase ? (
-                <Globe className="w-12 h-12 text-background" />
               ) : (
                 <Video className="w-12 h-12 text-background" />
               )}
@@ -48,106 +46,106 @@ const VideoProcessingState = ({
           {/* Title */}
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-              {isRecovering ? 'Verificando Video' : isInPollingPhase ? 'Verificando via Webhook' : 'Generando tu Video'}
+              {isRecovering ? 'Verificando Video' : 'Generando tu Video'}
             </h1>
             
             <p className="text-muted-foreground text-lg">
               {isRecovering 
                 ? 'Verificando si tu video ya está listo en segundo plano...'
-                : isInPollingPhase
-                ? 'Sistema verificando automáticamente cada minuto via webhook externa...'
-                : 'Nuestro sistema está procesando tu solicitud con inteligencia artificial'
+                : 'Sistema automático verificando cada minuto - sin intervención manual requerida'
               }
             </p>
           </div>
 
-          {/* BOTÓN MANUAL PROMINENTE - SIEMPRE VISIBLE */}
-          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
+          {/* Sistema Automático Info */}
+          <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Zap className="w-6 h-6 text-green-400 animate-pulse" />
-              <h3 className="text-xl font-semibold text-green-300">Verificación Manual</h3>
+              <Clock className="w-6 h-6 text-blue-400 animate-pulse" />
+              <h3 className="text-xl font-semibold text-blue-300">Sistema Automático Activo</h3>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              ¿Quieres verificar si tu video ya está listo? Usa el botón manual para una verificación instantánea.
-            </p>
-            <Button
-              onClick={onManualCheck}
-              size="lg"
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 animate-pulse"
-            >
-              <Play className="w-5 h-5 mr-3" />
-              🔍 Verificar Video Manualmente
-            </Button>
-            <p className="text-xs text-green-400">
-              ✨ Disponible en cualquier momento - Verificación instantánea
-            </p>
+            <div className="space-y-2 text-center">
+              <p className="text-sm text-muted-foreground">
+                🔄 Verificación automática cada 60 segundos
+              </p>
+              <p className="text-sm text-muted-foreground">
+                ⚡ Primera verificación a los 10 segundos
+              </p>
+              <p className="text-sm text-muted-foreground">
+                🎯 El video se detectará automáticamente cuando esté listo
+              </p>
+              <p className="text-sm text-blue-300 font-medium">
+                ⏰ Transcurridos: {minutesElapsed} min | Restantes: {minutesRemaining} min
+              </p>
+            </div>
           </div>
+
+          {/* BOTÓN MANUAL COMO BACKUP */}
+          {onManualCheck && (
+            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <Zap className="w-6 h-6 text-green-400" />
+                <h3 className="text-lg font-semibold text-green-300">Verificación Manual (Backup)</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                El sistema verifica automáticamente, pero puedes forzar una verificación manual si lo deseas.
+              </p>
+              <Button
+                onClick={onManualCheck}
+                size="lg"
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300"
+              >
+                <Play className="w-5 h-5 mr-3" />
+                🔍 Verificar Ahora (Manual)
+              </Button>
+              <p className="text-xs text-green-400">
+                ✨ Solo como backup - el sistema automático es el principal
+              </p>
+            </div>
+          )}
 
           {/* Debug Information */}
           {debugInfo && (
             <div className="bg-card/30 border border-blue-500/30 rounded-lg p-4">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <Globe className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-medium text-blue-300">Estado del Sistema</span>
+                <span className="text-sm font-medium text-blue-300">Estado del Sistema Automático</span>
               </div>
               <p className="text-xs text-blue-200 font-mono">{debugInfo}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Minutos transcurridos: {minutesElapsed} | Verificación automática: {isInPollingPhase ? 'ACTIVA' : 'PENDIENTE'}
-              </p>
             </div>
           )}
 
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Phase-specific Information */}
-          <div className="bg-card/50 cyber-border border-amber-500/30 rounded-xl p-6">
+          {/* Automatic System Information */}
+          <div className="bg-card/50 cyber-border border-blue-500/30 rounded-xl p-6">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
-              <h3 className="text-lg font-semibold text-amber-300">
-                {isInPollingPhase ? 'Verificación Webhook Activa' : 'Información del Proceso'}
+              <AlertTriangle className="w-6 h-6 text-blue-400 animate-pulse" />
+              <h3 className="text-lg font-semibold text-blue-300">
+                Sistema Automático en Funcionamiento
               </h3>
             </div>
             <div className="space-y-3 text-center">
-              {isInPollingPhase ? (
-                <>
-                  <p className="text-muted-foreground text-sm">
-                    🌐 Verificación automática cada minuto + respaldo cada 30 segundos
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    ⚡ Sistema mejorado con verificación inmediata y doble respaldo
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    🔍 Botón manual disponible para verificación instantánea
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    ⏰ Tiempo restante: {minutesRemaining} min | Transcurridos: {minutesElapsed} min
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-muted-foreground text-sm">
-                    🎬 Generando video (primeros 30 segundos)
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    🕒 Verificaciones webhook iniciarán en 30 segundos
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    🔍 Botón manual ya disponible para pruebas
-                  </p>
-                </>
-              )}
+              <p className="text-muted-foreground text-sm">
+                🕐 Verificación cada 60 segundos automáticamente
+              </p>
+              <p className="text-muted-foreground text-sm">
+                🔍 No requiere intervención manual - totalmente automático
+              </p>
+              <p className="text-muted-foreground text-sm">
+                ✅ Se detendrá automáticamente cuando encuentre el video
+              </p>
+              <p className="text-muted-foreground text-sm">
+                📊 Estado: {minutesElapsed} min transcurridos, verificando cada minuto
+              </p>
             </div>
           </div>
 
           {/* Connection Status */}
           <div className="flex items-center justify-center space-x-2">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${isInPollingPhase ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+            <div className="w-2 h-2 rounded-full animate-pulse bg-blue-500"></div>
             <span className="text-sm text-muted-foreground">
-              {isInPollingPhase 
-                ? 'Sistema webhook activo (cada minuto + respaldo)' 
-                : 'Sistema de generación en proceso'
-              }
+              Sistema automático verificando cada 60 segundos
             </span>
           </div>
 
