@@ -60,11 +60,11 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   };
 
   const startPeriodicChecking = (requestId: string) => {
-    baseStartPeriodicChecking(requestId, setVideoResult, setIsGenerating);
+    baseStartPeriodicChecking();
   };
 
   const checkFinalResult = () => {
-    baseCheckFinalResult(setVideoResult, setIsGenerating);
+    baseCheckFinalResult();
   };
 
   const checkVideoManually = () => {
