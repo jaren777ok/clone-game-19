@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Sparkles, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/hooks/useSession';
 import { generateScript } from '@/lib/neurocopyUtils';
 
 interface Props {
@@ -18,6 +19,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { sessionId } = useSession();
 
   const handleGenerateScript = async () => {
     if (!instructions.trim()) {
@@ -32,6 +34,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
     setIsGenerating(true);
     
     try {
+      console.log('Generando script con SessionID:', sessionId);
       const script = await generateScript(instructions, user?.id);
       setGeneratedScript(script);
       
@@ -92,6 +95,11 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
             <p className="text-xs text-muted-foreground/80">
               💡 Potencia tu copywriting: Incluye enlaces de Instagram, TikTok o Noticias para análisis avanzado de tendencias y engagement
             </p>
+            {sessionId && (
+              <p className="text-xs text-muted-foreground/60 mt-2">
+                Sesión: {sessionId.substring(0, 40)}...
+              </p>
+            )}
           </div>
 
           <Card className="cyber-border mb-6">

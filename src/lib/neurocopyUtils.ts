@@ -1,5 +1,6 @@
 
 import { useAuth } from '@/hooks/useAuth';
+import { getCurrentSessionId } from './sessionUtils';
 
 interface NeurocopyResponse {
   guion_IA: string;
@@ -16,6 +17,13 @@ export const generateScript = async (instructions: string, userId?: string): Pro
     // Agregar userId si está disponible
     if (userId) {
       requestBody.Userid = userId;
+    }
+    
+    // Agregar sessionid si está disponible
+    const sessionId = getCurrentSessionId();
+    if (sessionId) {
+      requestBody.sessionid = sessionId;
+      console.log('SessionID agregado al payload:', sessionId);
     }
     
     const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/guion_base', {

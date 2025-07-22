@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
@@ -6,6 +5,7 @@ import { ChatArea } from "@/components/chat/ChatArea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useChats } from "@/hooks/useChats";
+import { useSession } from "@/hooks/useSession";
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -27,6 +27,7 @@ export interface Chat {
 
 const NeurocopyChat = () => {
   const { user, loading: authLoading } = useAuth();
+  const { sessionId } = useSession();
   const { chats, loading: chatsLoading, setChats, saveChat, updateChat, deleteChat, saveMessage } = useChats();
   const [activeChat, setActiveChat] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,9 +40,6 @@ const NeurocopyChat = () => {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
-
-  // REMOVED: Auto-select first chat - now user must choose
-  // The welcome screen will be shown when no chat is active
 
   const createNewChat = async () => {
     const newChat: Chat = {
@@ -145,6 +143,7 @@ const NeurocopyChat = () => {
     
     console.log('Chat activo:', currentChatId);
     console.log('Usuario ID:', user?.id);
+    console.log('SessionID:', sessionId);
     console.log('Contenido del mensaje:', content);
     console.log('Imágenes:', images.length);
     
@@ -191,6 +190,12 @@ const NeurocopyChat = () => {
       formData.append('userId', user?.id || 'anonymous');
       formData.append('messageId', newMessage.id);
       formData.append('imagen', images.length > 0 ? 'true' : 'no');
+      
+      // Agregar sessionid al FormData
+      if (sessionId) {
+        formData.append('sessionid', sessionId);
+        console.log('SessionID agregado al FormData:', sessionId);
+      }
 
       // Procesar y añadir imágenes como archivos binarios
       if (images.length > 0) {
@@ -223,6 +228,7 @@ const NeurocopyChat = () => {
 
       console.log('Enviando payload con FormData al webhook');
       console.log('Número de imágenes procesadas:', images.length);
+      console.log('SessionID en el payload:', sessionId);
       
       const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/NeuroCopy', {
         method: 'POST',
