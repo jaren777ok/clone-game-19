@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -169,11 +170,17 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     console.log('Iniciando nuevo proceso de generación de video');
     
     try {
-      // Generate unique requestId
+      // Generate unique requestId - UNA SOLA VEZ
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       const requestId = `${timestamp}-${random}`;
       setCurrentRequestId(requestId);
+
+      console.log('🔍 DEBUG - Generado requestId único:', {
+        requestId: requestId,
+        timestamp: timestamp,
+        random: random
+      });
 
       // Create database entry IMMEDIATELY 
       const success = await handleStartGeneration(script.trim(), requestId);
@@ -190,12 +197,13 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         description: `Procesamiento iniciado. ID: ${requestId.substring(0, 8)}...`
       });
 
-      // Send to webhook in background (don't wait for confirmation)
+      // Send to webhook in background PASANDO EL MISMO REQUEST ID
       initiateVideoGeneration(
         script,
         user,
         flowState!,
-        toast
+        toast,
+        requestId  // ← PASAR EL REQUEST ID AL WEBHOOK
       ).catch(err => {
         console.error('Error enviando al webhook (background):', err);
         // Webhook error doesn't stop the process - video will expire naturally if webhook fails
@@ -263,11 +271,17 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     console.log('Iniciando generación de video con archivos manuales');
     
     try {
-      // Generate unique requestId
+      // Generate unique requestId - UNA SOLA VEZ
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       const requestId = `${timestamp}-${random}`;
       setCurrentRequestId(requestId);
+
+      console.log('🔍 DEBUG - handleGenerateVideoWithFiles generado requestId único:', {
+        requestId: requestId,
+        timestamp: timestamp,
+        random: random
+      });
 
       // Decrypt API key
       const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
@@ -276,7 +290,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       const payload = {
         script: script.trim(),
         userId: user?.id || '',
-        requestId,
+        requestId, // ← USAR EL REQUEST ID GENERADO UNA SOLA VEZ
         timestamp: new Date().toISOString(),
         appMode: 'production',
         ClaveAPI: decryptedApiKey,
@@ -303,7 +317,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         split: flowState!.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
 
-      console.log('🔍 DEBUG - Payload con subtitleCustomization:', {
+      console.log('🔍 DEBUG - Payload con subtitleCustomization y requestId sincronizado:', {
         requestId,
         hasSubtitleCustomization: !!payload.subtitleCustomization,
         subtitleCustomizationData: payload.subtitleCustomization,
@@ -396,11 +410,17 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     console.log('Iniciando generación de video con URLs de Drive');
     
     try {
-      // Generate unique requestId
+      // Generate unique requestId - UNA SOLA VEZ
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       const requestId = `${timestamp}-${random}`;
       setCurrentRequestId(requestId);
+
+      console.log('🔍 DEBUG - handleGenerateVideoWithUrls generado requestId único:', {
+        requestId: requestId,
+        timestamp: timestamp,
+        random: random
+      });
 
       // Decrypt API key
       const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
@@ -409,7 +429,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       const payload = {
         script: script.trim(),
         userId: user?.id || '',
-        requestId,
+        requestId, // ← USAR EL REQUEST ID GENERADO UNA SOLA VEZ
         timestamp: new Date().toISOString(),
         appMode: 'production',
         ClaveAPI: decryptedApiKey,
@@ -436,7 +456,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         split: flowState!.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
 
-      console.log('🔍 DEBUG - Payload con subtitleCustomization (URLs):', {
+      console.log('🔍 DEBUG - Payload con subtitleCustomization (URLs) y requestId sincronizado:', {
         requestId,
         hasSubtitleCustomization: !!payload.subtitleCustomization,
         subtitleCustomizationData: payload.subtitleCustomization,

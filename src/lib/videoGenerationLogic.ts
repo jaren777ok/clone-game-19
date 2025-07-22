@@ -1,3 +1,4 @@
+
 import { User } from '@supabase/supabase-js';
 import { FlowState } from '@/types/videoFlow';
 import { saveGenerationState } from '@/lib/videoGeneration';
@@ -42,14 +43,16 @@ export const initiateVideoGeneration = async (
   script: string,
   user: User | null,
   flowState: FlowState,
-  toast: any
+  toast: any,
+  requestId: string  // ← RECIBIR EL REQUEST ID ya generado
 ): Promise<{ requestId: string }> => {
   if (!user) {
     throw new Error('Usuario no autenticado');
   }
 
-  // 🔍 DEBUG: Verificar subtítulos al inicio de generación
-  console.log('🔍 DEBUG - initiateVideoGeneration START:', {
+  // 🔍 DEBUG: Verificar que recibimos el requestId correcto
+  console.log('🔍 DEBUG - initiateVideoGeneration START con requestId recibido:', {
+    requestId: requestId,
     userId: user.id,
     selectedStyle: flowState.selectedStyle?.id,
     hasSubtitleCustomization: !!flowState.subtitleCustomization,
@@ -66,10 +69,13 @@ export const initiateVideoGeneration = async (
     } : null
   });
 
-  // Generar requestId único basado en timestamp + random
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 8);
-  const requestId = `${timestamp}-${random}`;
+  // REMOVIDO: Ya no generamos requestId aquí, usamos el que recibimos
+  // const timestamp = Date.now();
+  // const random = Math.random().toString(36).substring(2, 8);
+  // const requestId = `${timestamp}-${random}`;
+  
+  // Extraer timestamp del requestId para logging
+  const timestamp = parseInt(requestId.split('-')[0]);
   
   // Desencriptar la clave API
   let decryptedApiKey: string;
@@ -91,7 +97,7 @@ export const initiateVideoGeneration = async (
     throw new Error('Clave API inválida después de desencriptar');
   }
   
-  console.log('🎬 Iniciando generación de video (sin crear tracking aún):', {
+  console.log('🎬 Iniciando generación de video (usando requestId del tracking):', {
     requestId: requestId,
     timestamp: timestamp,
     timestampDate: new Date(timestamp).toISOString(),
@@ -108,11 +114,11 @@ export const initiateVideoGeneration = async (
     hasSubtitleCustomization: !!flowState.subtitleCustomization
   });
 
-  // Preparar payload base con clave API desencriptada
+  // Preparar payload base con clave API desencriptada y requestId sincronizado
   const basePayload = {
     script: script.trim(),
     userId: user.id,
-    requestId: requestId,
+    requestId: requestId, // ← USAR EL REQUEST ID RECIBIDO
     timestamp: new Date(timestamp).toISOString(),
     appMode: "produccion",
     ClaveAPI: decryptedApiKey, // Usando la clave desencriptada
@@ -141,7 +147,7 @@ export const initiateVideoGeneration = async (
   };
 
   // 🔍 DEBUG: Verificar payload completo antes de enviar
-  console.log('🔍 DEBUG - Payload completo preparado:', {
+  console.log('🔍 DEBUG - Payload completo preparado con requestId sincronizado:', {
     requestId: requestId,
     hasSubtitleCustomization: !!basePayload.subtitleCustomization,
     subtitleCustomizationPayload: basePayload.subtitleCustomization,
@@ -175,7 +181,7 @@ export const initiateVideoGeneration = async (
     webhookType = 'MultiAvatar';
   }
 
-  console.log('📤 Enviando payload al webhook (esperando confirmación):', {
+  console.log('📤 Enviando payload al webhook con requestId sincronizado:', {
     requestId: requestId,
     webhook: webhookType,
     payloadSize: JSON.stringify(basePayload).length,
@@ -199,7 +205,7 @@ export const initiateVideoGeneration = async (
         subtitulo: flowState.cardCustomization?.subtitulo || 'Información relevante'
       };
       
-      console.log('📰 Enviando a webhook Estilo Noticia con datos adicionales:', {
+      console.log('📰 Enviando a webhook Estilo Noticia con requestId sincronizado:', {
         requestId: requestId,
         fecha: noticiaPayload.fecha,
         titulo: noticiaPayload.titulo,
@@ -210,7 +216,7 @@ export const initiateVideoGeneration = async (
       webhookConfirmed = await sendToEstiloNoticiaWebhook(noticiaPayload);
     } else if (flowState.selectedStyle!.id === 'style-3') {
       // Estilo Educativo 1
-      console.log('🎓 Enviando a webhook Estilo Educativo 1:', {
+      console.log('🎓 Enviando a webhook Estilo Educativo 1 con requestId sincronizado:', {
         requestId: requestId,
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
@@ -218,7 +224,7 @@ export const initiateVideoGeneration = async (
       webhookConfirmed = await sendToEstiloEducativoWebhook(basePayload);
     } else if (flowState.selectedStyle!.id === 'style-4') {
       // Estilo Educativo 2
-      console.log('🎓 Enviando a webhook Estilo Educativo 2:', {
+      console.log('🎓 Enviando a webhook Estilo Educativo 2 con requestId sincronizado:', {
         requestId: requestId,
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
@@ -234,7 +240,7 @@ export const initiateVideoGeneration = async (
       const manualPayload = {
         script: script.trim(),
         userId: user.id,
-        requestId: requestId,
+        requestId: requestId, // ← USAR EL REQUEST ID SINCRONIZADO
         timestamp: new Date(timestamp).toISOString(),
         appMode: "produccion",
         ClaveAPI: decryptedApiKey,
@@ -262,7 +268,7 @@ export const initiateVideoGeneration = async (
       };
 
       // 🔍 DEBUG: Verificar payload manual específicamente
-      console.log('🔍 DEBUG - MANUAL Payload antes de enviar:', {
+      console.log('🔍 DEBUG - MANUAL Payload con requestId sincronizado:', {
         requestId: requestId,
         hasSubtitleCustomization: !!manualPayload.subtitleCustomization,
         subtitleCustomizationComplete: manualPayload.subtitleCustomization,
@@ -270,7 +276,7 @@ export const initiateVideoGeneration = async (
         payloadKeys: Object.keys(manualPayload)
       });
       
-      console.log('📁 Enviando a webhook Estilo Manual con archivos (sin nombrePresentador):', {
+      console.log('📁 Enviando a webhook Estilo Manual con requestId sincronizado:', {
         requestId: requestId,
         imagesCount: flowState.manualCustomization.images.length,
         videosCount: flowState.manualCustomization.videos.length,
@@ -296,7 +302,7 @@ export const initiateVideoGeneration = async (
       const manual2Payload = {
         script: script.trim(),
         userId: user.id,
-        requestId: requestId,
+        requestId: requestId, // ← USAR EL REQUEST ID SINCRONIZADO
         timestamp: new Date(timestamp).toISOString(),
         appMode: "produccion",
         ClaveAPI: decryptedApiKey,
@@ -323,7 +329,7 @@ export const initiateVideoGeneration = async (
         split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
       
-      console.log('📁 Enviando a webhook Estilo Manual 2 con archivos (sin nombrePresentador):', {
+      console.log('📁 Enviando a webhook Estilo Manual 2 con requestId sincronizado:', {
         requestId: requestId,
         imagesCount: flowState.manualCustomization.images.length,
         videosCount: flowState.manualCustomization.videos.length,
@@ -336,7 +342,7 @@ export const initiateVideoGeneration = async (
       );
     } else if (flowState.selectedStyle!.id === 'style-7') {
       // Estilo Multi-Avatar
-      console.log('👥 Enviando a webhook Estilo Multi-Avatar:', {
+      console.log('👥 Enviando a webhook Estilo Multi-Avatar con requestId sincronizado:', {
         requestId: requestId,
         firstAvatar: flowState.selectedAvatar!.avatar_name,
         secondAvatar: flowState.selectedSecondAvatar!.avatar_name,
@@ -356,7 +362,7 @@ export const initiateVideoGeneration = async (
       webhookConfirmed = await sendToMultiAvatarWebhook(multiAvatarPayload);
     } else if (flowState.selectedStyle!.id === 'style-2') {
       // Estilo Noticiero - webhook estándar
-      console.log('🎥 Enviando a webhook estándar (Estilo Noticiero):', {
+      console.log('🎥 Enviando a webhook estándar (Estilo Noticiero) con requestId sincronizado:', {
         requestId: requestId,
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
@@ -364,7 +370,7 @@ export const initiateVideoGeneration = async (
       webhookConfirmed = await sendToWebhook(basePayload);
     } else {
       // Fallback para otros estilos no definidos
-      console.log('🎥 Enviando a webhook estándar (fallback):', {
+      console.log('🎥 Enviando a webhook estándar (fallback) con requestId sincronizado:', {
         requestId: requestId,
         presenterName: basePayload.nombrePresentador,
         apiKeyConfirmed: decryptedApiKey.substring(0, 8) + '...'
@@ -373,7 +379,7 @@ export const initiateVideoGeneration = async (
     }
 
     if (webhookConfirmed) {
-      console.log('✅ Webhook confirmó recepción:', {
+      console.log('✅ Webhook confirmó recepción con requestId sincronizado:', {
         requestId: requestId,
         timestamp: new Date().toISOString(),
         apiKeyDecryptedAndSent: true
