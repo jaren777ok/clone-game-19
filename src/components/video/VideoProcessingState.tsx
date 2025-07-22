@@ -42,7 +42,7 @@ const VideoProcessingState = ({
             </h1>
             
             <p className="text-muted-foreground text-lg">
-              Tu video se está procesando. El sistema verifica automáticamente cada minuto.
+              Tu video se está procesando. Usa el botón para verificar si ya está listo.
             </p>
           </div>
 
@@ -59,16 +59,16 @@ const VideoProcessingState = ({
                 className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-12 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <Play className="w-6 h-6 mr-3" />
-                {isChecking ? 'Verificando...' : 'Verificar Ahora'}
+                {isChecking ? 'Verificando...' : 'Verificar Video'}
               </Button>
             </div>
           )}
 
-          {/* System Information - Updated */}
+          {/* System Information - Simplified */}
           <div className="bg-card/50 cyber-border border-blue-500/30 rounded-xl p-6">
             <div className="space-y-3 text-center">
               <p className="text-blue-200 text-base font-medium">
-                🤖 El sistema verifica automáticamente cada minuto si tu video está listo
+                ✅ Presiona el botón para verificar si tu video ya está listo
               </p>
               <p className="text-muted-foreground text-sm">
                 🔄 Puedes cerrar la aplicación y volver más tarde
@@ -81,9 +81,9 @@ const VideoProcessingState = ({
 
           {/* Connection Status */}
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-muted-foreground">
-              Verificación automática activa
+              Sistema listo para verificación manual
             </span>
           </div>
 

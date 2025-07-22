@@ -15,7 +15,6 @@ export const useVideoMonitoring = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const autoCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateTimeRemaining = useCallback((remaining: number) => {
     setTimeRemaining(remaining);
@@ -28,20 +27,55 @@ export const useVideoMonitoring = () => {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
     }
-    
-    if (autoCheckIntervalRef.current) {
-      clearInterval(autoCheckIntervalRef.current);
-      autoCheckIntervalRef.current = null;
-    }
   }, []);
+
+  // Sistema completamente manual - solo countdown visual
+  const startCountdown = useCallback((
+    requestId: string, 
+    scriptToCheck: string, 
+    setVideoResult: (result: string) => void,
+    setIsGenerating: (generating: boolean) => void,
+    customStartTime?: number
+  ) => {
+    if (!user) {
+      console.log('❌ [MONITORING] No hay usuario - abortando');
+      return;
+    }
+
+    const startTime = customStartTime || Date.now();
+    
+    console.log('🚀 [MONITORING] INICIANDO SISTEMA COMPLETAMENTE MANUAL:', {
+      requestId,
+      startTime: new Date(startTime).toISOString(),
+      userId: user.id
+    });
+    
+    setGenerationStartTime(startTime);
+    setDebugInfo('🚀 Sistema manual activo - usa el botón para verificar');
+    
+    // Solo countdown timer visual - SIN verificaciones automáticas
+    const updateCountdown = () => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
+      
+      updateTimeRemaining(remaining);
+      
+      if (remaining <= 0) {
+        console.log('⏰ [MONITORING] Tiempo agotado - SISTEMA MANUAL: sin verificaciones automáticas');
+        setDebugInfo('⏰ Tiempo agotado - usa el botón para verificar');
+      }
+    };
+
+    updateCountdown();
+    countdownIntervalRef.current = setInterval(updateCountdown, 1000);
+  }, [user, updateTimeRemaining]);
 
   // Verificación COMPLETAMENTE manual con webhook mejorada
   const checkVideoManually = useCallback(async (
     requestId: string,
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void,
-    isAutoCheck: boolean = false
+    setIsGenerating: (generating: boolean) => void
   ) => {
     if (!user) {
       console.log('❌ [MONITORING] No hay usuario para verificación manual');
@@ -53,9 +87,8 @@ export const useVideoMonitoring = () => {
       return false;
     }
 
-    const checkType = isAutoCheck ? 'AUTOMÁTICA' : 'MANUAL';
-    console.log(`🔍 [MONITORING] VERIFICACIÓN ${checkType} INICIADA`);
-    setDebugInfo(`🔍 Verificando estado del video (${checkType.toLowerCase()})...`);
+    console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL INICIADA');
+    setDebugInfo('🔍 Verificando estado del video...');
     setIsChecking(true);
 
     try {
@@ -72,17 +105,15 @@ export const useVideoMonitoring = () => {
       if (error || !trackingData) {
         console.error('❌ [MONITORING] Error obteniendo datos de tracking:', error);
         setDebugInfo('❌ Error: No se encontró tracking activo');
-        if (!isAutoCheck) {
-          toast({
-            title: "Error de verificación",
-            description: "No se encontró un video en proceso para verificar.",
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Error de verificación",
+          description: "No se encontró un video en proceso para verificar.",
+          variant: "destructive"
+        });
         return false;
       }
 
-      console.log(`📦 [MONITORING] Datos de tracking obtenidos (${checkType}):`, {
+      console.log('📦 [MONITORING] Datos de tracking obtenidos:', {
         requestId: trackingData.request_id,
         userId: trackingData.user_id,
         scriptLength: trackingData.script.length
@@ -97,11 +128,8 @@ export const useVideoMonitoring = () => {
 
       if (result.success) {
         if (result.videoUrl) {
-          console.log(`🎥 [MONITORING] Video completado (${checkType}):`, result.videoUrl);
+          console.log('🎥 [MONITORING] Video completado:', result.videoUrl);
           setDebugInfo('🎥 Video completado exitosamente');
-          
-          // Limpiar intervalos automáticos cuando el video esté listo
-          clearAllIntervals();
           
           // Guardar video en la base de datos
           const { error: insertError } = await supabase
@@ -133,121 +161,50 @@ export const useVideoMonitoring = () => {
           
           return true;
         } else {
-          console.log(`⏳ [MONITORING] Video aún no está listo (${checkType})`);
-          setDebugInfo(`⏳ Video en proceso - ${isAutoCheck ? 'verificación automática' : 'intenta de nuevo más tarde'}`);
+          console.log('⏳ [MONITORING] Video aún no está listo');
+          setDebugInfo('⏳ Video en proceso - intenta de nuevo más tarde');
           
-          // Solo mostrar toast para verificaciones manuales
-          if (!isAutoCheck) {
-            toast({
-              title: "Video en proceso",
-              description: "El video aún no está listo. Intenta de nuevo más tarde.",
-              variant: "default"
-            });
-          }
+          // Usar toast informativo en lugar de destructivo
+          toast({
+            title: "Video en proceso",
+            description: "El video aún no está listo. Intenta de nuevo más tarde.",
+            variant: "default"
+          });
           
           return false;
         }
       } else {
         // Solo casos críticos llegan aquí (no debería pasar con la nueva lógica)
-        console.error(`❌ [MONITORING] Error crítico en verificación ${checkType.toLowerCase()}`);
+        console.error('❌ [MONITORING] Error crítico en verificación manual');
         setDebugInfo('❌ Error crítico en verificación');
         
-        // Solo mostrar toast para verificaciones manuales
-        if (!isAutoCheck) {
-          toast({
-            title: "Error de verificación",
-            description: "Hubo un problema crítico con la verificación. Intenta de nuevo.",
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Error de verificación",
+          description: "Hubo un problema crítico con la verificación. Intenta de nuevo.",
+          variant: "destructive"
+        });
         
         return false;
       }
     } catch (error) {
-      console.error(`💥 [MONITORING] Error en verificación ${checkType.toLowerCase()}:`, error);
+      console.error('💥 [MONITORING] Error en verificación manual:', error);
       setDebugInfo(`💥 Error: ${error}`);
       
-      // Solo mostrar toast para verificaciones manuales
-      if (!isAutoCheck) {
-        toast({
-          title: "Error de verificación",
-          description: "Hubo un problema con la verificación manual.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Error de verificación",
+        description: "Hubo un problema con la verificación manual.",
+        variant: "destructive"
+      });
       
       return false;
     } finally {
       setIsChecking(false);
     }
-  }, [user, toast, isChecking, clearAllIntervals]);
-
-  // Sistema completamente manual - solo countdown visual + verificación automática
-  const startCountdown = useCallback((
-    requestId: string, 
-    scriptToCheck: string, 
-    setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void,
-    customStartTime?: number
-  ) => {
-    if (!user) {
-      console.log('❌ [MONITORING] No hay usuario - abortando');
-      return;
-    }
-
-    const startTime = customStartTime || Date.now();
-    
-    console.log('🚀 [MONITORING] INICIANDO SISTEMA CON VERIFICACIÓN AUTOMÁTICA:', {
-      requestId,
-      startTime: new Date(startTime).toISOString(),
-      userId: user.id
-    });
-    
-    setGenerationStartTime(startTime);
-    setDebugInfo('🚀 Sistema activo - verificación automática cada minuto');
-    
-    // Solo countdown timer visual - SIN verificaciones automáticas iniciales
-    const updateCountdown = () => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
-      
-      updateTimeRemaining(remaining);
-      
-      if (remaining <= 0) {
-        console.log('⏰ [MONITORING] Tiempo agotado - manteniendo verificación automática');
-        setDebugInfo('⏰ Tiempo agotado - verificación automática activa');
-      }
-    };
-
-    updateCountdown();
-    countdownIntervalRef.current = setInterval(updateCountdown, 1000);
-
-    // Iniciar verificación automática después de 1 minuto
-    console.log('⏱️ [MONITORING] Programando verificación automática cada 60 segundos');
-    setTimeout(() => {
-      // Verificación inmediata después del primer minuto
-      checkVideoManually(requestId, scriptToCheck, setVideoResult, setIsGenerating, true);
-      
-      // Luego cada minuto
-      autoCheckIntervalRef.current = setInterval(() => {
-        checkVideoManually(requestId, scriptToCheck, setVideoResult, setIsGenerating, true);
-      }, 60000); // 60 segundos
-    }, 60000); // Iniciar después de 1 minuto
-  }, [user, updateTimeRemaining, checkVideoManually]);
-
-  // Wrapper para verificación manual desde el botón
-  const checkVideoManuallyFromButton = useCallback((
-    requestId: string,
-    scriptToCheck: string,
-    setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void
-  ) => {
-    return checkVideoManually(requestId, scriptToCheck, setVideoResult, setIsGenerating, false);
-  }, [checkVideoManually]);
+  }, [user, toast, isChecking]);
 
   const cleanup = useCallback(() => {
-    console.log('🧹 [MONITORING] Limpieza completa del monitoreo automático');
-    setDebugInfo('🧹 Sistema limpiado');
+    console.log('🧹 [MONITORING] Limpieza completa del monitoreo manual');
+    setDebugInfo('🧹 Sistema manual limpiado');
     clearAllIntervals();
   }, [clearAllIntervals]);
 
@@ -263,7 +220,7 @@ export const useVideoMonitoring = () => {
     startCountdown,
     startPeriodicChecking: () => {}, // Legacy compatibility - no hace nada
     checkFinalResult: () => {}, // Legacy compatibility - no hace nada
-    checkVideoManually: checkVideoManuallyFromButton,
+    checkVideoManually,
     cleanup
   };
 };
