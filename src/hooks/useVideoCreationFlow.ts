@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { FlowState, VideoStyle, Avatar, Voice, ApiVersionCustomization, SubtitleCustomization, HeyGenApiKey } from '@/types/videoFlow';
+import { FlowState, VideoStyle, Avatar, Voice, ApiVersionCustomization, SubtitleCustomization, HeyGenApiKey, CardCustomization, PresenterCustomization, ManualCustomization } from '@/types/videoFlow';
 import { getStyleInternalId } from '@/utils/styleMapping';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -57,7 +57,10 @@ export const useVideoCreationFlow = () => {
     cardCustomization: null,
     presenterCustomization: null,
     apiVersionCustomization: null,
-    manualCustomization: null
+    manualCustomization: null,
+    videoStyles: defaultVideoStyles,
+    apiKey: '',
+    videoScript: ''
   });
 
   const [apiKeys, setApiKeys] = useState<HeyGenApiKey[]>([]);
@@ -127,16 +130,19 @@ export const useVideoCreationFlow = () => {
               api_key_encrypted: savedConfig.heygen_api_keys.api_key_encrypted,
               created_at: savedConfig.heygen_api_keys.created_at
             } : null,
-            selectedAvatar: savedConfig.avatar_data || null,
-            selectedSecondAvatar: savedConfig.second_avatar_data || null,
-            selectedVoice: savedConfig.voice_data || null,
-            selectedStyle: savedConfig.style_data || null,
-            subtitleCustomization: savedConfig.subtitle_customization || null,
+            selectedAvatar: savedConfig.avatar_data ? (savedConfig.avatar_data as unknown as Avatar) : null,
+            selectedSecondAvatar: savedConfig.second_avatar_data ? (savedConfig.second_avatar_data as unknown as Avatar) : null,
+            selectedVoice: savedConfig.voice_data ? (savedConfig.voice_data as unknown as Voice) : null,
+            selectedStyle: savedConfig.style_data ? (savedConfig.style_data as unknown as VideoStyle) : null,
+            subtitleCustomization: savedConfig.subtitle_customization ? (savedConfig.subtitle_customization as unknown as SubtitleCustomization) : null,
             generatedScript: savedConfig.generated_script || null,
-            cardCustomization: savedConfig.card_customization || null,
-            presenterCustomization: savedConfig.presenter_customization || null,
+            cardCustomization: savedConfig.card_customization ? (savedConfig.card_customization as unknown as CardCustomization) : null,
+            presenterCustomization: savedConfig.presenter_customization ? (savedConfig.presenter_customization as unknown as PresenterCustomization) : null,
             apiVersionCustomization: null,
-            manualCustomization: savedConfig.manual_customization || null
+            manualCustomization: savedConfig.manual_customization ? (savedConfig.manual_customization as unknown as ManualCustomization) : null,
+            videoStyles: defaultVideoStyles,
+            apiKey: savedConfig.heygen_api_keys?.api_key_encrypted || '',
+            videoScript: savedConfig.generated_script || ''
           };
 
           setFlowState(newFlowState);
@@ -171,16 +177,16 @@ export const useVideoCreationFlow = () => {
       const configData = {
         user_id: user.id,
         api_key_id: state.selectedApiKey?.id || null,
-        avatar_data: state.selectedAvatar,
-        second_avatar_data: state.selectedSecondAvatar,
-        voice_data: state.selectedVoice,
-        style_data: state.selectedStyle,
-        presenter_customization: state.presenterCustomization,
-        card_customization: state.cardCustomization,
-        subtitle_customization: state.subtitleCustomization,
-        generated_script: state.generatedScript,
+        avatar_data: state.selectedAvatar ? JSON.parse(JSON.stringify(state.selectedAvatar)) : null,
+        second_avatar_data: state.selectedSecondAvatar ? JSON.parse(JSON.stringify(state.selectedSecondAvatar)) : null,
+        voice_data: state.selectedVoice ? JSON.parse(JSON.stringify(state.selectedVoice)) : null,
+        style_data: state.selectedStyle ? JSON.parse(JSON.stringify(state.selectedStyle)) : null,
+        presenter_customization: state.presenterCustomization ? JSON.parse(JSON.stringify(state.presenterCustomization)) : null,
+        card_customization: state.cardCustomization ? JSON.parse(JSON.stringify(state.cardCustomization)) : null,
+        subtitle_customization: state.subtitleCustomization ? JSON.parse(JSON.stringify(state.subtitleCustomization)) : null,
+        generated_script: state.generatedScript || null,
         current_step: state.step,
-        manual_customization: state.manualCustomization,
+        manual_customization: state.manualCustomization ? JSON.parse(JSON.stringify(state.manualCustomization)) : null,
         updated_at: new Date().toISOString()
       };
 
@@ -220,7 +226,11 @@ export const useVideoCreationFlow = () => {
   };
 
   const selectApiKey = (apiKey: HeyGenApiKey) => {
-    const newState = { ...flowState, selectedApiKey: apiKey };
+    const newState = { 
+      ...flowState, 
+      selectedApiKey: apiKey,
+      apiKey: apiKey.api_key_encrypted
+    };
     setFlowState(newState);
     saveConfiguration(newState);
     
@@ -295,7 +305,15 @@ export const useVideoCreationFlow = () => {
 
   const selectGeneratedScript = (script: string) => {
     console.log('📝 Script generado seleccionado:', script?.substring(0, 100) + '...');
-    const newState = { ...flowState, generatedScript: script };
+    
+    // Aplicar límite de 955 caracteres
+    const limitedScript = script.length > 955 ? script.substring(0, 955) : script;
+    
+    const newState = { 
+      ...flowState, 
+      generatedScript: limitedScript,
+      videoScript: limitedScript
+    };
     setFlowState(newState);
     saveConfiguration(newState);
     
@@ -316,7 +334,10 @@ export const useVideoCreationFlow = () => {
       cardCustomization: null,
       presenterCustomization: null,
       apiVersionCustomization: null,
-      manualCustomization: null
+      manualCustomization: null,
+      videoStyles: defaultVideoStyles,
+      apiKey: '',
+      videoScript: ''
     };
     setFlowState(newState);
     saveConfiguration(newState);
