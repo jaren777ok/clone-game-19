@@ -67,14 +67,14 @@ export const useVideoMonitoring = () => {
 
     const startTime = customStartTime || Date.now();
     
-    console.log('🚀 [MONITORING] INICIANDO SISTEMA SIMPLIFICADO:', {
+    console.log('🚀 [MONITORING] INICIANDO SISTEMA MEJORADO:', {
       requestId,
       startTime: new Date(startTime).toISOString(),
       userId: user.id
     });
     
     setGenerationStartTime(startTime);
-    setDebugInfo('🚀 Sistema iniciado - webhook en 2 minutos');
+    setDebugInfo('🚀 Sistema iniciado - webhook en 30 segundos');
     
     // Start countdown timer
     const updateCountdown = () => {
@@ -93,7 +93,7 @@ export const useVideoMonitoring = () => {
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-    // Start webhook monitoring service
+    // Start improved webhook monitoring service
     webhookMonitoringService.startMonitoring(
       user.id,
       user,
@@ -112,6 +112,8 @@ export const useVideoMonitoring = () => {
     if (!user) return false;
 
     console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL EJECUTADA');
+    
+    setDebugInfo('🔍 Ejecutando verificación manual...');
     
     const found = await webhookMonitoringService.performManualCheck(
       user.id,

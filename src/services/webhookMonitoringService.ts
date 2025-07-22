@@ -5,8 +5,11 @@ import { checkVideoViaWebhook } from '@/lib/databaseUtils';
 
 interface MonitoringSession {
   intervalId: NodeJS.Timeout | null;
+  backupIntervalId: NodeJS.Timeout | null;
   isActive: boolean;
   startTime: number;
+  attemptCount: number;
+  lastAttemptTime: number;
 }
 
 class WebhookMonitoringService {
@@ -23,31 +26,45 @@ class WebhookMonitoringService {
 
     const startTime = Date.now();
     
-    console.log('🚀 [MONITORING SERVICE] Iniciando monitoreo independiente:', {
+    console.log('🚀 [WEBHOOK SERVICE] Iniciando monitoreo mejorado:', {
       userId,
       startTime: new Date(startTime).toISOString()
     });
 
-    onDebugUpdate('🚀 Sistema iniciado - activación en 2 minutos');
+    onDebugUpdate('🚀 Sistema iniciado - primera verificación en 30 segundos');
 
     // Create session
     const session: MonitoringSession = {
       intervalId: null,
+      backupIntervalId: null,
       isActive: true,
-      startTime
+      startTime,
+      attemptCount: 0,
+      lastAttemptTime: 0
     };
 
     this.sessions.set(userId, session);
 
-    // Schedule webhook activation after 2 minutes
+    // Start IMMEDIATE verification (testing)
     setTimeout(() => {
       if (this.sessions.get(userId)?.isActive) {
-        this.activateWebhookVerification(userId, user, onVideoFound, onDebugUpdate);
+        console.log('🔥 [WEBHOOK SERVICE] Verificación inmediata de prueba');
+        this.performWebhookCheck(userId, user, onVideoFound, onDebugUpdate, 'INMEDIATA');
       }
-    }, 2 * 60 * 1000); // 2 minutes
+    }, 5000); // 5 segundos para prueba inmediata
+
+    // Schedule main webhook verification after 30 seconds (reduced from 2 minutes)
+    setTimeout(() => {
+      if (this.sessions.get(userId)?.isActive) {
+        this.activateMainVerification(userId, user, onVideoFound, onDebugUpdate);
+      }
+    }, 30 * 1000); // 30 segundos
+
+    // Start backup verification every 30 seconds
+    this.activateBackupVerification(userId, user, onVideoFound, onDebugUpdate);
   }
 
-  private async activateWebhookVerification(
+  private async activateMainVerification(
     userId: string,
     user: User,
     onVideoFound: (videoData: any) => void,
@@ -56,38 +73,80 @@ class WebhookMonitoringService {
     const session = this.sessions.get(userId);
     if (!session?.isActive) return;
 
-    console.log('🎯 [MONITORING SERVICE] Activando verificaciones webhook cada minuto');
-    onDebugUpdate('🎯 Webhook activado - verificando cada minuto');
+    console.log('🎯 [WEBHOOK SERVICE] Activando verificación principal cada minuto');
+    onDebugUpdate('🎯 Verificación principal activada - cada minuto');
 
     // Execute immediate check
-    await this.performWebhookCheck(userId, user, onVideoFound, onDebugUpdate);
+    await this.performWebhookCheck(userId, user, onVideoFound, onDebugUpdate, 'PRINCIPAL');
 
-    // Set up interval for every minute
+    // Set up main interval for every minute
     session.intervalId = setInterval(async () => {
-      if (!this.sessions.get(userId)?.isActive) {
+      const currentSession = this.sessions.get(userId);
+      if (!currentSession?.isActive) {
         this.stopMonitoring(userId);
         return;
       }
 
-      await this.performWebhookCheck(userId, user, onVideoFound, onDebugUpdate);
+      await this.performWebhookCheck(userId, user, onVideoFound, onDebugUpdate, 'PRINCIPAL');
     }, 60 * 1000); // Every minute
+  }
+
+  private async activateBackupVerification(
+    userId: string,
+    user: User,
+    onVideoFound: (videoData: any) => void,
+    onDebugUpdate: (message: string) => void
+  ) {
+    const session = this.sessions.get(userId);
+    if (!session?.isActive) return;
+
+    console.log('🔄 [WEBHOOK SERVICE] Activando verificación de respaldo cada 30 segundos');
+
+    // Set up backup interval for every 30 seconds
+    session.backupIntervalId = setInterval(async () => {
+      const currentSession = this.sessions.get(userId);
+      if (!currentSession?.isActive) {
+        this.stopMonitoring(userId);
+        return;
+      }
+
+      // Only run backup if main verification hasn't run recently
+      const timeSinceLastAttempt = Date.now() - currentSession.lastAttemptTime;
+      if (timeSinceLastAttempt > 25000) { // If no main verification in last 25 seconds
+        console.log('🆘 [WEBHOOK SERVICE] Ejecutando verificación de respaldo');
+        await this.performWebhookCheck(userId, user, onVideoFound, onDebugUpdate, 'RESPALDO');
+      }
+    }, 30 * 1000); // Every 30 seconds
   }
 
   private async performWebhookCheck(
     userId: string,
     user: User,
     onVideoFound: (videoData: any) => void,
-    onDebugUpdate: (message: string) => void
+    onDebugUpdate: (message: string) => void,
+    checkType: string = 'AUTO'
   ) {
+    const session = this.sessions.get(userId);
+    if (!session?.isActive) return;
+
     try {
-      console.log('🔍 [MONITORING SERVICE] Ejecutando verificación webhook');
+      session.attemptCount++;
+      session.lastAttemptTime = Date.now();
+
+      const minutesElapsed = Math.floor((Date.now() - session.startTime) / 60000);
+      
+      console.log(`🔍 [WEBHOOK SERVICE] Verificación ${checkType} #${session.attemptCount}:`, {
+        minutesElapsed,
+        userId,
+        timestamp: new Date().toISOString()
+      });
       
       // Get fresh tracking data from database
       const trackingData = await this.getFreshTrackingData(userId);
       
       if (!trackingData) {
-        console.log('❌ [MONITORING SERVICE] No hay tracking activo');
-        onDebugUpdate('❌ No hay tracking activo');
+        console.log('❌ [WEBHOOK SERVICE] No hay tracking activo');
+        onDebugUpdate('❌ No hay tracking activo - deteniendo verificación');
         this.stopMonitoring(userId);
         return;
       }
@@ -95,37 +154,51 @@ class WebhookMonitoringService {
       const { request_id, script, status } = trackingData;
 
       if (status !== 'processing') {
-        console.log('✅ [MONITORING SERVICE] Tracking ya no está en processing:', status);
+        console.log('✅ [WEBHOOK SERVICE] Tracking ya no está en processing:', status);
+        onDebugUpdate(`✅ Tracking completado: ${status}`);
         this.stopMonitoring(userId);
         return;
       }
 
-      const minutesElapsed = Math.floor((Date.now() - Date.parse(trackingData.start_time)) / 60000);
-      onDebugUpdate(`🔍 Verificando webhook (min: ${minutesElapsed})`);
+      onDebugUpdate(`🔍 ${checkType} #${session.attemptCount} (min: ${minutesElapsed}) - Enviando a webhook...`);
 
-      console.log('📤 [MONITORING SERVICE] Enviando a webhook:', {
+      console.log('📤 [WEBHOOK SERVICE] Enviando datos a webhook:', {
         requestId: request_id,
         userId,
         scriptLength: script.length,
-        minutesElapsed
+        minutesElapsed,
+        checkType,
+        webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
       });
 
-      // Send to webhook
-      const videoData = await checkVideoViaWebhook(user, request_id, script);
+      // Send to webhook with aggressive logging
+      const videoData = await this.sendToWebhookWithLogging(user, request_id, script, checkType);
 
       if (videoData) {
-        console.log('🎉 [MONITORING SERVICE] VIDEO ENCONTRADO');
-        onDebugUpdate('🎉 Video encontrado via webhook');
+        console.log('🎉 [WEBHOOK SERVICE] VIDEO ENCONTRADO VIA WEBHOOK');
+        onDebugUpdate(`🎉 Video encontrado via ${checkType}`);
         onVideoFound(videoData);
         this.stopMonitoring(userId);
       } else {
-        console.log(`❌ [MONITORING SERVICE] Video no listo (min: ${minutesElapsed})`);
-        onDebugUpdate(`❌ Video no listo (min: ${minutesElapsed})`);
+        console.log(`❌ [WEBHOOK SERVICE] Video no listo en verificación ${checkType}`);
+        onDebugUpdate(`❌ ${checkType} #${session.attemptCount}: Video no listo`);
       }
 
     } catch (error) {
-      console.error('💥 [MONITORING SERVICE] Error en verificación:', error);
-      onDebugUpdate(`💥 Error: ${error}`);
+      console.error(`💥 [WEBHOOK SERVICE] Error en verificación ${checkType}:`, error);
+      onDebugUpdate(`💥 Error ${checkType}: ${error}`);
+    }
+  }
+
+  private async sendToWebhookWithLogging(user: User, requestId: string, script: string, checkType: string) {
+    try {
+      console.log(`🌐 [WEBHOOK SERVICE] ${checkType} - Enviando petición HTTP a webhook`);
+      const result = await checkVideoViaWebhook(user, requestId, script);
+      console.log(`📥 [WEBHOOK SERVICE] ${checkType} - Respuesta webhook recibida:`, !!result);
+      return result;
+    } catch (error) {
+      console.error(`💥 [WEBHOOK SERVICE] ${checkType} - Error en petición webhook:`, error);
+      throw error;
     }
   }
 
@@ -141,13 +214,20 @@ class WebhookMonitoringService {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [MONITORING SERVICE] Error obteniendo tracking:', error);
+        console.error('❌ [WEBHOOK SERVICE] Error obteniendo tracking:', error);
         return null;
       }
 
+      console.log('📊 [WEBHOOK SERVICE] Datos de tracking obtenidos:', {
+        hasData: !!data,
+        requestId: data?.request_id,
+        status: data?.status,
+        scriptLength: data?.script?.length
+      });
+
       return data;
     } catch (error) {
-      console.error('💥 [MONITORING SERVICE] Error en getFreshTrackingData:', error);
+      console.error('💥 [WEBHOOK SERVICE] Error en getFreshTrackingData:', error);
       return null;
     }
   }
@@ -158,32 +238,40 @@ class WebhookMonitoringService {
     onVideoFound: (videoData: any) => void,
     onDebugUpdate: (message: string) => void
   ): Promise<boolean> {
-    console.log('🔍 [MONITORING SERVICE] Verificación manual ejecutada');
-    onDebugUpdate('🔍 Verificación manual...');
+    console.log('🔍 [WEBHOOK SERVICE] VERIFICACIÓN MANUAL EJECUTADA');
+    onDebugUpdate('🔍 Verificación manual iniciada...');
 
     try {
       const trackingData = await this.getFreshTrackingData(userId);
       
       if (!trackingData) {
-        onDebugUpdate('❌ No hay tracking activo');
+        onDebugUpdate('❌ Manual: No hay tracking activo');
         return false;
       }
 
       const { request_id, script } = trackingData;
-      const videoData = await checkVideoViaWebhook(user, request_id, script);
+      
+      onDebugUpdate('📤 Manual: Enviando datos a webhook...');
+      console.log('📤 [WEBHOOK SERVICE] Manual - Enviando a webhook:', {
+        requestId: request_id,
+        scriptLength: script.length
+      });
+
+      const videoData = await this.sendToWebhookWithLogging(user, request_id, script, 'MANUAL');
 
       if (videoData) {
-        console.log('✅ [MONITORING SERVICE] Video encontrado en verificación manual');
+        console.log('✅ [WEBHOOK SERVICE] Video encontrado en verificación manual');
+        onDebugUpdate('✅ Manual: Video encontrado!');
         onVideoFound(videoData);
         this.stopMonitoring(userId);
         return true;
       } else {
-        onDebugUpdate('❌ Video no encontrado');
+        onDebugUpdate('❌ Manual: Video no encontrado');
         return false;
       }
     } catch (error) {
-      console.error('💥 [MONITORING SERVICE] Error en verificación manual:', error);
-      onDebugUpdate(`💥 Error: ${error}`);
+      console.error('💥 [WEBHOOK SERVICE] Error en verificación manual:', error);
+      onDebugUpdate(`💥 Manual: Error - ${error}`);
       return false;
     }
   }
@@ -191,10 +279,14 @@ class WebhookMonitoringService {
   stopMonitoring(userId: string) {
     const session = this.sessions.get(userId);
     if (session) {
-      console.log('🛑 [MONITORING SERVICE] Deteniendo monitoreo para usuario:', userId);
+      console.log('🛑 [WEBHOOK SERVICE] Deteniendo monitoreo para usuario:', userId);
       
       if (session.intervalId) {
         clearInterval(session.intervalId);
+      }
+      
+      if (session.backupIntervalId) {
+        clearInterval(session.backupIntervalId);
       }
       
       session.isActive = false;
@@ -206,10 +298,16 @@ class WebhookMonitoringService {
     return this.sessions.get(userId)?.isActive || false;
   }
 
-  getElapsedTime(userId: string): number {
+  getSessionInfo(userId: string) {
     const session = this.sessions.get(userId);
-    if (!session) return 0;
-    return Math.floor((Date.now() - session.startTime) / 1000);
+    if (!session) return null;
+    
+    return {
+      elapsedTime: Math.floor((Date.now() - session.startTime) / 1000),
+      attemptCount: session.attemptCount,
+      isActive: session.isActive,
+      timeSinceLastAttempt: session.lastAttemptTime ? Math.floor((Date.now() - session.lastAttemptTime) / 1000) : 0
+    };
   }
 }
 

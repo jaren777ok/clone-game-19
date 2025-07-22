@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Video, Wifi, AlertTriangle, Clock, RefreshCw, Globe } from 'lucide-react';
+import { Video, Wifi, AlertTriangle, Clock, RefreshCw, Globe, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
 import { hasReachedPollingTime } from '@/lib/countdownUtils';
@@ -10,7 +10,7 @@ interface VideoProcessingStateProps {
   totalTime: number;
   isRecovering?: boolean;
   onManualCheck?: () => void;
-  debugInfo?: string; // Nuevo prop para debug
+  debugInfo?: string;
 }
 
 const VideoProcessingState = ({ 
@@ -61,16 +61,16 @@ const VideoProcessingState = ({
             </p>
           </div>
 
-          {/* Debug Information - Solo en desarrollo */}
+          {/* Debug Information */}
           {debugInfo && (
-            <div className="bg-card/30 border border-yellow-500/30 rounded-lg p-4">
+            <div className="bg-card/30 border border-blue-500/30 rounded-lg p-4">
               <div className="flex items-center justify-center space-x-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                <span className="text-sm font-medium text-yellow-300">Debug Info</span>
+                <Globe className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium text-blue-300">Estado del Sistema</span>
               </div>
-              <p className="text-xs text-yellow-200 font-mono">{debugInfo}</p>
+              <p className="text-xs text-blue-200 font-mono">{debugInfo}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Minutos transcurridos: {minutesElapsed} | Fase polling: {isInPollingPhase ? 'SÍ' : 'NO'}
+                Minutos transcurridos: {minutesElapsed} | Verificación automática: {isInPollingPhase ? 'ACTIVA' : 'PENDIENTE'}
               </p>
             </div>
           )}
@@ -78,16 +78,16 @@ const VideoProcessingState = ({
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Manual Check Button - Solo mostrar después de 2 minutos */}
-          {isInPollingPhase && onManualCheck && (
-            <div className="flex justify-center">
+          {/* Manual Check Button - Always visible for testing */}
+          {onManualCheck && (
+            <div className="flex justify-center space-x-4">
               <Button
                 onClick={onManualCheck}
                 variant="outline"
-                className="bg-card/50 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300"
+                className="bg-green-500/10 border-green-500/30 hover:bg-green-500/20 hover:border-green-500/50 transition-all duration-300"
               >
-                <Globe className="w-4 h-4 mr-2" />
-                Verificar via Webhook Ahora
+                <Play className="w-4 h-4 mr-2" />
+                Verificar Manualmente
               </Button>
             </div>
           )}
@@ -97,32 +97,35 @@ const VideoProcessingState = ({
             <div className="flex items-center justify-center space-x-2 mb-4">
               <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
               <h3 className="text-lg font-semibold text-amber-300">
-                {isInPollingPhase ? 'Verificación via Webhook Activa' : 'Información del Proceso'}
+                {isInPollingPhase ? 'Verificación Webhook Activa' : 'Información del Proceso'}
               </h3>
             </div>
             <div className="space-y-3 text-center">
               {isInPollingPhase ? (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    🌐 Verificando automáticamente cada minuto via webhook externa
+                    🌐 Verificación automática cada minuto + respaldo cada 30 segundos
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    ⚡ Sistema mejorado con doble verificación (normal + forzada)
+                    ⚡ Sistema mejorado con verificación inmediata y doble respaldo
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    ⏰ Tiempo restante: {minutesRemaining} minutos | Transcurridos: {minutesElapsed} minutos
+                    🔍 Botón manual disponible para verificación instantánea
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    ⏰ Tiempo restante: {minutesRemaining} min | Transcurridos: {minutesElapsed} min
                   </p>
                 </>
               ) : (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    🎬 Generando video (primeros 2 minutos)
+                    🎬 Generando video (primeros 30 segundos)
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    🕒 Las verificaciones via webhook iniciarán a los 2 minutos
+                    🕒 Verificaciones webhook iniciarán en 30 segundos
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    💻 Puedes cerrar la app y volver luego
+                    🔍 Botón manual ya disponible para pruebas
                   </p>
                 </>
               )}
@@ -131,10 +134,10 @@ const VideoProcessingState = ({
 
           {/* Connection Status */}
           <div className="flex items-center justify-center space-x-2">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${isInPollingPhase ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${isInPollingPhase ? 'bg-green-500' : 'bg-blue-500'}`}></div>
             <span className="text-sm text-muted-foreground">
               {isInPollingPhase 
-                ? 'Sistema de verificación via webhook activo (cada minuto)' 
+                ? 'Sistema webhook activo (cada minuto + respaldo)' 
                 : 'Sistema de generación en proceso'
               }
             </span>
