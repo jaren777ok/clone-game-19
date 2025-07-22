@@ -55,33 +55,39 @@ const VideoProcessingState = ({
 
           {/* Manual Check Button - Enhanced with vibrant green gradient */}
           {canCheckVideo && onManualCheck && (
-            <div className="space-y-4">
-              {/* Container with gradient background and glow effects */}
-              <div className="relative mx-auto max-w-md">
-                {/* Outer glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-green-500 to-emerald-600 rounded-2xl blur-md opacity-75 animate-pulse"></div>
+            <div className="space-y-6">
+              {/* Container with enhanced gradient background and glow effects */}
+              <div className="relative mx-auto max-w-lg">
+                {/* Outer glow effect - More intense */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-green-500 to-emerald-600 rounded-3xl blur-xl opacity-90 animate-pulse"></div>
                 
-                {/* Inner container with gradient background */}
-                <div className="relative bg-gradient-to-r from-green-400/20 via-green-500/30 to-emerald-600/20 p-6 rounded-2xl border border-green-500/50 backdrop-blur-sm">
+                {/* Secondary glow for more depth */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-300 via-green-400 to-emerald-500 rounded-3xl blur-lg opacity-60 animate-pulse delay-150"></div>
+                
+                {/* Inner container with enhanced gradient background */}
+                <div className="relative bg-gradient-to-r from-green-400/30 via-green-500/40 to-emerald-600/30 p-8 rounded-3xl border-2 border-green-400/60 backdrop-blur-sm shadow-2xl shadow-green-500/40">
                   <Button
                     onClick={onManualCheck}
                     disabled={isChecking}
                     size="lg"
-                    className="w-full bg-gradient-to-r from-green-500 via-green-600 to-emerald-700 hover:from-green-600 hover:via-green-700 hover:to-emerald-800 text-white font-bold py-4 px-12 rounded-xl shadow-2xl shadow-green-500/50 transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-0 relative overflow-hidden"
+                    className="w-full bg-gradient-to-r from-green-400 via-green-500 to-emerald-600 hover:from-green-500 hover:via-green-600 hover:to-emerald-700 focus:from-green-500 focus:via-green-600 focus:to-emerald-700 text-white font-black py-6 px-16 rounded-2xl shadow-2xl shadow-green-500/60 transform hover:scale-110 focus:scale-110 transition-all duration-300 text-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-0 relative overflow-hidden ring-2 ring-green-400/50 hover:ring-green-300/70 focus:ring-green-300/70"
                   >
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-[shimmer_2s_infinite]"></div>
+                    {/* Enhanced shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-[shimmer_1.5s_infinite]"></div>
                     
-                    <Play className="w-6 h-6 mr-3 relative z-10" />
-                    <span className="relative z-10">
+                    {/* Pulsing background overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-300/20 via-green-400/30 to-emerald-500/20 animate-pulse"></div>
+                    
+                    <Play className="w-7 h-7 mr-4 relative z-10 drop-shadow-lg" />
+                    <span className="relative z-10 drop-shadow-lg tracking-wide">
                       {isChecking ? 'Verificando...' : 'Verificar Video'}
                     </span>
                   </Button>
                 </div>
               </div>
               
-              <p className="text-green-300 text-base font-medium animate-pulse">
-                ✨ Toca el botón para verificar si tu video ya está listo
+              <p className="text-green-200 text-lg font-bold animate-pulse bg-gradient-to-r from-green-200 via-green-300 to-emerald-300 bg-clip-text text-transparent">
+                ✨ Toca el botón para verificar si tu video ya está listo ✨
               </p>
             </div>
           )}
