@@ -147,7 +147,7 @@ export const useVideoMonitoring = () => {
           }
 
           // Limpiar estado de generación
-          await clearGenerationState(user.id);
+          clearGenerationState();
           
           // Actualizar estado de la UI
           setVideoResult(result.videoUrl);
