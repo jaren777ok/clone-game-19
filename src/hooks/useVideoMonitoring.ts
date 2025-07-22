@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
-import { verifyVideoExists, recoverLostVideo, checkFinalVideoResult } from '@/lib/databaseUtils';
+import { checkVideoViaWebhook, recoverLostVideo, checkFinalVideoResult } from '@/lib/databaseUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
 
 export const useVideoMonitoring = () => {
@@ -32,7 +32,7 @@ export const useVideoMonitoring = () => {
   }, []);
 
   const videoDetected = useCallback((videoData: any, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void) => {
-    console.log('🎉 VIDEO DETECTADO - Limpiando estado:', {
+    console.log('🎉 VIDEO DETECTADO VIA WEBHOOK - Limpiando estado:', {
       videoUrl: videoData.video_url,
       title: videoData.title,
       requestId: videoData.request_id
@@ -59,11 +59,12 @@ export const useVideoMonitoring = () => {
     customStartTime?: number
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando monitoreo MEJORADO - Verificación desde minuto 25:', {
+    console.log('🚀 Iniciando monitoreo MEJORADO CON WEBHOOK - Verificaciones desde minuto 25:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
       scriptLength: scriptToCheck.length,
-      userId: user?.id
+      userId: user?.id,
+      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
     });
     
     setGenerationStartTime(startTime);
@@ -78,7 +79,7 @@ export const useVideoMonitoring = () => {
       updateTimeRemaining(remaining);
       
       if (remaining <= 0) {
-        console.log('⏰ Tiempo agotado - verificación final');
+        console.log('⏰ Tiempo agotado - verificación final via webhook');
         checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
         return;
       }
@@ -88,85 +89,79 @@ export const useVideoMonitoring = () => {
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-    // VERIFICACIÓN INMEDIATA: Intentar recuperar video perdido al inicio
+    // VERIFICACIÓN INICIAL: Intentar recuperar video perdido al inicio (legacy DB check)
     setTimeout(async () => {
       if (!isActiveRef.current) return;
       
-      console.log('🔄 Verificación inicial - intentando recuperar video perdido');
+      console.log('🔄 Verificación inicial - intentando recuperar video perdido (legacy)');
       const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
       if (recoveredVideo && isActiveRef.current) {
         videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
       }
     }, 5000); // 5 segundos después de iniciar
 
-    // ⭐ NUEVA LÓGICA: VERIFICACIÓN DESDE EL MINUTO 25 CADA MINUTO
+    // ⭐ NUEVA LÓGICA: VERIFICACIÓN VIA WEBHOOK DESDE EL MINUTO 25 CADA MINUTO
     setTimeout(() => {
       if (!isActiveRef.current) return;
       
-      console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25');
+      console.log('🎯 INICIANDO VERIFICACIONES VIA WEBHOOK CADA MINUTO DESDE MINUTO 25');
       
-      const regularCheck = async () => {
+      const webhookCheck = async () => {
         if (!isActiveRef.current) return;
         
         const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-        console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video:', {
+        console.log('🌐 Verificación via webhook (minuto ' + minutesElapsed + '):', {
           requestId,
           userId: user?.id,
-          minutesElapsed
+          minutesElapsed,
+          webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
         });
         
-        const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+        const videoData = await checkVideoViaWebhook(user, requestId, scriptToCheck);
         if (videoData && isActiveRef.current) {
-          console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN REGULAR:', videoData);
+          console.log('✅ VIDEO ENCONTRADO VIA WEBHOOK:', videoData);
           videoDetected(videoData, setVideoResult, setIsGenerating);
         } else {
-          console.log('❌ Video no encontrado aún en minuto', minutesElapsed);
+          console.log('❌ Webhook respuesta: Video no listo aún en minuto', minutesElapsed);
         }
       };
       
       // Ejecutar verificación inmediatamente al llegar al minuto 25
-      regularCheck();
+      webhookCheck();
       
-      // Continuar verificando cada minuto
-      pollingIntervalRef.current = setInterval(regularCheck, 60 * 1000); // Cada minuto
+      // Continuar verificando cada minuto via webhook
+      pollingIntervalRef.current = setInterval(webhookCheck, 60 * 1000); // Cada minuto
       
-    }, 25 * 60 * 1000); // ⭐ Iniciar a los 25 minutos (no 30)
+    }, 25 * 60 * 1000); // ⭐ Iniciar a los 25 minutos
 
   }, [updateTimeRemaining, user, videoDetected]);
 
-  // Función para verificación manual mejorada
+  // Función para verificación manual mejorada CON WEBHOOK
   const checkVideoManually = useCallback(async (
     requestId: string,
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN MANUAL SOLICITADA:', {
+    console.log('🔍 VERIFICACIÓN MANUAL VIA WEBHOOK:', {
       requestId,
       userId: user?.id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
     });
     
-    // Verificación directa y completa
-    const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+    // Verificación principal via webhook
+    const videoData = await checkVideoViaWebhook(user, requestId, scriptToCheck);
     if (videoData) {
-      console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN MANUAL:', videoData);
+      console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN MANUAL VIA WEBHOOK:', videoData);
       videoDetected(videoData, setVideoResult, setIsGenerating);
       return true;
     }
     
-    // Intentar recuperación como fallback
-    const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
-    if (recoveredVideo) {
-      console.log('🔄 VIDEO RECUPERADO EN VERIFICACIÓN MANUAL:', recoveredVideo);
-      videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
-      return true;
-    }
-    
-    console.log('❌ Video no encontrado en verificación manual');
+    console.log('❌ Webhook manual: Video no encontrado');
     toast({
       title: "Video no encontrado",
-      description: "El video aún no está disponible. La verificación automática continuará cada minuto desde el minuto 25.",
+      description: "El video aún no está disponible. La verificación automática via webhook continuará cada minuto desde el minuto 25.",
       variant: "default"
     });
     
@@ -179,7 +174,7 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('⚠️ startPeriodicChecking (legacy) - funcionalidad incluida en startCountdown');
+    console.log('⚠️ startPeriodicChecking (legacy) - funcionalidad incluida en startCountdown con webhook');
   }, []);
 
   const checkFinalResult = useCallback(async (
@@ -187,20 +182,20 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN FINAL tras 39 minutos');
+    console.log('🔍 VERIFICACIÓN FINAL tras 39 minutos VIA WEBHOOK');
     
     try {
       const videoData = await checkFinalVideoResult(user, scriptToCheck);
       
       if (videoData?.video_url) {
-        console.log('✅ Video encontrado en verificación final');
+        console.log('✅ Video encontrado en verificación final via webhook');
         setVideoResult(videoData.video_url);
         toast({
           title: "¡Video completado!",
           description: videoData.title || "Tu video ha sido generado exitosamente.",
         });
       } else {
-        console.log('⏰ Video NO encontrado después de 39 minutos');
+        console.log('⏰ Video NO encontrado después de 39 minutos via webhook');
         toast({
           title: "Video en proceso",
           description: "Tu video está tardando un poco más de lo normal. Por favor, revisa la sección 'Videos Guardados' en 10-15 minutos.",
@@ -208,7 +203,7 @@ export const useVideoMonitoring = () => {
         });
       }
     } catch (e) {
-      console.error('❌ Error en verificación final:', e);
+      console.error('❌ Error en verificación final via webhook:', e);
       toast({
         title: "Error en verificación",
         description: "Hubo un problema al verificar el video. Por favor, revisa la sección 'Videos Guardados' en unos minutos.",
@@ -222,7 +217,7 @@ export const useVideoMonitoring = () => {
   }, [user, toast]);
 
   const cleanup = useCallback(() => {
-    console.log('🧹 Limpieza completa del monitoreo');
+    console.log('🧹 Limpieza completa del monitoreo con webhook');
     isActiveRef.current = false;
     clearAllIntervals();
   }, [clearAllIntervals]);

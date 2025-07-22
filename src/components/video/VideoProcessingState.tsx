@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Video, Wifi, AlertTriangle, Clock, RefreshCw } from 'lucide-react';
+import { Video, Wifi, AlertTriangle, Clock, RefreshCw, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
 import { hasReachedPollingTime } from '@/lib/countdownUtils';
@@ -30,7 +30,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
               {isRecovering ? (
                 <Wifi className="w-12 h-12 text-background" />
               ) : isInPollingPhase ? (
-                <Clock className="w-12 h-12 text-background" />
+                <Globe className="w-12 h-12 text-background" />
               ) : (
                 <Video className="w-12 h-12 text-background" />
               )}
@@ -40,14 +40,14 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
           {/* Title */}
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-              {isRecovering ? 'Verificando Video' : isInPollingPhase ? 'Verificando Resultado' : 'Generando tu Video'}
+              {isRecovering ? 'Verificando Video' : isInPollingPhase ? 'Verificando via Webhook' : 'Generando tu Video'}
             </h1>
             
             <p className="text-muted-foreground text-lg">
               {isRecovering 
                 ? 'Verificando si tu video ya está listo en segundo plano...'
                 : isInPollingPhase
-                ? 'Verificando automáticamente si tu video está disponible...'
+                ? 'Sistema avanzado verificando automáticamente via webhook externa...'
                 : 'Nuestro sistema está procesando tu solicitud con inteligencia artificial'
               }
             </p>
@@ -56,7 +56,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Manual Check Button - Solo mostrar después de 30 minutos */}
+          {/* Manual Check Button - Solo mostrar después de 25 minutos */}
           {isInPollingPhase && onManualCheck && (
             <div className="flex justify-center">
               <Button
@@ -64,8 +64,8 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
                 variant="outline"
                 className="bg-card/50 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Verificar Video Ahora
+                <Globe className="w-4 h-4 mr-2" />
+                Verificar via Webhook Ahora
               </Button>
             </div>
           )}
@@ -75,17 +75,17 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
             <div className="flex items-center justify-center space-x-2 mb-4">
               <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
               <h3 className="text-lg font-semibold text-amber-300">
-                {isInPollingPhase ? 'Verificación Automática Activa' : 'Información del Proceso'}
+                {isInPollingPhase ? 'Verificación via Webhook Activa' : 'Información del Proceso'}
               </h3>
             </div>
             <div className="space-y-3 text-center">
               {isInPollingPhase ? (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    🔍 Verificando automáticamente cada 30 segundos
+                    🌐 Verificando automáticamente cada minuto via webhook externa
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    ⚡ Sistema mejorado con recuperación automática
+                    ⚡ Sistema mejorado con verificación en tiempo real
                   </p>
                   <p className="text-muted-foreground text-sm">
                     ⏰ Tiempo restante: {minutesRemaining} minutos
@@ -94,10 +94,10 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
               ) : (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    🎬 Generando video (primeros 30 minutos)
+                    🎬 Generando video (primeros 25 minutos)
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    🕒 Las verificaciones intensivas iniciarán a los 30 minutos
+                    🕒 Las verificaciones via webhook iniciarán a los 25 minutos
                   </p>
                   <p className="text-muted-foreground text-sm">
                     💻 Puedes cerrar la app y volver luego
@@ -112,7 +112,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
             <div className={`w-2 h-2 rounded-full animate-pulse ${isInPollingPhase ? 'bg-blue-500' : 'bg-green-500'}`}></div>
             <span className="text-sm text-muted-foreground">
               {isInPollingPhase 
-                ? 'Sistema de verificación mejorado activo' 
+                ? 'Sistema de verificación via webhook activo' 
                 : 'Sistema de generación en proceso'
               }
             </span>
