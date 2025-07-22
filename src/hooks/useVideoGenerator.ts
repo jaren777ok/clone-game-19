@@ -522,6 +522,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       totalTime: COUNTDOWN_TIME,
       currentRequestId,
       isLoading,
+      debugInfo: `RequestId: ${currentRequestId} | Generating: ${isGenerating} | TimeLeft: ${Math.floor(timeRemaining/60)}min`
     },
     handlers: {
       setScript,
