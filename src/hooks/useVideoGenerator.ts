@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -46,22 +45,22 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     cleanup 
   } = useVideoMonitoring();
 
-  // Wrapper functions to provide state setters to monitoring hooks
-  const startCountdown = (requestId: string, scriptToCheck: string, setVideoResultParam: (result: string) => void, setIsGeneratingParam: (generating: boolean) => void, customStartTime?: number) => {
-    baseStartCountdown(requestId, scriptToCheck, setVideoResultParam, setIsGeneratingParam, customStartTime);
+  // ⭐ WRAPPER FUNCTIONS ACTUALIZADOS - SIN SCRIPT
+  const startCountdown = (requestId: string, setVideoResultParam: (result: string) => void, setIsGeneratingParam: (generating: boolean) => void, customStartTime?: number) => {
+    baseStartCountdown(requestId, setVideoResultParam, setIsGeneratingParam, customStartTime);
   };
 
-  const startPeriodicChecking = (requestId: string, scriptToCheck: string) => {
-    baseStartPeriodicChecking(requestId, scriptToCheck, setVideoResult, setIsGenerating);
+  const startPeriodicChecking = (requestId: string) => {
+    baseStartPeriodicChecking(requestId, setVideoResult, setIsGenerating);
   };
 
-  const checkFinalResult = (scriptToCheck: string) => {
-    baseCheckFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
+  const checkFinalResult = () => {
+    baseCheckFinalResult(setVideoResult, setIsGenerating);
   };
 
   const checkVideoManually = () => {
-    if (currentRequestId && script) {
-      return baseCheckVideoManually(currentRequestId, script, setVideoResult, setIsGenerating);
+    if (currentRequestId) {
+      return baseCheckVideoManually(currentRequestId, setVideoResult, setIsGenerating);
     }
     return Promise.resolve(false);
   };
@@ -188,9 +187,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         throw new Error('No se pudo guardar el estado de generación');
       }
 
-      // Start countdown immediately
-      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId, script.trim());
+      // Start countdown immediately - SIN SCRIPT
+      startCountdown(requestId, setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId);
 
       toast({
         title: "Video en procesamiento",
@@ -339,9 +338,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         throw new Error('No se pudo guardar el estado de generación');
       }
 
-      // Start countdown and monitoring ONLY after successful webhook call
-      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId, script.trim());
+      // Start countdown and monitoring ONLY after successful webhook call - SIN SCRIPT
+      startCountdown(requestId, setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId);
 
       toast({
         title: "Video en procesamiento",
@@ -478,9 +477,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         throw new Error('No se pudo guardar el estado de generación');
       }
 
-      // Start countdown and monitoring ONLY after successful webhook call
-      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
-      startPeriodicChecking(requestId, script.trim());
+      // Start countdown and monitoring ONLY after successful webhook call - SIN SCRIPT
+      startCountdown(requestId, setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId);
 
       toast({
         title: "Video en procesamiento",

@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -55,20 +56,18 @@ export const useVideoMonitoring = () => {
     });
   }, [clearAllIntervals, toast]);
 
-  // ⭐ COUNTDOWN MEJORADO - Con soporte para modo recuperación
+  // ⭐ COUNTDOWN MEJORADO - SIN SCRIPT, solo request_id
   const startCountdown = useCallback((
     requestId: string, 
-    scriptToCheck: string, 
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void,
     customStartTime?: number,
     isRecovering?: boolean
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando monitoreo MEJORADO:', {
+    console.log('🚀 Iniciando monitoreo MEJORADO SIN SCRIPT:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
-      scriptLength: scriptToCheck.length,
       userId: user?.id,
       isRecovering: !!isRecovering
     });
@@ -86,7 +85,7 @@ export const useVideoMonitoring = () => {
       
       if (remaining <= 0) {
         console.log('⏰ Tiempo agotado - verificación final');
-        checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
+        checkFinalResult(setVideoResult, setIsGenerating);
         return;
       }
     };
@@ -95,20 +94,20 @@ export const useVideoMonitoring = () => {
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-    // ⭐ MODO RECUPERACIÓN: Verificaciones cada 30 segundos desde el inicio
+    // ⭐ MODO RECUPERACIÓN: Verificaciones cada 30 segundos desde el inicio - SIN SCRIPT
     if (isRecovering) {
-      console.log('🔄 MODO RECUPERACIÓN ACTIVADO - Verificaciones cada 30 segundos');
+      console.log('🔄 MODO RECUPERACIÓN ACTIVADO - Verificaciones cada 30 segundos SIN SCRIPT');
       
       const recoveryCheck = async () => {
         if (!isActiveRef.current) return;
         
-        console.log('🔍 Verificación en modo recuperación:', {
+        console.log('🔍 Verificación en modo recuperación SIN SCRIPT:', {
           requestId,
           userId: user?.id,
           timestamp: new Date().toISOString()
         });
         
-        const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+        const videoData = await verifyVideoExists(user, requestId);
         if (videoData && isActiveRef.current) {
           console.log('✅ VIDEO ENCONTRADO EN MODO RECUPERACIÓN:', videoData);
           videoDetected(videoData, setVideoResult, setIsGenerating);
@@ -124,36 +123,36 @@ export const useVideoMonitoring = () => {
       recoveryIntervalRef.current = setInterval(recoveryCheck, 30 * 1000);
       
     } else {
-      // ⭐ MODO NORMAL: Verificación inicial + verificaciones desde minuto 25
+      // ⭐ MODO NORMAL: Verificación inicial + verificaciones desde minuto 25 - SIN SCRIPT
       
       // VERIFICACIÓN INMEDIATA: Intentar recuperar video perdido al inicio
       setTimeout(async () => {
         if (!isActiveRef.current) return;
         
-        console.log('🔄 Verificación inicial - intentando recuperar video perdido');
-        const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
+        console.log('🔄 Verificación inicial - intentando recuperar video perdido SIN SCRIPT');
+        const recoveredVideo = await recoverLostVideo(user, requestId);
         if (recoveredVideo && isActiveRef.current) {
           videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
         }
       }, 5000); // 5 segundos después de iniciar
 
-      // VERIFICACIONES DESDE EL MINUTO 25 CADA MINUTO
+      // VERIFICACIONES DESDE EL MINUTO 25 CADA MINUTO - SIN SCRIPT
       setTimeout(() => {
         if (!isActiveRef.current) return;
         
-        console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25');
+        console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25 - SIN SCRIPT');
         
         const regularCheck = async () => {
           if (!isActiveRef.current) return;
           
           const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-          console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video:', {
+          console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video SIN SCRIPT:', {
             requestId,
             userId: user?.id,
             minutesElapsed
           });
           
-          const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+          const videoData = await verifyVideoExists(user, requestId);
           if (videoData && isActiveRef.current) {
             console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN REGULAR:', videoData);
             videoDetected(videoData, setVideoResult, setIsGenerating);
@@ -173,29 +172,28 @@ export const useVideoMonitoring = () => {
 
   }, [updateTimeRemaining, user, videoDetected]);
 
-  // Función para verificación manual mejorada
+  // Función para verificación manual mejorada - SIN SCRIPT
   const checkVideoManually = useCallback(async (
     requestId: string,
-    scriptToCheck: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN MANUAL SOLICITADA:', {
+    console.log('🔍 VERIFICACIÓN MANUAL SOLICITADA SIN SCRIPT:', {
       requestId,
       userId: user?.id,
       timestamp: new Date().toISOString()
     });
     
-    // Verificación directa y completa
-    const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+    // Verificación directa y completa - SIN SCRIPT
+    const videoData = await verifyVideoExists(user, requestId);
     if (videoData) {
       console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN MANUAL:', videoData);
       videoDetected(videoData, setVideoResult, setIsGenerating);
       return true;
     }
     
-    // Intentar recuperación como fallback
-    const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
+    // Intentar recuperación como fallback - SIN SCRIPT
+    const recoveredVideo = await recoverLostVideo(user, requestId);
     if (recoveredVideo) {
       console.log('🔄 VIDEO RECUPERADO EN VERIFICACIÓN MANUAL:', recoveredVideo);
       videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
@@ -213,8 +211,7 @@ export const useVideoMonitoring = () => {
   }, [user, videoDetected, toast]);
 
   const startPeriodicChecking = useCallback((
-    requestId: string, 
-    scriptToCheck: string,
+    requestId: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
@@ -222,14 +219,13 @@ export const useVideoMonitoring = () => {
   }, []);
 
   const checkFinalResult = useCallback(async (
-    scriptToCheck: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN FINAL tras 39 minutos');
+    console.log('🔍 VERIFICACIÓN FINAL tras 39 minutos - SIN SCRIPT');
     
     try {
-      const videoData = await checkFinalVideoResult(user, scriptToCheck);
+      const videoData = await checkFinalVideoResult(user);
       
       if (videoData?.video_url) {
         console.log('✅ Video encontrado en verificación final');

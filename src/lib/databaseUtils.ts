@@ -2,13 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
-export const verifyVideoExists = async (user: User | null, requestId: string, script: string) => {
+export const verifyVideoExists = async (user: User | null, requestId: string) => {
   if (!user) return null;
 
   console.log('🎯 VERIFICACIÓN DIRECTA POR REQUEST_ID ÚNICAMENTE:', {
     userId: user.id,
     requestId: requestId,
-    scriptLength: script.length,
     timestamp: new Date().toISOString()
   });
 
@@ -84,7 +83,7 @@ const updateTrackingToCompleted = async (user: User, requestId: string) => {
 };
 
 // Función para recuperar videos "perdidos" - SOLO POR REQUEST_ID
-export const recoverLostVideo = async (user: User | null, requestId: string, script: string) => {
+export const recoverLostVideo = async (user: User | null, requestId: string) => {
   if (!user) return null;
 
   console.log('🔄 RECUPERACIÓN DE VIDEO POR REQUEST_ID ÚNICAMENTE:', {
@@ -95,7 +94,7 @@ export const recoverLostVideo = async (user: User | null, requestId: string, scr
 
   try {
     // Verificar directamente si el video existe por request_id
-    const videoExists = await verifyVideoExists(user, requestId, script);
+    const videoExists = await verifyVideoExists(user, requestId);
     
     if (videoExists) {
       console.log('🎉 VIDEO RECUPERADO EXITOSAMENTE:', videoExists);
@@ -149,17 +148,16 @@ export const recoverLostVideo = async (user: User | null, requestId: string, scr
 };
 
 // Mantener función legacy para compatibilidad
-export const checkVideoInDatabase = async (user: User | null, requestId: string, script: string) => {
+export const checkVideoInDatabase = async (user: User | null, requestId: string) => {
   console.log('⚠️ checkVideoInDatabase (legacy) - redirigiendo a verifyVideoExists');
-  return await verifyVideoExists(user, requestId, script);
+  return await verifyVideoExists(user, requestId);
 };
 
-export const checkFinalVideoResult = async (user: User | null, script: string) => {
+export const checkFinalVideoResult = async (user: User | null) => {
   if (!user) return null;
   
   console.log('🔍 VERIFICACIÓN FINAL - SOLO POR TRACKING RECIENTE:', {
     userId: user.id,
-    scriptPreview: script.substring(0, 50) + '...',
     timestamp: new Date().toISOString()
   });
 
@@ -179,7 +177,7 @@ export const checkFinalVideoResult = async (user: User | null, script: string) =
     });
     
     // Intentar recuperar el video usando los datos del tracking
-    const videoResult = await verifyVideoExists(user, recentTracking.request_id, script);
+    const videoResult = await verifyVideoExists(user, recentTracking.request_id);
     if (videoResult) {
       return { video_url: videoResult.video_url, title: videoResult.title };
     }
