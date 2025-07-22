@@ -908,12 +908,12 @@ export const sendToMultiAvatarWebhook = async (payload: WebhookPayload): Promise
   }
 };
 
-// Nueva función para verificación manual de video
+// Nueva función para verificación manual de video con manejo de respuesta JSON
 export const sendVideoVerificationWebhook = async (
   requestId: string,
   userId: string,
   script: string
-): Promise<boolean> => {
+): Promise<{ success: boolean; videoUrl?: string; message?: string }> => {
   console.log('🔍 Enviando verificación manual de video...');
   console.log('📦 Datos:', { requestId, userId, scriptLength: script.length });
 
@@ -944,18 +944,44 @@ export const sendVideoVerificationWebhook = async (
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      console.log('✅ Verificación manual enviada exitosamente');
-      return true;
+      const data = await response.json();
+      console.log('✅ Respuesta recibida de webhook:', data);
+      
+      // Verificar si la respuesta tiene el formato esperado: [{"video_url": "..."}]
+      if (Array.isArray(data) && data.length > 0 && data[0].video_url) {
+        console.log('🎥 Video encontrado:', data[0].video_url);
+        return {
+          success: true,
+          videoUrl: data[0].video_url,
+          message: 'Video encontrado y listo'
+        };
+      } else {
+        console.log('⏳ Video aún no está listo');
+        return {
+          success: true,
+          message: 'El video aún no está listo'
+        };
+      }
     } else {
       console.error('❌ Error en verificación manual:', response.status, response.statusText);
-      return false;
+      return {
+        success: false,
+        message: 'Error de conexión con el servidor'
+      };
     }
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       console.error('❌ Timeout en verificación manual después de 30 segundos');
+      return {
+        success: false,
+        message: 'Tiempo de espera agotado'
+      };
     } else {
       console.error('❌ Error enviando verificación manual:', error);
+      return {
+        success: false,
+        message: 'Error de conexión'
+      };
     }
-    return false;
   }
 };

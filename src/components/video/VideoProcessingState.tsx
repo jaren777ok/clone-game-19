@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Video, AlertTriangle, Clock, Database, Play } from 'lucide-react';
+import { Video, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
 
@@ -10,6 +10,7 @@ interface VideoProcessingStateProps {
   isRecovering?: boolean;
   onManualCheck?: () => void;
   debugInfo?: string;
+  isChecking?: boolean;
 }
 
 const VideoProcessingState = ({ 
@@ -17,7 +18,8 @@ const VideoProcessingState = ({
   totalTime, 
   isRecovering, 
   onManualCheck,
-  debugInfo 
+  debugInfo,
+  isChecking 
 }: VideoProcessingStateProps) => {
   const minutesRemaining = Math.floor(timeRemaining / 60);
   const minutesElapsed = Math.floor((totalTime - timeRemaining) / 60);
@@ -43,99 +45,51 @@ const VideoProcessingState = ({
             </h1>
             
             <p className="text-muted-foreground text-lg">
-              Sistema manual - verifica el estado cuando desees usando el botón
+              Tu video se está procesando. Usa el botón para verificar si ya está listo.
             </p>
           </div>
-
-          {/* Sistema Manual Information */}
-          <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <Clock className="w-6 h-6 text-blue-400" />
-              <h3 className="text-xl font-semibold text-blue-300">Sistema Manual de Verificación</h3>
-            </div>
-            <div className="space-y-2 text-center">
-              <p className="text-sm text-blue-200">
-                ⏰ <strong>Sin verificaciones automáticas</strong> - solo cuando presiones el botón
-              </p>
-              <p className="text-sm text-muted-foreground">
-                🎯 Verificación dirigida a webhook externa especializada
-              </p>
-              <p className="text-sm text-green-300 font-medium">
-                ⏰ Transcurridos: {minutesElapsed} min | Restantes: {minutesRemaining} min
-              </p>
-            </div>
-          </div>
-
-          {/* Manual Check Button */}
-          {onManualCheck && (
-            <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
-              <div className="flex items-center justify-center space-x-2 mb-4">
-                <Play className="w-6 h-6 text-green-400" />
-                <h3 className="text-lg font-semibold text-green-300">Verificación Manual</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Presiona el botón para enviar los datos de tu video a la webhook de verificación externa.
-              </p>
-              <Button
-                onClick={onManualCheck}
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300"
-              >
-                <Play className="w-5 h-5 mr-3" />
-                Verificar Video
-              </Button>
-              <p className="text-xs text-green-400">
-                ✨ Envía requestId, userId y script a webhook externa
-              </p>
-            </div>
-          )}
-
-          {/* Debug Information */}
-          {debugInfo && (
-            <div className="bg-card/30 border border-blue-500/30 rounded-lg p-4">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <Database className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-medium text-blue-300">Estado del Sistema Manual</span>
-              </div>
-              <p className="text-xs text-blue-200 font-mono">{debugInfo}</p>
-            </div>
-          )}
 
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* System Information */}
-          <div className="bg-card/50 cyber-border border-blue-500/30 rounded-xl p-6">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <Clock className="w-6 h-6 text-blue-400" />
-              <h3 className="text-lg font-semibold text-blue-300">
-                Sistema Manual de Verificación
-              </h3>
+          {/* Manual Check Button - Simplified */}
+          {onManualCheck && (
+            <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-8 space-y-6">
+              <Button
+                onClick={onManualCheck}
+                disabled={isChecking}
+                size="lg"
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-12 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                <Play className="w-6 h-6 mr-3" />
+                {isChecking ? 'Verificando...' : 'Verificar Video'}
+              </Button>
             </div>
+          )}
+
+          {/* System Information - Simplified */}
+          <div className="bg-card/50 cyber-border border-blue-500/30 rounded-xl p-6">
             <div className="space-y-3 text-center">
-              <p className="text-blue-200 text-sm font-medium">
-                🎯 <strong>Verificación completamente manual</strong> - sin automatizaciones
+              <p className="text-blue-200 text-base font-medium">
+                ✅ Presiona el botón para verificar si tu video ya está listo
               </p>
               <p className="text-muted-foreground text-sm">
-                📤 El botón envía datos a webhook externa especializada
+                🔄 Puedes cerrar la aplicación y volver más tarde
               </p>
               <p className="text-muted-foreground text-sm">
-                ⏰ Countdown de 39 minutos para referencia temporal
+                ⚡ Tu video puede estar listo antes del tiempo estimado
               </p>
-              <p className="text-muted-foreground text-sm">
-                🎛️ Tú decides cuándo verificar el estado de tu video
-              </p>
-              <p className="text-muted-foreground text-sm">
-                🔗 Webhook: videogenerado - maneja la verificación externa
+              <p className="text-green-300 text-sm font-medium">
+                ⏰ Tiempo transcurrido: {minutesElapsed} min | Tiempo restante: {minutesRemaining} min
               </p>
             </div>
           </div>
 
           {/* Connection Status */}
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-muted-foreground">
-              Sistema manual activo - verifica cuando desees
+              Sistema listo para verificación manual
             </span>
           </div>
 
