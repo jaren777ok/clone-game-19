@@ -1,4 +1,3 @@
-
 import React from 'react';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
@@ -26,6 +25,7 @@ const VideoGenerator = () => {
         timeRemaining={state.timeRemaining}
         totalTime={state.totalTime}
         isRecovering={state.isRecovering}
+        onManualCheck={handlers.checkVideoManually}
       />
     );
   }

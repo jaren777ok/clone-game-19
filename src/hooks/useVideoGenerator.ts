@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -41,7 +40,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   const { 
     startCountdown: baseStartCountdown, 
     startPeriodicChecking: baseStartPeriodicChecking, 
-    checkFinalResult: baseCheckFinalResult, 
+    checkFinalResult: baseCheckFinalResult,
+    checkVideoManually: baseCheckVideoManually,
     cleanup 
   } = useVideoMonitoring();
 
@@ -56,6 +56,13 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
 
   const checkFinalResult = (scriptToCheck: string) => {
     baseCheckFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
+  };
+
+  const checkVideoManually = () => {
+    if (currentRequestId && script) {
+      return baseCheckVideoManually(currentRequestId, script, setVideoResult, setIsGenerating);
+    }
+    return Promise.resolve(false);
   };
 
   const handleRecoverGeneration = () => {
@@ -505,6 +512,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       handleCancelRecovery,
       handleNewVideo,
       handleCancelGeneration,
+      checkVideoManually,
     },
   };
 };

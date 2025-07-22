@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Video, Wifi, AlertTriangle, Clock } from 'lucide-react';
+import { Video, Wifi, AlertTriangle, Clock, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
 import { hasReachedPollingTime } from '@/lib/countdownUtils';
 
@@ -8,9 +9,10 @@ interface VideoProcessingStateProps {
   timeRemaining: number;
   totalTime: number;
   isRecovering?: boolean;
+  onManualCheck?: () => void;
 }
 
-const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoProcessingStateProps) => {
+const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManualCheck }: VideoProcessingStateProps) => {
   const startTime = Date.now() - (totalTime - timeRemaining) * 1000;
   const isInPollingPhase = hasReachedPollingTime(startTime);
   const minutesRemaining = Math.floor(timeRemaining / 60);
@@ -45,7 +47,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
               {isRecovering 
                 ? 'Verificando si tu video ya está listo en segundo plano...'
                 : isInPollingPhase
-                ? 'Verificando cada minuto si tu video está disponible...'
+                ? 'Verificando automáticamente si tu video está disponible...'
                 : 'Nuestro sistema está procesando tu solicitud con inteligencia artificial'
               }
             </p>
@@ -54,22 +56,36 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
+          {/* Manual Check Button - Solo mostrar después de 30 minutos */}
+          {isInPollingPhase && onManualCheck && (
+            <div className="flex justify-center">
+              <Button
+                onClick={onManualCheck}
+                variant="outline"
+                className="bg-card/50 border-primary/20 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Verificar Video Ahora
+              </Button>
+            </div>
+          )}
+
           {/* Phase-specific Information */}
           <div className="bg-card/50 cyber-border border-amber-500/30 rounded-xl p-6">
             <div className="flex items-center justify-center space-x-2 mb-4">
               <AlertTriangle className="w-6 h-6 text-amber-400 animate-pulse" />
               <h3 className="text-lg font-semibold text-amber-300">
-                {isInPollingPhase ? 'Fase de Verificación Activa' : 'Información del Proceso'}
+                {isInPollingPhase ? 'Verificación Automática Activa' : 'Información del Proceso'}
               </h3>
             </div>
             <div className="space-y-3 text-center">
               {isInPollingPhase ? (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    🔍 Verificando cada minuto si tu video está disponible
+                    🔍 Verificando automáticamente cada 30 segundos
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    ⚡ Tu video debería estar disponible pronto
+                    ⚡ Sistema mejorado con recuperación automática
                   </p>
                   <p className="text-muted-foreground text-sm">
                     ⏰ Tiempo restante: {minutesRemaining} minutos
@@ -81,7 +97,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
                     🎬 Generando video (primeros 30 minutos)
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    🕒 Las verificaciones iniciarán automáticamente a los 30 minutos
+                    🕒 Las verificaciones intensivas iniciarán a los 30 minutos
                   </p>
                   <p className="text-muted-foreground text-sm">
                     💻 Puedes cerrar la app y volver luego
@@ -96,7 +112,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering }: VideoP
             <div className={`w-2 h-2 rounded-full animate-pulse ${isInPollingPhase ? 'bg-blue-500' : 'bg-green-500'}`}></div>
             <span className="text-sm text-muted-foreground">
               {isInPollingPhase 
-                ? 'Verificación activa cada minuto' 
+                ? 'Sistema de verificación mejorado activo' 
                 : 'Sistema de generación en proceso'
               }
             </span>

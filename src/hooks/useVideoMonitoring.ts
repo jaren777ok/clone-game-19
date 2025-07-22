@@ -2,18 +2,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  COUNTDOWN_TIME, 
-  calculateTimeRemaining,
-  hasReachedPollingTime 
-} from '@/lib/countdownUtils';
-import { checkVideoInDatabase, checkFinalVideoResult } from '@/lib/databaseUtils';
+import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
+import { verifyVideoExists, recoverLostVideo, checkFinalVideoResult } from '@/lib/databaseUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
-import { 
-  clearAllIntervals, 
-  startCountdownInterval, 
-  startDelayedPolling 
-} from '@/lib/intervalUtils';
 
 export const useVideoMonitoring = () => {
   const [timeRemaining, setTimeRemaining] = useState(COUNTDOWN_TIME);
@@ -22,12 +13,48 @@ export const useVideoMonitoring = () => {
   const { toast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intensivePollingRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(false);
 
-  // Force component updates for real-time counter
   const updateTimeRemaining = useCallback((remaining: number) => {
     setTimeRemaining(remaining);
   }, []);
+
+  const clearAllIntervals = useCallback(() => {
+    console.log('🧹 Limpiando todos los intervalos de monitoreo');
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    if (intensivePollingRef.current) {
+      clearInterval(intensivePollingRef.current);
+      intensivePollingRef.current = null;
+    }
+  }, []);
+
+  const videoDetected = useCallback((videoData: any, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void) => {
+    console.log('🎉 VIDEO DETECTADO - Limpiando estado:', {
+      videoUrl: videoData.video_url,
+      title: videoData.title,
+      requestId: videoData.request_id
+    });
+    
+    isActiveRef.current = false;
+    clearAllIntervals();
+    
+    setVideoResult(videoData.video_url);
+    setIsGenerating(false);
+    clearGenerationState();
+    
+    toast({
+      title: "¡Video completado!",
+      description: videoData.title || "Tu video ha sido generado exitosamente.",
+    });
+  }, [clearAllIntervals, toast]);
 
   const startCountdown = useCallback((
     requestId: string, 
@@ -37,7 +64,7 @@ export const useVideoMonitoring = () => {
     customStartTime?: number
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando contador de 39 minutos:', {
+    console.log('🚀 Iniciando monitoreo mejorado de 39 minutos:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
       scriptLength: scriptToCheck.length,
@@ -47,102 +74,119 @@ export const useVideoMonitoring = () => {
     setGenerationStartTime(startTime);
     isActiveRef.current = true;
     
-    const handleTimeUpdate = (remaining: number) => {
-      if (isActiveRef.current) {
-        updateTimeRemaining(remaining);
-      }
-    };
-
-    const handleTimeExpired = () => {
-      console.log('⏰ Contador finalizado, ejecutando verificación final para requestId:', requestId);
-      isActiveRef.current = false;
-      checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
-    };
-
-    // Iniciar contador visual
-    startCountdownInterval(startTime, handleTimeUpdate, handleTimeExpired, countdownIntervalRef);
-    
-    // Iniciar verificaciones retrasadas (después de 30 minutos)
-    startDelayedVideoChecking(requestId, scriptToCheck, setVideoResult, setIsGenerating, startTime);
-  }, [updateTimeRemaining, user]);
-
-  const startDelayedVideoChecking = useCallback((
-    requestId: string, 
-    scriptToCheck: string,
-    setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void,
-    startTime: number
-  ) => {
-    console.log('🕐 Programando verificaciones retrasadas:', {
-      requestId: requestId,
-      startTime: new Date(startTime).toISOString(),
-      delayMinutes: 30
-    });
-    
-    const checkForVideo = async () => {
-      if (!isActiveRef.current) {
-        console.log('⚠️ Verificación cancelada - proceso inactivo');
+    // Countdown visual cada segundo
+    const updateCountdown = () => {
+      if (!isActiveRef.current) return;
+      
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
+      updateTimeRemaining(remaining);
+      
+      if (remaining <= 0) {
+        console.log('⏰ Tiempo agotado - verificación final');
+        checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
         return;
       }
-      
-      try {
-        const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-        console.log('🔍 Verificando video específico (minuto ' + minutesElapsed + '):', {
-          requestId: requestId,
-          userId: user?.id,
-          scriptPreview: scriptToCheck.substring(0, 50) + '...'
-        });
-        
-        const videoData = await checkVideoInDatabase(user, requestId, scriptToCheck);
-        
-        if (videoData?.video_url) {
-          console.log('🎉 ¡VIDEO ESPECÍFICO ENCONTRADO!:', {
-            videoUrl: videoData.video_url,
-            title: videoData.title,
-            requestId: videoData.request_id,
-            minutesElapsed: minutesElapsed
-          });
-          
-          isActiveRef.current = false;
-          clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
-          
-          setVideoResult(videoData.video_url);
-          setIsGenerating(false);
-          clearGenerationState();
-          
-          toast({
-            title: "¡Video completado!",
-            description: videoData.title || "Tu video ha sido generado exitosamente.",
-          });
-        } else {
-          console.log('⏳ Video específico no encontrado aún:', {
-            requestId: requestId,
-            minutesElapsed: minutesElapsed,
-            nextCheckIn: '1 minuto'
-          });
-        }
-      } catch (e) {
-        console.error('❌ Error durante verificación específica:', {
-          requestId: requestId,
-          error: e,
-          minutesElapsed: Math.floor((Date.now() - startTime) / 60000)
-        });
-      }
     };
 
-    // Usar la nueva función de verificación retrasada
-    startDelayedPolling(startTime, checkForVideo, pollingIntervalRef);
-  }, [user, toast]);
+    // Iniciar countdown
+    updateCountdown();
+    countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-  // Función legacy mantenida para compatibilidad
+    // VERIFICACIÓN INMEDIATA: Intentar recuperar video perdido al inicio
+    setTimeout(async () => {
+      if (!isActiveRef.current) return;
+      
+      console.log('🔄 Verificación inicial - intentando recuperar video perdido');
+      const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
+      if (recoveredVideo && isActiveRef.current) {
+        videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
+      }
+    }, 5000); // 5 segundos después de iniciar
+
+    // VERIFICACIÓN REGULAR: Cada 2 minutos desde los 30 minutos
+    setTimeout(() => {
+      if (!isActiveRef.current) return;
+      
+      console.log('🔄 Iniciando verificaciones regulares cada 2 minutos');
+      const regularCheck = async () => {
+        if (!isActiveRef.current) return;
+        
+        const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
+        console.log('🔍 Verificación regular (minuto ' + minutesElapsed + ')');
+        
+        const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+        if (videoData && isActiveRef.current) {
+          videoDetected(videoData, setVideoResult, setIsGenerating);
+        }
+      };
+      
+      regularCheck(); // Ejecutar inmediatamente
+      pollingIntervalRef.current = setInterval(regularCheck, 2 * 60 * 1000); // Cada 2 minutos
+    }, 30 * 60 * 1000); // Iniciar a los 30 minutos
+
+    // VERIFICACIÓN INTENSIVA: Cada 30 segundos desde los 35 minutos
+    setTimeout(() => {
+      if (!isActiveRef.current) return;
+      
+      console.log('⚡ Iniciando verificaciones intensivas cada 30 segundos');
+      const intensiveCheck = async () => {
+        if (!isActiveRef.current) return;
+        
+        const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
+        console.log('🔍 Verificación intensiva (minuto ' + minutesElapsed + ')');
+        
+        const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+        if (videoData && isActiveRef.current) {
+          videoDetected(videoData, setVideoResult, setIsGenerating);
+        }
+      };
+      
+      intensiveCheck(); // Ejecutar inmediatamente
+      intensivePollingRef.current = setInterval(intensiveCheck, 30 * 1000); // Cada 30 segundos
+    }, 35 * 60 * 1000); // Iniciar a los 35 minutos
+
+  }, [updateTimeRemaining, user, videoDetected]);
+
+  // Función para verificación manual
+  const checkVideoManually = useCallback(async (
+    requestId: string,
+    scriptToCheck: string,
+    setVideoResult: (result: string) => void,
+    setIsGenerating: (generating: boolean) => void
+  ) => {
+    console.log('🔍 VERIFICACIÓN MANUAL solicitada');
+    
+    // Primero intentar recuperar video perdido
+    const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
+    if (recoveredVideo) {
+      videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
+      return true;
+    }
+    
+    // Luego verificación estándar
+    const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+    if (videoData) {
+      videoDetected(videoData, setVideoResult, setIsGenerating);
+      return true;
+    }
+    
+    toast({
+      title: "Video no encontrado",
+      description: "El video aún no está disponible. Continuaremos verificando automáticamente.",
+      variant: "default"
+    });
+    
+    return false;
+  }, [user, videoDetected, toast]);
+
   const startPeriodicChecking = useCallback((
     requestId: string, 
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('⚠️ startPeriodicChecking llamado (legacy) - requestId:', requestId);
-    // En el nuevo flujo, esta función no se usa porque usamos startDelayedVideoChecking
+    console.log('⚠️ startPeriodicChecking (legacy) - funcionalidad incluida en startCountdown');
   }, []);
 
   const checkFinalResult = useCallback(async (
@@ -150,27 +194,20 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN FINAL después de 39 minutos:', {
-      scriptPreview: scriptToCheck.substring(0, 50) + '...',
-      userId: user?.id,
-      timestamp: new Date().toISOString()
-    });
+    console.log('🔍 VERIFICACIÓN FINAL tras 39 minutos');
     
     try {
       const videoData = await checkFinalVideoResult(user, scriptToCheck);
       
       if (videoData?.video_url) {
-        console.log('✅ Video específico encontrado en verificación final:', {
-          videoUrl: videoData.video_url,
-          title: videoData.title
-        });
+        console.log('✅ Video encontrado en verificación final');
         setVideoResult(videoData.video_url);
         toast({
           title: "¡Video completado!",
           description: videoData.title || "Tu video ha sido generado exitosamente.",
         });
       } else {
-        console.log('⏰ Video específico NO encontrado después de 39 minutos');
+        console.log('⏰ Video NO encontrado después de 39 minutos');
         toast({
           title: "Video en proceso",
           description: "Tu video está tardando un poco más de lo normal. Por favor, revisa la sección 'Videos Guardados' en 10-15 minutos.",
@@ -192,12 +229,11 @@ export const useVideoMonitoring = () => {
   }, [user, toast]);
 
   const cleanup = useCallback(() => {
-    console.log('🧹 Limpiando intervalos de monitoreo');
+    console.log('🧹 Limpieza completa del monitoreo');
     isActiveRef.current = false;
-    clearAllIntervals(pollingIntervalRef, countdownIntervalRef);
-  }, []);
+    clearAllIntervals();
+  }, [clearAllIntervals]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return cleanup;
   }, [cleanup]);
@@ -206,8 +242,9 @@ export const useVideoMonitoring = () => {
     timeRemaining,
     generationStartTime,
     startCountdown,
-    startPeriodicChecking, // Mantenido para compatibilidad
+    startPeriodicChecking,
     checkFinalResult,
+    checkVideoManually,
     cleanup
   };
 };
