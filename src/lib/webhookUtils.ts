@@ -907,3 +907,55 @@ export const sendToMultiAvatarWebhook = async (payload: WebhookPayload): Promise
     return false;
   }
 };
+
+// Nueva función para verificación manual de video
+export const sendVideoVerificationWebhook = async (
+  requestId: string,
+  userId: string,
+  script: string
+): Promise<boolean> => {
+  console.log('🔍 Enviando verificación manual de video...');
+  console.log('📦 Datos:', { requestId, userId, scriptLength: script.length });
+
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado';
+  
+  const payload = {
+    requestId,
+    userId,
+    script,
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    console.log('📤 Enviando verificación manual a webhook...');
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      console.log('✅ Verificación manual enviada exitosamente');
+      return true;
+    } else {
+      console.error('❌ Error en verificación manual:', response.status, response.statusText);
+      return false;
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('❌ Timeout en verificación manual después de 30 segundos');
+    } else {
+      console.error('❌ Error enviando verificación manual:', error);
+    }
+    return false;
+  }
+};

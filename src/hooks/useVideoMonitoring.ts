@@ -1,8 +1,9 @@
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
-import { checkFinalVideoResult, checkVideoDirectly } from '@/lib/databaseUtils';
+import { checkFinalVideoResult } from '@/lib/databaseUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
 import { webhookMonitoringService } from '@/services/webhookMonitoringService';
 
@@ -52,37 +53,7 @@ export const useVideoMonitoring = () => {
     });
   }, [clearAllIntervals, toast]);
 
-  // 🚨 NEW: Force check for stuck videos
-  const forceCheckStuckVideo = useCallback(async (
-    requestId: string,
-    script: string,
-    setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void
-  ) => {
-    if (!user) return false;
-
-    console.log('🚨 [FORCE CHECK] Ejecutando verificación forzada para video stuck');
-    setDebugInfo('🚨 Verificación forzada iniciada...');
-    
-    try {
-      const videoData = await checkVideoDirectly(user, requestId, script);
-      
-      if (videoData) {
-        console.log('✅ [FORCE CHECK] Video encontrado en verificación forzada!');
-        videoDetected(videoData, setVideoResult, setIsGenerating);
-        return true;
-      } else {
-        console.log('❌ [FORCE CHECK] Video no encontrado en verificación forzada');
-        setDebugInfo('❌ Force check: Video no encontrado');
-        return false;
-      }
-    } catch (error) {
-      console.error('💥 [FORCE CHECK] Error en verificación forzada:', error);
-      setDebugInfo(`💥 Force check error: ${error}`);
-      return false;
-    }
-  }, [user, videoDetected]);
-
+  // Sistema manual sin verificaciones automáticas
   const startCountdown = useCallback((
     requestId: string, 
     scriptToCheck: string, 
@@ -97,26 +68,16 @@ export const useVideoMonitoring = () => {
 
     const startTime = customStartTime || Date.now();
     
-    console.log('🚀 [MONITORING] INICIANDO SISTEMA MEJORADO CON AUTO-RECOVERY:', {
+    console.log('🚀 [MONITORING] INICIANDO SISTEMA MANUAL (sin verificaciones automáticas):', {
       requestId,
       startTime: new Date(startTime).toISOString(),
       userId: user.id
     });
     
     setGenerationStartTime(startTime);
-    setDebugInfo('🚀 Sistema iniciado - verificación BD directa cada 60s');
+    setDebugInfo('🚀 Sistema manual iniciado - usar botón para verificar');
     
-    // 🚨 IMMEDIATE FORCE CHECK for stuck videos
-    setTimeout(async () => {
-      console.log('🚨 [AUTO-RECOVERY] Verificación inmediata para videos stuck');
-      const found = await forceCheckStuckVideo(requestId, scriptToCheck, setVideoResult, setIsGenerating);
-      if (found) {
-        console.log('✅ [AUTO-RECOVERY] Video stuck recuperado exitosamente!');
-        return;
-      }
-    }, 2000); // Check after 2 seconds
-
-    // Start countdown timer
+    // Start countdown timer solo para mostrar tiempo transcurrido
     const updateCountdown = () => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
@@ -124,7 +85,7 @@ export const useVideoMonitoring = () => {
       updateTimeRemaining(remaining);
       
       if (remaining <= 0) {
-        console.log('⏰ [MONITORING] Tiempo agotado - verificación final');
+        console.log('⏰ [MONITORING] Tiempo agotado - verificación final automática');
         checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
         return;
       }
@@ -133,46 +94,16 @@ export const useVideoMonitoring = () => {
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-    // Start improved monitoring service with health checks
+    // Inicializar sesión manual (sin verificaciones automáticas)
     webhookMonitoringService.startMonitoring(
       user.id,
       user,
       (videoData) => videoDetected(videoData, setVideoResult, setIsGenerating),
       setDebugInfo
     );
+  }, [user, updateTimeRemaining, videoDetected, clearAllIntervals]);
 
-    // 🚨 NEW: Health check every 30 seconds
-    const healthCheckInterval = setInterval(() => {
-      const isHealthy = webhookMonitoringService.isMonitoring(user.id);
-      if (!isHealthy) {
-        console.log('🚨 [HEALTH CHECK] Sistema automático no está funcionando - reiniciando');
-        setDebugInfo('🚨 Sistema reiniciado por health check');
-        
-        // Restart monitoring
-        webhookMonitoringService.startMonitoring(
-          user.id,
-          user,
-          (videoData) => videoDetected(videoData, setVideoResult, setIsGenerating),
-          setDebugInfo
-        );
-      } else {
-        const sessionInfo = webhookMonitoringService.getSessionInfo(user.id);
-        if (sessionInfo) {
-          console.log('💚 [HEALTH CHECK] Sistema funcionando correctamente:', sessionInfo);
-        }
-      }
-    }, 30000); // Every 30 seconds
-
-    // Clean up health check on unmount
-    const originalClearAll = clearAllIntervals;
-    const newClearAll = () => {
-      clearInterval(healthCheckInterval);
-      originalClearAll();
-    };
-    // Update clearAllIntervals reference (simplified approach)
-
-  }, [user, updateTimeRemaining, videoDetected, forceCheckStuckVideo, clearAllIntervals]);
-
+  // Verificación manual que usa la nueva webhook
   const checkVideoManually = useCallback(async (
     requestId: string,
     scriptToCheck: string,
@@ -181,15 +112,10 @@ export const useVideoMonitoring = () => {
   ) => {
     if (!user) return false;
 
-    console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL MEJORADA EJECUTADA');
+    console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL EJECUTADA');
     
-    setDebugInfo('🔍 Ejecutando verificación manual mejorada...');
+    setDebugInfo('🔍 Ejecutando verificación manual...');
     
-    // First try force check for stuck videos
-    const forceFound = await forceCheckStuckVideo(requestId, scriptToCheck, setVideoResult, setIsGenerating);
-    if (forceFound) return true;
-
-    // Then try regular manual check
     const found = await webhookMonitoringService.performManualCheck(
       user.id,
       user,
@@ -199,14 +125,14 @@ export const useVideoMonitoring = () => {
     
     if (!found) {
       toast({
-        title: "Video no encontrado",
-        description: "El video aún no está disponible. La verificación automática continuará.",
+        title: "Verificación enviada",
+        description: "Se ha enviado la verificación a la webhook externa. El sistema te notificará cuando el video esté listo.",
         variant: "default"
       });
     }
     
     return found;
-  }, [user, videoDetected, toast, forceCheckStuckVideo]);
+  }, [user, videoDetected, toast]);
 
   const checkFinalResult = useCallback(async (
     scriptToCheck: string,
@@ -270,7 +196,6 @@ export const useVideoMonitoring = () => {
     startPeriodicChecking: () => {}, // Legacy compatibility
     checkFinalResult,
     checkVideoManually,
-    forceCheckStuckVideo, // 🚨 NEW: Export force check function
     cleanup
   };
 };
