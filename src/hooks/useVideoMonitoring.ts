@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +12,7 @@ export const useVideoMonitoring = () => {
   const { toast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recoveryIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(false);
 
   const updateTimeRemaining = useCallback((remaining: number) => {
@@ -28,6 +28,10 @@ export const useVideoMonitoring = () => {
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
+    }
+    if (recoveryIntervalRef.current) {
+      clearInterval(recoveryIntervalRef.current);
+      recoveryIntervalRef.current = null;
     }
   }, []);
 
@@ -51,19 +55,22 @@ export const useVideoMonitoring = () => {
     });
   }, [clearAllIntervals, toast]);
 
+  // ⭐ COUNTDOWN MEJORADO - Con soporte para modo recuperación
   const startCountdown = useCallback((
     requestId: string, 
     scriptToCheck: string, 
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void,
-    customStartTime?: number
+    customStartTime?: number,
+    isRecovering?: boolean
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando monitoreo MEJORADO - Verificación desde minuto 25:', {
+    console.log('🚀 Iniciando monitoreo MEJORADO:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
       scriptLength: scriptToCheck.length,
-      userId: user?.id
+      userId: user?.id,
+      isRecovering: !!isRecovering
     });
     
     setGenerationStartTime(startTime);
@@ -88,49 +95,81 @@ export const useVideoMonitoring = () => {
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-    // VERIFICACIÓN INMEDIATA: Intentar recuperar video perdido al inicio
-    setTimeout(async () => {
-      if (!isActiveRef.current) return;
+    // ⭐ MODO RECUPERACIÓN: Verificaciones cada 30 segundos desde el inicio
+    if (isRecovering) {
+      console.log('🔄 MODO RECUPERACIÓN ACTIVADO - Verificaciones cada 30 segundos');
       
-      console.log('🔄 Verificación inicial - intentando recuperar video perdido');
-      const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
-      if (recoveredVideo && isActiveRef.current) {
-        videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
-      }
-    }, 5000); // 5 segundos después de iniciar
-
-    // ⭐ NUEVA LÓGICA: VERIFICACIÓN DESDE EL MINUTO 25 CADA MINUTO
-    setTimeout(() => {
-      if (!isActiveRef.current) return;
-      
-      console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25');
-      
-      const regularCheck = async () => {
+      const recoveryCheck = async () => {
         if (!isActiveRef.current) return;
         
-        const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-        console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video:', {
+        console.log('🔍 Verificación en modo recuperación:', {
           requestId,
           userId: user?.id,
-          minutesElapsed
+          timestamp: new Date().toISOString()
         });
         
         const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
         if (videoData && isActiveRef.current) {
-          console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN REGULAR:', videoData);
+          console.log('✅ VIDEO ENCONTRADO EN MODO RECUPERACIÓN:', videoData);
           videoDetected(videoData, setVideoResult, setIsGenerating);
         } else {
-          console.log('❌ Video no encontrado aún en minuto', minutesElapsed);
+          console.log('❌ Video no encontrado aún en verificación de recuperación');
         }
       };
       
-      // Ejecutar verificación inmediatamente al llegar al minuto 25
-      regularCheck();
+      // Verificación inmediata
+      setTimeout(recoveryCheck, 5000); // 5 segundos después de iniciar
       
-      // Continuar verificando cada minuto
-      pollingIntervalRef.current = setInterval(regularCheck, 60 * 1000); // Cada minuto
+      // Verificaciones cada 30 segundos
+      recoveryIntervalRef.current = setInterval(recoveryCheck, 30 * 1000);
       
-    }, 25 * 60 * 1000); // ⭐ Iniciar a los 25 minutos (no 30)
+    } else {
+      // ⭐ MODO NORMAL: Verificación inicial + verificaciones desde minuto 25
+      
+      // VERIFICACIÓN INMEDIATA: Intentar recuperar video perdido al inicio
+      setTimeout(async () => {
+        if (!isActiveRef.current) return;
+        
+        console.log('🔄 Verificación inicial - intentando recuperar video perdido');
+        const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
+        if (recoveredVideo && isActiveRef.current) {
+          videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
+        }
+      }, 5000); // 5 segundos después de iniciar
+
+      // VERIFICACIONES DESDE EL MINUTO 25 CADA MINUTO
+      setTimeout(() => {
+        if (!isActiveRef.current) return;
+        
+        console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25');
+        
+        const regularCheck = async () => {
+          if (!isActiveRef.current) return;
+          
+          const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
+          console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video:', {
+            requestId,
+            userId: user?.id,
+            minutesElapsed
+          });
+          
+          const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
+          if (videoData && isActiveRef.current) {
+            console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN REGULAR:', videoData);
+            videoDetected(videoData, setVideoResult, setIsGenerating);
+          } else {
+            console.log('❌ Video no encontrado aún en minuto', minutesElapsed);
+          }
+        };
+        
+        // Ejecutar verificación inmediatamente al llegar al minuto 25
+        regularCheck();
+        
+        // Continuar verificando cada minuto
+        pollingIntervalRef.current = setInterval(regularCheck, 60 * 1000); // Cada minuto
+        
+      }, 25 * 60 * 1000); // Iniciar a los 25 minutos
+    }
 
   }, [updateTimeRemaining, user, videoDetected]);
 

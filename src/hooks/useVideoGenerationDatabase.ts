@@ -10,7 +10,7 @@ import {
   calculateRemainingTime,
   cleanupExpiredGenerations
 } from '@/lib/videoGenerationDatabase';
-import { checkVideoInDatabase } from '@/lib/databaseUtils';
+import { verifyVideoExists } from '@/lib/databaseUtils';
 
 export interface UseVideoGenerationDatabaseReturn {
   currentGeneration: VideoGenerationTrackingData | null;
@@ -24,7 +24,7 @@ export interface UseVideoGenerationDatabaseReturn {
     setCurrentRequestId: (id: string) => void,
     setIsGenerating: (generating: boolean) => void,
     setVideoResult: (result: string) => void,
-    startCountdown: (requestId: string, script: string, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void, startTime?: number) => void
+    startCountdown: (requestId: string, script: string, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void, startTime?: number, isRecovering?: boolean) => void
   ) => Promise<void>;
   handleCancelRecovery: () => Promise<void>;
   handleVideoCompleted: (requestId: string) => Promise<void>;
@@ -62,6 +62,30 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
         const remaining = calculateRemainingTime(generation.start_time);
         setTimeRemaining(remaining);
         
+        console.log('🔍 VERIFICACIÓN INICIAL AL CARGAR - Verificando si video ya existe:', {
+          requestId: generation.request_id,
+          userId: user.id,
+          remaining: remaining
+        });
+
+        // ⭐ VERIFICACIÓN INMEDIATA: Comprobar si el video ya existe
+        const existingVideo = await verifyVideoExists(user, generation.request_id, generation.script);
+        if (existingVideo?.video_url) {
+          console.log('🎉 VIDEO YA COMPLETADO ENCONTRADO AL CARGAR:', {
+            videoUrl: existingVideo.video_url,
+            title: existingVideo.title,
+            requestId: existingVideo.request_id
+          });
+          
+          // Marcar como completado y limpiar estado
+          await markVideoGenerationCompleted(generation.request_id, user);
+          setCurrentGeneration(null);
+          setTimeRemaining(0);
+          setShowRecoveryOption(false);
+          setIsLoading(false);
+          return;
+        }
+        
         // Only show recovery option if there's significant time remaining
         if (remaining > 60) { // At least 1 minute remaining
           setShowRecoveryOption(true);
@@ -85,8 +109,6 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
   useEffect(() => {
     refreshCurrentGeneration();
   }, [refreshCurrentGeneration]);
-
-  // Cleanup removed - will only run manually to avoid race conditions
 
   // Update time remaining every second when there's an active generation
   useEffect(() => {
@@ -126,13 +148,13 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
     }
   }, [user]);
 
-  // Recover an existing generation
+  // ⭐ RECUPERACIÓN MEJORADA - Verificación inmediata y monitoreo optimizado
   const handleRecoverGeneration = useCallback(async (
     setScript: (script: string) => void,
     setCurrentRequestId: (id: string) => void,
     setIsGenerating: (generating: boolean) => void,
     setVideoResult: (result: string) => void,
-    startCountdown: (requestId: string, script: string, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void, startTime?: number) => void
+    startCountdown: (requestId: string, script: string, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void, startTime?: number, isRecovering?: boolean) => void
   ) => {
     if (!currentGeneration || !user) return;
 
@@ -141,6 +163,12 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
       setIsGenerating(true);
       setShowRecoveryOption(false);
 
+      console.log('🔄 INICIANDO RECUPERACIÓN MEJORADA:', {
+        requestId: currentGeneration.request_id,
+        userId: user.id,
+        script: currentGeneration.script.substring(0, 50) + '...'
+      });
+
       // Set the recovered state
       setScript(currentGeneration.script);
       setCurrentRequestId(currentGeneration.request_id);
@@ -148,23 +176,47 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
       // Update last check time
       await updateLastCheckTime(currentGeneration.request_id, user);
 
-      // Check if video is already available
-      const existingVideo = await checkVideoInDatabase(user, currentGeneration.request_id, currentGeneration.script);
-      if (existingVideo) {
+      // ⭐ VERIFICACIÓN INMEDIATA COMPLETA - Usar verifyVideoExists directamente
+      console.log('🎯 VERIFICACIÓN INMEDIATA AL RECUPERAR - Buscando video existente...');
+      const existingVideo = await verifyVideoExists(user, currentGeneration.request_id, currentGeneration.script);
+      
+      if (existingVideo?.video_url) {
+        console.log('🎉 VIDEO YA COMPLETADO ENCONTRADO EN RECUPERACIÓN:', {
+          videoUrl: existingVideo.video_url,
+          title: existingVideo.title,
+          requestId: existingVideo.request_id,
+          createdAt: existingVideo.created_at
+        });
+        
         setVideoResult(existingVideo.video_url);
         await handleVideoCompleted(currentGeneration.request_id);
         setIsGenerating(false);
+        setIsRecovering(false);
         return;
       }
 
-      // Start countdown with the original start time
+      console.log('❌ Video no encontrado al recuperar - Iniciando monitoreo optimizado');
+
+      // ⭐ Iniciar countdown con flag de recuperación y verificaciones más frecuentes
       const startTime = new Date(currentGeneration.start_time).getTime();
-      startCountdown(currentGeneration.request_id, currentGeneration.script, setVideoResult, setIsGenerating, startTime);
+      startCountdown(
+        currentGeneration.request_id, 
+        currentGeneration.script, 
+        setVideoResult, 
+        setIsGenerating, 
+        startTime,
+        true // ⭐ Flag isRecovering = true
+      );
+      
     } catch (error) {
       console.error('Error recovering generation:', error);
       setIsGenerating(false);
-    } finally {
       setIsRecovering(false);
+    } finally {
+      // Solo quitar el flag de recuperación si hubo error
+      if (!currentGeneration) {
+        setIsRecovering(false);
+      }
     }
   }, [currentGeneration, user]);
 
