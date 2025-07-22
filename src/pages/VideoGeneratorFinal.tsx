@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
@@ -21,10 +22,8 @@ const VideoGeneratorFinal = () => {
 
   // Determinar el estado efectivo del flujo
   useEffect(() => {
-    // Prioridad 1: Estado pasado via navegación
     const navigationState = location.state as FlowState | undefined;
     
-    // DEBUG: Log navigation state
     console.log('🐛 DEBUG VideoGeneratorFinal - Navigation state:', {
       navigationState: navigationState,
       selectedStyle: navigationState?.selectedStyle,
@@ -42,8 +41,6 @@ const VideoGeneratorFinal = () => {
       return;
     }
 
-    // Prioridad 2: Estado actual del hook
-    // DEBUG: Log current flow state
     console.log('🐛 DEBUG VideoGeneratorFinal - Current flow state:', {
       currentFlowState: currentFlowState,
       selectedStyle: currentFlowState?.selectedStyle,
@@ -61,7 +58,6 @@ const VideoGeneratorFinal = () => {
       return;
     }
 
-    // Si no hay configuración válida, redirigir al flujo
     console.log('❌ No hay configuración válida, redirigiendo al flujo');
     navigate('/crear-video');
   }, [location.state, currentFlowState, navigate]);
@@ -78,7 +74,6 @@ const VideoGeneratorFinal = () => {
     navigate('/crear-video');
   };
 
-  // Limpiar configuración cuando se genera exitosamente un video
   const handleVideoGenerated = async () => {
     if (user) {
       console.log('🎉 Video generado exitosamente, limpiando configuración');
@@ -86,15 +81,22 @@ const VideoGeneratorFinal = () => {
     }
   };
 
-  // Agregar el efecto para limpiar configuración cuando el video esté listo
+  // ⭐ EFECTO CRÍTICO: Limpiar configuración cuando el video esté listo
   useEffect(() => {
     if (state.videoResult) {
+      console.log('🎉 VideoGeneratorFinal - Video completado detectado:', {
+        videoUrl: state.videoResult,
+        isGenerating: state.isGenerating,
+        timestamp: new Date().toISOString()
+      });
       handleVideoGenerated();
     }
   }, [state.videoResult]);
 
-  // DEBUG: Log effective flow state
-  console.log('🐛 DEBUG VideoGeneratorFinal - Effective flow state:', {
+  console.log('🐛 DEBUG VideoGeneratorFinal - Estado actual:', {
+    hasVideoResult: !!state.videoResult,
+    videoResult: state.videoResult,
+    isGenerating: state.isGenerating,
     effectiveFlowState: effectiveFlowState,
     selectedStyle: effectiveFlowState?.selectedStyle,
     selectedStyleId: effectiveFlowState?.selectedStyle?.id,
@@ -115,7 +117,20 @@ const VideoGeneratorFinal = () => {
     );
   }
 
+  // ⭐ PRIORIDAD CRÍTICA: Si hay videoResult, mostrar pantalla de éxito INMEDIATAMENTE
+  if (state.videoResult) {
+    console.log('🎉 VideoGeneratorFinal - Mostrando pantalla de éxito con video:', state.videoResult);
+    return (
+      <VideoResult 
+        videoUrl={state.videoResult} 
+        onNewVideo={handlers.handleNewVideo}
+      />
+    );
+  }
+
+  // Solo después, verificar si está generando
   if (state.isGenerating) {
+    console.log('🔄 VideoGeneratorFinal - Mostrando pantalla de procesamiento');
     return (
       <VideoProcessingState 
         timeRemaining={state.timeRemaining}
@@ -125,15 +140,8 @@ const VideoGeneratorFinal = () => {
     );
   }
 
-  if (state.videoResult) {
-    return (
-      <VideoResult 
-        videoUrl={state.videoResult} 
-        onNewVideo={handlers.handleNewVideo}
-      />
-    );
-  }
-
+  // Pantalla de script (estado inicial)
+  console.log('📝 VideoGeneratorFinal - Mostrando pantalla de script');
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
@@ -149,7 +157,6 @@ const VideoGeneratorFinal = () => {
         )}
 
         <div className="max-w-4xl mx-auto">
-          {/* Mostrar información del flujo seleccionado */}
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-3 sm:p-6 mb-6 sm:mb-8 cyber-border mx-4 sm:mx-0">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="text-sm sm:text-lg font-semibold">Configuración seleccionada:</h2>
