@@ -1,3 +1,4 @@
+
 import React from 'react';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
@@ -26,6 +27,7 @@ const VideoGenerator = () => {
         totalTime={state.totalTime}
         isRecovering={state.isRecovering}
         onManualCheck={handlers.checkVideoManually}
+        debugInfo={state.debugInfo} // Pasar información de debug
       />
     );
   }

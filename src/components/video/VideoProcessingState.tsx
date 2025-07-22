@@ -10,12 +10,20 @@ interface VideoProcessingStateProps {
   totalTime: number;
   isRecovering?: boolean;
   onManualCheck?: () => void;
+  debugInfo?: string; // Nuevo prop para debug
 }
 
-const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManualCheck }: VideoProcessingStateProps) => {
+const VideoProcessingState = ({ 
+  timeRemaining, 
+  totalTime, 
+  isRecovering, 
+  onManualCheck,
+  debugInfo 
+}: VideoProcessingStateProps) => {
   const startTime = Date.now() - (totalTime - timeRemaining) * 1000;
   const isInPollingPhase = hasReachedPollingTime(startTime);
   const minutesRemaining = Math.floor(timeRemaining / 60);
+  const minutesElapsed = Math.floor((totalTime - timeRemaining) / 60);
   
   return (
     <div className="min-h-screen bg-background relative overflow-hidden py-16">
@@ -47,11 +55,25 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
               {isRecovering 
                 ? 'Verificando si tu video ya está listo en segundo plano...'
                 : isInPollingPhase
-                ? 'Sistema avanzado verificando automáticamente via webhook externa...'
+                ? 'Sistema verificando automáticamente cada minuto via webhook externa...'
                 : 'Nuestro sistema está procesando tu solicitud con inteligencia artificial'
               }
             </p>
           </div>
+
+          {/* Debug Information - Solo en desarrollo */}
+          {debugInfo && (
+            <div className="bg-card/30 border border-yellow-500/30 rounded-lg p-4">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm font-medium text-yellow-300">Debug Info</span>
+              </div>
+              <p className="text-xs text-yellow-200 font-mono">{debugInfo}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Minutos transcurridos: {minutesElapsed} | Fase polling: {isInPollingPhase ? 'SÍ' : 'NO'}
+              </p>
+            </div>
+          )}
 
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
@@ -85,10 +107,10 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
                     🌐 Verificando automáticamente cada minuto via webhook externa
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    ⚡ Sistema mejorado con verificación en tiempo real
+                    ⚡ Sistema mejorado con doble verificación (normal + forzada)
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    ⏰ Tiempo restante: {minutesRemaining} minutos
+                    ⏰ Tiempo restante: {minutesRemaining} minutos | Transcurridos: {minutesElapsed} minutos
                   </p>
                 </>
               ) : (
@@ -112,7 +134,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
             <div className={`w-2 h-2 rounded-full animate-pulse ${isInPollingPhase ? 'bg-blue-500' : 'bg-green-500'}`}></div>
             <span className="text-sm text-muted-foreground">
               {isInPollingPhase 
-                ? 'Sistema de verificación via webhook activo' 
+                ? 'Sistema de verificación via webhook activo (cada minuto)' 
                 : 'Sistema de generación en proceso'
               }
             </span>
