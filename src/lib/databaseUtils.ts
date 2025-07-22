@@ -1,11 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
 export const verifyVideoExists = async (user: User | null, requestId: string, script: string) => {
   if (!user) return null;
 
-  console.log('🔍 VERIFICACIÓN ROBUSTA INICIADA:', {
+  console.log('🎯 VERIFICACIÓN DIRECTA Y SIMPLE:', {
     userId: user.id,
     requestId: requestId,
     scriptLength: script.length,
@@ -13,8 +12,9 @@ export const verifyVideoExists = async (user: User | null, requestId: string, sc
   });
 
   try {
-    // ESTRATEGIA 1: Búsqueda DIRECTA por user_id + request_id (más confiable)
-    console.log('📋 Estrategia 1: Búsqueda directa por user_id + request_id');
+    // ⭐ ESTRATEGIA PRINCIPAL: Búsqueda DIRECTA por user_id + request_id
+    console.log('🔍 Buscando por user_id + request_id:', { userId: user.id, requestId });
+    
     const { data: videoByRequestId, error: errorByRequestId } = await supabase
       .from('generated_videos')
       .select('video_url, request_id, title, created_at, script')
@@ -27,34 +27,27 @@ export const verifyVideoExists = async (user: User | null, requestId: string, sc
       console.error('❌ Error en búsqueda por requestId:', errorByRequestId);
     } else if (videoByRequestId && videoByRequestId.length > 0) {
       const video = videoByRequestId[0];
-      // Verificar que sea reciente (últimas 2 horas)
-      const videoTime = new Date(video.created_at).getTime();
-      const now = Date.now();
-      const hoursAgo = (now - videoTime) / (1000 * 60 * 60);
       
       console.log('✅ VIDEO ENCONTRADO POR REQUEST_ID:', {
         videoUrl: video.video_url,
         title: video.title,
         requestId: video.request_id,
-        createdAt: video.created_at,
-        hoursAgo: Math.round(hoursAgo * 100) / 100,
-        scriptMatch: video.script.trim() === script.trim()
+        createdAt: video.created_at
       });
+
+      // ⭐ AUTO-ACTUALIZAR TRACKING A COMPLETED
+      await updateTrackingToCompleted(user, requestId);
       
-      if (hoursAgo <= 2) {
-        return {
-          video_url: video.video_url,
-          title: video.title,
-          request_id: video.request_id,
-          created_at: video.created_at
-        };
-      } else {
-        console.log('⚠️ Video encontrado pero es muy antiguo:', { hoursAgo });
-      }
+      return {
+        video_url: video.video_url,
+        title: video.title,
+        request_id: video.request_id,
+        created_at: video.created_at
+      };
     }
 
-    // ESTRATEGIA 2: Búsqueda por user_id + script (fallback)
-    console.log('📋 Estrategia 2: Búsqueda por user_id + script exacto');
+    // FALLBACK: Búsqueda por script exacto (solo si no encontró por request_id)
+    console.log('🔍 Fallback: Buscando por script exacto');
     const { data: videoByScript, error: errorByScript } = await supabase
       .from('generated_videos')
       .select('video_url, request_id, title, created_at, script')
@@ -67,80 +60,126 @@ export const verifyVideoExists = async (user: User | null, requestId: string, sc
       console.error('❌ Error en búsqueda por script:', errorByScript);
     } else if (videoByScript && videoByScript.length > 0) {
       const video = videoByScript[0];
+      
       // Verificar que sea reciente (últimas 2 horas)
       const videoTime = new Date(video.created_at).getTime();
       const now = Date.now();
       const hoursAgo = (now - videoTime) / (1000 * 60 * 60);
       
-      console.log('✅ VIDEO ENCONTRADO POR SCRIPT:', {
-        videoUrl: video.video_url,
-        title: video.title,
-        requestId: video.request_id,
-        createdAt: video.created_at,
-        hoursAgo: Math.round(hoursAgo * 100) / 100,
-        originalRequestId: requestId
-      });
-      
       if (hoursAgo <= 2) {
+        console.log('✅ VIDEO ENCONTRADO POR SCRIPT (reciente):', {
+          videoUrl: video.video_url,
+          title: video.title,
+          requestId: video.request_id,
+          hoursAgo: Math.round(hoursAgo * 100) / 100
+        });
+
+        // ⭐ AUTO-ACTUALIZAR TRACKING A COMPLETED
+        await updateTrackingToCompleted(user, requestId);
+        
         return {
           video_url: video.video_url,
           title: video.title,
           request_id: video.request_id,
           created_at: video.created_at
         };
-      } else {
-        console.log('⚠️ Video encontrado por script pero es muy antiguo:', { hoursAgo });
       }
     }
 
-    // ESTRATEGIA 3: Verificación de videos recientes del usuario (último recurso)
-    console.log('📋 Estrategia 3: Búsqueda de videos recientes del usuario');
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const { data: recentVideos, error: errorRecent } = await supabase
-      .from('generated_videos')
-      .select('video_url, request_id, title, created_at, script')
-      .eq('user_id', user.id)
-      .gte('created_at', twoHoursAgo)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    console.log('❌ NO SE ENCONTRÓ VIDEO - Continuando verificación automática');
+    return null;
 
-    if (errorRecent) {
-      console.error('❌ Error en búsqueda de videos recientes:', errorRecent);
-    } else if (recentVideos && recentVideos.length > 0) {
-      console.log('📋 Videos recientes encontrados:', recentVideos.length);
-      
-      // Buscar coincidencia por script similar (90% de coincidencia)
-      for (const video of recentVideos) {
-        const similarity = calculateStringSimilarity(video.script.trim(), script.trim());
-        console.log('🔍 Comparando video:', {
-          requestId: video.request_id,
-          similarity: Math.round(similarity * 100) + '%',
-          createdAt: video.created_at
-        });
+  } catch (error) {
+    console.error('💥 Error durante verificación:', error);
+    return null;
+  }
+};
+
+// ⭐ NUEVA FUNCIÓN: Auto-actualizar tracking a completed
+const updateTrackingToCompleted = async (user: User, requestId: string) => {
+  try {
+    console.log('🔄 Auto-actualizando tracking a COMPLETED:', { userId: user.id, requestId });
+    
+    const { error } = await supabase
+      .from('video_generation_tracking')
+      .update({ 
+        status: 'completed',
+        last_check_time: new Date().toISOString()
+      })
+      .eq('user_id', user.id)
+      .eq('request_id', requestId);
+
+    if (error) {
+      console.error('❌ Error actualizando tracking:', error);
+    } else {
+      console.log('✅ Tracking actualizado correctamente a COMPLETED');
+    }
+  } catch (error) {
+    console.error('💥 Error en updateTrackingToCompleted:', error);
+  }
+};
+
+// Función para recuperar videos "perdidos" - SIMPLIFICADA
+export const recoverLostVideo = async (user: User | null, requestId: string, script: string) => {
+  if (!user) return null;
+
+  console.log('🔄 RECUPERACIÓN DE VIDEO PERDIDO:', {
+    userId: user.id,
+    requestId: requestId,
+    timestamp: new Date().toISOString()
+  });
+
+  try {
+    // Verificar directamente si el video existe
+    const videoExists = await verifyVideoExists(user, requestId, script);
+    
+    if (videoExists) {
+      console.log('🎉 VIDEO RECUPERADO EXITOSAMENTE:', videoExists);
+      return videoExists;
+    }
+
+    // ⭐ RECUPERACIÓN DE VIDEOS "EXPIRED": Buscar tracking expired que tenga video
+    console.log('🔍 Buscando videos con tracking expired...');
+    const { data: expiredTracking, error: expiredError } = await supabase
+      .from('video_generation_tracking')
+      .select('request_id, script')
+      .eq('user_id', user.id)
+      .eq('status', 'expired')
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (!expiredError && expiredTracking && expiredTracking.length > 0) {
+      for (const tracking of expiredTracking) {
+        console.log('🔍 Verificando tracking expired:', tracking.request_id);
         
-        if (similarity > 0.9) {
-          console.log('✅ VIDEO ENCONTRADO POR SIMILITUD DE SCRIPT:', {
-            videoUrl: video.video_url,
-            title: video.title,
-            requestId: video.request_id,
-            similarity: Math.round(similarity * 100) + '%'
-          });
+        const { data: expiredVideo, error: videoError } = await supabase
+          .from('generated_videos')
+          .select('video_url, request_id, title, created_at')
+          .eq('user_id', user.id)
+          .eq('request_id', tracking.request_id)
+          .limit(1);
+
+        if (!videoError && expiredVideo && expiredVideo.length > 0) {
+          console.log('🎉 ENCONTRADO VIDEO CON TRACKING EXPIRED - Auto-corrigiendo:', expiredVideo[0]);
+          
+          // Auto-corregir tracking de expired → completed
+          await updateTrackingToCompleted(user, tracking.request_id);
           
           return {
-            video_url: video.video_url,
-            title: video.title,
-            request_id: video.request_id,
-            created_at: video.created_at
+            video_url: expiredVideo[0].video_url,
+            title: expiredVideo[0].title,
+            request_id: expiredVideo[0].request_id,
+            created_at: expiredVideo[0].created_at
           };
         }
       }
     }
 
-    console.log('❌ NO SE ENCONTRÓ VIDEO ESPECÍFICO tras verificación robusta');
+    console.log('❌ No se pudo recuperar el video');
     return null;
 
   } catch (error) {
-    console.error('💥 Error durante verificación robusta:', error);
+    console.error('💥 Error en recuperación de video:', error);
     return null;
   }
 };
@@ -187,62 +226,6 @@ const getEditDistance = (str1: string, str2: string): number => {
   return matrix[str2.length][str1.length];
 };
 
-// Función para recuperar videos "perdidos"
-export const recoverLostVideo = async (user: User | null, requestId: string, script: string) => {
-  if (!user) return null;
-
-  console.log('🔄 INICIANDO RECUPERACIÓN DE VIDEO PERDIDO:', {
-    userId: user.id,
-    requestId: requestId,
-    timestamp: new Date().toISOString()
-  });
-
-  try {
-    // Verificar si el video existe
-    const videoExists = await verifyVideoExists(user, requestId, script);
-    
-    if (videoExists) {
-      console.log('🎉 VIDEO RECUPERADO:', videoExists);
-      
-      // Verificar el estado en tracking
-      const { data: trackingData, error: trackingError } = await supabase
-        .from('video_generation_tracking')
-        .select('status, id')
-        .eq('user_id', user.id)
-        .eq('request_id', requestId)
-        .single();
-
-      if (!trackingError && trackingData && trackingData.status === 'expired') {
-        console.log('🔄 Actualizando tracking de "expired" a "completed"');
-        
-        // Actualizar el tracking a completed
-        const { error: updateError } = await supabase
-          .from('video_generation_tracking')
-          .update({ 
-            status: 'completed',
-            last_check_time: new Date().toISOString()
-          })
-          .eq('id', trackingData.id);
-
-        if (updateError) {
-          console.error('❌ Error actualizando tracking:', updateError);
-        } else {
-          console.log('✅ Tracking actualizado correctamente');
-        }
-      }
-      
-      return videoExists;
-    }
-
-    console.log('❌ No se pudo recuperar el video');
-    return null;
-
-  } catch (error) {
-    console.error('💥 Error en recuperación de video:', error);
-    return null;
-  }
-};
-
 // Mantener función legacy para compatibilidad
 export const checkVideoInDatabase = async (user: User | null, requestId: string, script: string) => {
   console.log('⚠️ checkVideoInDatabase (legacy) - redirigiendo a verifyVideoExists');
@@ -252,7 +235,7 @@ export const checkVideoInDatabase = async (user: User | null, requestId: string,
 export const checkFinalVideoResult = async (user: User | null, script: string) => {
   if (!user) return null;
   
-  console.log('🔍 VERIFICACIÓN FINAL (mejorada):', {
+  console.log('🔍 VERIFICACIÓN FINAL MEJORADA:', {
     userId: user.id,
     scriptPreview: script.substring(0, 50) + '...',
     timestamp: new Date().toISOString()
@@ -274,13 +257,13 @@ export const checkFinalVideoResult = async (user: User | null, script: string) =
     });
     
     // Intentar recuperar el video usando los datos del tracking
-    const videoResult = await recoverLostVideo(user, recentTracking.request_id, script);
+    const videoResult = await verifyVideoExists(user, recentTracking.request_id, script);
     if (videoResult) {
       return videoResult;
     }
   }
 
-  // Fallback: verificación directa
+  // Fallback: verificación directa por script
   const videoResult = await verifyVideoExists(user, 'final-check', script);
   return videoResult ? { video_url: videoResult.video_url, title: videoResult.title } : null;
 };
