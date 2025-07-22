@@ -56,7 +56,75 @@ export const useVideoMonitoring = () => {
     });
   }, [clearAllIntervals, toast]);
 
-  // ⭐ COUNTDOWN MEJORADO - SIN SCRIPT, solo request_id
+  // ⭐ NUEVA FUNCIÓN: Verificación final directa con requestId
+  const checkFinalResultWithRequestId = useCallback(async (
+    requestId: string,
+    setVideoResult: (result: string) => void,
+    setIsGenerating: (generating: boolean) => void
+  ) => {
+    console.log('🔍 VERIFICACIÓN FINAL DIRECTA con requestId:', {
+      requestId,
+      userId: user?.id,
+      timestamp: new Date().toISOString()
+    });
+    
+    try {
+      // Verificación directa con el requestId específico
+      const videoData = await verifyVideoExists(user, requestId);
+      
+      if (videoData?.video_url) {
+        console.log('✅ Video encontrado en verificación final directa:', {
+          videoUrl: videoData.video_url,
+          title: videoData.title,
+          requestId: videoData.request_id
+        });
+        
+        videoDetected(videoData, setVideoResult, setIsGenerating);
+        return;
+      }
+
+      console.log('❌ Video no encontrado con requestId específico - intentando fallback');
+      
+      // Fallback: intentar con tracking más reciente
+      const fallbackVideo = await checkFinalVideoResult(user);
+      if (fallbackVideo?.video_url) {
+        console.log('🔄 Video encontrado en fallback:', fallbackVideo);
+        videoDetected({ 
+          video_url: fallbackVideo.video_url, 
+          title: fallbackVideo.title,
+          request_id: requestId
+        }, setVideoResult, setIsGenerating);
+        return;
+      }
+
+      // Video realmente no encontrado
+      console.log('⏰ Video NO encontrado después de verificación completa');
+      handleVideoNotFound(setVideoResult, setIsGenerating);
+      
+    } catch (error) {
+      console.error('❌ Error en verificación final directa:', error);
+      handleVideoNotFound(setVideoResult, setIsGenerating);
+    }
+  }, [user, videoDetected, toast]);
+
+  const handleVideoNotFound = useCallback((
+    setVideoResult: (result: string) => void,
+    setIsGenerating: (generating: boolean) => void
+  ) => {
+    console.log('⏰ Manejando video no encontrado - finalizando proceso');
+    
+    isActiveRef.current = false;
+    setIsGenerating(false);
+    clearGenerationState();
+    
+    toast({
+      title: "Video en proceso",
+      description: "Tu video está tardando un poco más de lo normal. Por favor, revisa la sección 'Videos Guardados' en 10-15 minutos.",
+      variant: "default"
+    });
+  }, [toast]);
+
+  // ⭐ COUNTDOWN MEJORADO - Verificación final corregida
   const startCountdown = useCallback((
     requestId: string, 
     setVideoResult: (result: string) => void,
@@ -65,7 +133,7 @@ export const useVideoMonitoring = () => {
     isRecovering?: boolean
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando monitoreo MEJORADO SIN SCRIPT:', {
+    console.log('🚀 Iniciando monitoreo MEJORADO:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
       userId: user?.id,
@@ -84,8 +152,8 @@ export const useVideoMonitoring = () => {
       updateTimeRemaining(remaining);
       
       if (remaining <= 0) {
-        console.log('⏰ Tiempo agotado - verificación final');
-        checkFinalResult(setVideoResult, setIsGenerating);
+        console.log('⏰ Tiempo agotado - iniciando verificación final DIRECTA con requestId:', requestId);
+        checkFinalResultWithRequestId(requestId, setVideoResult, setIsGenerating);
         return;
       }
     };
@@ -94,14 +162,14 @@ export const useVideoMonitoring = () => {
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
 
-    // ⭐ MODO RECUPERACIÓN: Verificaciones cada 30 segundos desde el inicio - SIN SCRIPT
+    // ⭐ MODO RECUPERACIÓN: Verificaciones cada 30 segundos desde el inicio
     if (isRecovering) {
-      console.log('🔄 MODO RECUPERACIÓN ACTIVADO - Verificaciones cada 30 segundos SIN SCRIPT');
+      console.log('🔄 MODO RECUPERACIÓN ACTIVADO - Verificaciones cada 30 segundos');
       
       const recoveryCheck = async () => {
         if (!isActiveRef.current) return;
         
-        console.log('🔍 Verificación en modo recuperación SIN SCRIPT:', {
+        console.log('🔍 Verificación en modo recuperación:', {
           requestId,
           userId: user?.id,
           timestamp: new Date().toISOString()
@@ -123,30 +191,30 @@ export const useVideoMonitoring = () => {
       recoveryIntervalRef.current = setInterval(recoveryCheck, 30 * 1000);
       
     } else {
-      // ⭐ MODO NORMAL: Verificación inicial + verificaciones desde minuto 25 - SIN SCRIPT
+      // ⭐ MODO NORMAL: Verificación inicial + verificaciones desde minuto 25
       
       // VERIFICACIÓN INMEDIATA: Intentar recuperar video perdido al inicio
       setTimeout(async () => {
         if (!isActiveRef.current) return;
         
-        console.log('🔄 Verificación inicial - intentando recuperar video perdido SIN SCRIPT');
+        console.log('🔄 Verificación inicial - intentando recuperar video perdido');
         const recoveredVideo = await recoverLostVideo(user, requestId);
         if (recoveredVideo && isActiveRef.current) {
           videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
         }
       }, 5000); // 5 segundos después de iniciar
 
-      // VERIFICACIONES DESDE EL MINUTO 25 CADA MINUTO - SIN SCRIPT
+      // VERIFICACIONES DESDE EL MINUTO 25 CADA MINUTO
       setTimeout(() => {
         if (!isActiveRef.current) return;
         
-        console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25 - SIN SCRIPT');
+        console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25');
         
         const regularCheck = async () => {
           if (!isActiveRef.current) return;
           
           const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-          console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video SIN SCRIPT:', {
+          console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video:', {
             requestId,
             userId: user?.id,
             minutesElapsed
@@ -170,21 +238,21 @@ export const useVideoMonitoring = () => {
       }, 25 * 60 * 1000); // Iniciar a los 25 minutos
     }
 
-  }, [updateTimeRemaining, user, videoDetected]);
+  }, [updateTimeRemaining, user, videoDetected, checkFinalResultWithRequestId]);
 
-  // Función para verificación manual mejorada - SIN SCRIPT
+  // Función para verificación manual mejorada
   const checkVideoManually = useCallback(async (
     requestId: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN MANUAL SOLICITADA SIN SCRIPT:', {
+    console.log('🔍 VERIFICACIÓN MANUAL SOLICITADA:', {
       requestId,
       userId: user?.id,
       timestamp: new Date().toISOString()
     });
     
-    // Verificación directa y completa - SIN SCRIPT
+    // Verificación directa y completa
     const videoData = await verifyVideoExists(user, requestId);
     if (videoData) {
       console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN MANUAL:', videoData);
@@ -192,7 +260,7 @@ export const useVideoMonitoring = () => {
       return true;
     }
     
-    // Intentar recuperación como fallback - SIN SCRIPT
+    // Intentar recuperación como fallback
     const recoveredVideo = await recoverLostVideo(user, requestId);
     if (recoveredVideo) {
       console.log('🔄 VIDEO RECUPERADO EN VERIFICACIÓN MANUAL:', recoveredVideo);
@@ -222,39 +290,8 @@ export const useVideoMonitoring = () => {
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN FINAL tras 39 minutos - SIN SCRIPT');
-    
-    try {
-      const videoData = await checkFinalVideoResult(user);
-      
-      if (videoData?.video_url) {
-        console.log('✅ Video encontrado en verificación final');
-        setVideoResult(videoData.video_url);
-        toast({
-          title: "¡Video completado!",
-          description: videoData.title || "Tu video ha sido generado exitosamente.",
-        });
-      } else {
-        console.log('⏰ Video NO encontrado después de 39 minutos');
-        toast({
-          title: "Video en proceso",
-          description: "Tu video está tardando un poco más de lo normal. Por favor, revisa la sección 'Videos Guardados' en 10-15 minutos.",
-          variant: "default"
-        });
-      }
-    } catch (e) {
-      console.error('❌ Error en verificación final:', e);
-      toast({
-        title: "Error en verificación",
-        description: "Hubo un problema al verificar el video. Por favor, revisa la sección 'Videos Guardados' en unos minutos.",
-        variant: "destructive"
-      });
-    }
-    
-    isActiveRef.current = false;
-    setIsGenerating(false);
-    clearGenerationState();
-  }, [user, toast]);
+    console.log('⚠️ checkFinalResult (legacy) - usar checkFinalResultWithRequestId en su lugar');
+  }, []);
 
   const cleanup = useCallback(() => {
     console.log('🧹 Limpieza completa del monitoreo');
