@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -82,6 +81,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       
       if (timeRemaining > 0) {
         setIsGenerating(true);
+        // Initialize startCountdown with the original start time so the button can appear
+        startCountdown(currentGeneration.request_id, currentGeneration.script, setVideoResult, setIsGenerating, new Date(currentGeneration.start_time).getTime());
       }
     }
   }, [currentGeneration, timeRemaining]);
