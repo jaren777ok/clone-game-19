@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Video, Play } from 'lucide-react';
+import { Video, Play, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
+import { formatTimeRemaining } from '@/lib/countdownUtils';
 
 interface VideoProcessingStateProps {
   timeRemaining: number;
@@ -11,6 +12,8 @@ interface VideoProcessingStateProps {
   onManualCheck?: () => void;
   debugInfo?: string;
   isChecking?: boolean;
+  canCheckVideo?: boolean;
+  timeUntilButton?: number;
 }
 
 const VideoProcessingState = ({ 
@@ -19,8 +22,12 @@ const VideoProcessingState = ({
   isRecovering, 
   onManualCheck,
   debugInfo,
-  isChecking 
+  isChecking,
+  canCheckVideo = false,
+  timeUntilButton = 0
 }: VideoProcessingStateProps) => {
+  const timeUntilButtonFormatted = formatTimeRemaining(timeUntilButton);
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden py-16">
       {/* Animated background */}
@@ -42,37 +49,64 @@ const VideoProcessingState = ({
             </h1>
             
             <p className="text-muted-foreground text-lg">
-              Tu video se está procesando. Usa el botón para verificar si ya está listo.
+              Tu video se está procesando. {canCheckVideo ? 'Ya puedes verificar si está listo.' : 'El botón de verificación aparecerá pronto.'}
             </p>
           </div>
 
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Manual Check Button - Simplified */}
+          {/* Manual Check Button or Wait Message */}
           {onManualCheck && (
             <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 rounded-xl p-8 space-y-6">
-              <Button
-                onClick={onManualCheck}
-                disabled={isChecking}
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-12 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                <Play className="w-6 h-6 mr-3" />
-                {isChecking ? 'Verificando...' : 'Verificar Video'}
-              </Button>
+              {canCheckVideo ? (
+                <Button
+                  onClick={onManualCheck}
+                  disabled={isChecking}
+                  size="lg"
+                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-12 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  <Play className="w-6 h-6 mr-3" />
+                  {isChecking ? 'Verificando...' : 'Verificar Video'}
+                </Button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center space-x-3 text-amber-400">
+                    <Clock className="w-6 h-6" />
+                    <span className="text-lg font-semibold">
+                      Botón disponible en {timeUntilButtonFormatted.formattedTime}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Los videos suelen tardar al menos 30 minutos. El botón aparecerá cuando sea útil verificar.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          {/* System Information - Simplified */}
+          {/* System Information - Updated */}
           <div className="bg-card/50 cyber-border border-blue-500/30 rounded-xl p-6">
             <div className="space-y-3 text-center">
-              <p className="text-blue-200 text-base font-medium">
-                ✅ Presiona el botón para verificar si tu video ya está listo
-              </p>
-              <p className="text-muted-foreground text-sm">
-                🔄 Puedes cerrar la aplicación y volver más tarde
-              </p>
+              {canCheckVideo ? (
+                <>
+                  <p className="text-blue-200 text-base font-medium">
+                    ✅ Ya puedes verificar si tu video está listo
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    🔄 Puedes cerrar la aplicación y volver más tarde
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-amber-200 text-base font-medium">
+                    ⏳ El botón de verificación aparecerá en {timeUntilButtonFormatted.formattedTime}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    🎥 Los videos necesitan tiempo para procesarse correctamente
+                  </p>
+                </>
+              )}
               <p className="text-muted-foreground text-sm">
                 ⚡ Tu video puede estar listo antes del tiempo estimado
               </p>
@@ -83,7 +117,7 @@ const VideoProcessingState = ({
           <div className="flex items-center justify-center space-x-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-muted-foreground">
-              Sistema listo para verificación manual
+              {canCheckVideo ? 'Listo para verificación' : 'Procesando video...'}
             </span>
           </div>
 

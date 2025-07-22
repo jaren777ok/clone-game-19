@@ -1,8 +1,8 @@
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
+import { COUNTDOWN_TIME, canShowCheckButton, getTimeUntilButtonAppears } from '@/lib/countdownUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
 import { sendVideoVerificationWebhook } from '@/lib/webhookUtils';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,18 @@ export const useVideoMonitoring = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Calculate if the check button should be visible
+  const canCheckVideo = useMemo(() => {
+    if (!generationStartTime) return false;
+    return canShowCheckButton(generationStartTime);
+  }, [generationStartTime, timeRemaining]);
+
+  // Calculate time until button appears
+  const timeUntilButton = useMemo(() => {
+    if (!generationStartTime || canCheckVideo) return 0;
+    return getTimeUntilButtonAppears(generationStartTime);
+  }, [generationStartTime, canCheckVideo, timeRemaining]);
 
   const updateTimeRemaining = useCallback((remaining: number) => {
     setTimeRemaining(remaining);
@@ -51,7 +63,7 @@ export const useVideoMonitoring = () => {
     });
     
     setGenerationStartTime(startTime);
-    setDebugInfo('🚀 Sistema manual activo - usa el botón para verificar');
+    setDebugInfo('🚀 Sistema manual activo - el botón aparecerá en 30 minutos');
     
     // Solo countdown timer visual - SIN verificaciones automáticas
     const updateCountdown = () => {
@@ -217,6 +229,8 @@ export const useVideoMonitoring = () => {
     generationStartTime,
     debugInfo,
     isChecking,
+    canCheckVideo,
+    timeUntilButton,
     startCountdown,
     startPeriodicChecking: () => {}, // Legacy compatibility - no hace nada
     checkFinalResult: () => {}, // Legacy compatibility - no hace nada

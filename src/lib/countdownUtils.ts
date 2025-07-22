@@ -2,6 +2,7 @@
 export const COUNTDOWN_TIME = 39 * 60; // 39 minutes in seconds
 export const DELAYED_POLLING_START = 2 * 60; // 2 minutes in seconds - cuando iniciar verificaciones
 export const POLLING_INTERVAL_DELAYED = 60 * 1000; // 1 minute in milliseconds - verificaciones cada minuto
+export const MINIMUM_WAIT_TIME = 30 * 60; // 30 minutes in seconds - tiempo mínimo antes de mostrar botón
 
 export const calculateTimeRemaining = (startTime: number): number => {
   const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -27,4 +28,14 @@ export const isTimeExpired = (startTime: number): boolean => {
 export const hasReachedPollingTime = (startTime: number): boolean => {
   const timeElapsed = Date.now() - startTime;
   return timeElapsed >= DELAYED_POLLING_START * 1000;
+};
+
+export const canShowCheckButton = (startTime: number): boolean => {
+  const timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+  return timeElapsed >= MINIMUM_WAIT_TIME;
+};
+
+export const getTimeUntilButtonAppears = (startTime: number): number => {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  return Math.max(0, MINIMUM_WAIT_TIME - elapsed);
 };
