@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { useVideoGenerationDatabase } from './useVideoGenerationDatabase';
 import { useVideoMonitoring } from './useVideoMonitoring';
+import { useVideoVerification } from './useVideoVerification';
 import { initiateVideoGeneration } from '@/lib/videoGenerationLogic';
 import { validateFlowState } from '@/lib/videoGenerationLogic';
 import { FlowState, ApiVersionCustomization } from '@/types/videoFlow';
@@ -22,6 +23,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   const [videoResult, setVideoResult] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [currentRequestId, setCurrentRequestId] = useState<string>('');
+  
+  const { forceVideoCheck } = useVideoVerification();
   
   const { 
     currentGeneration,
@@ -45,9 +48,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     cleanup 
   } = useVideoMonitoring();
 
-  // ⭐ FUNCIONES WRAPPER MEJORADAS CON LOGGING
+  // Enhanced wrapper functions with multi-strategy verification
   const startCountdown = (requestId: string, setVideoResultParam: (result: string) => void, setIsGeneratingParam: (generating: boolean) => void, customStartTime?: number) => {
-    console.log('🚀 useVideoGenerator - Iniciando countdown con parámetros:', {
+    console.log('🚀 useVideoGenerator - Iniciando countdown MEJORADO con verificación multi-estrategia:', {
       requestId,
       customStartTime,
       hasSetVideoResult: !!setVideoResultParam,
@@ -66,10 +69,13 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
 
   const checkVideoManually = () => {
     if (currentRequestId) {
-      console.log('🔍 useVideoGenerator - Verificación manual con requestId:', currentRequestId);
+      console.log('🔍 useVideoGenerator - Verificación manual MEJORADA');
       return baseCheckVideoManually(currentRequestId, setVideoResult, setIsGenerating);
+    } else {
+      // Fallback: use multi-strategy verification even without specific requestId
+      console.log('🔍 useVideoGenerator - Verificación manual sin requestId específico - usando estrategia múltiple');
+      return forceVideoCheck(setVideoResult, setIsGenerating);
     }
-    return Promise.resolve(false);
   };
 
   const handleRecoverGeneration = () => {
@@ -82,22 +88,60 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     );
   };
 
-  // ⭐ EFECTO CRÍTICO: Monitorear cambios en videoResult
+  // Critical effect to monitor videoResult changes
   useEffect(() => {
     if (videoResult) {
-      console.log('🎉 useVideoGenerator - videoResult actualizado:', {
+      console.log('🎉 useVideoGenerator - videoResult actualizado (CRÍTICO):', {
         videoUrl: videoResult,
         isGenerating: isGenerating,
         timestamp: new Date().toISOString()
       });
       
-      // ⭐ FORZAR isGenerating = false si hay videoResult
+      // Force isGenerating = false when videoResult exists
       if (isGenerating) {
-        console.log('🔄 useVideoGenerator - Forzando isGenerating = false porque hay videoResult');
+        console.log('🔄 useVideoGenerator - FORZANDO isGenerating = false (videoResult existe)');
         setIsGenerating(false);
       }
     }
   }, [videoResult, isGenerating]);
+
+  // Enhanced effect to periodically check for completed videos during generation
+  useEffect(() => {
+    let backgroundCheckInterval: NodeJS.Timeout | null = null;
+    
+    if (isGenerating && currentRequestId && !videoResult) {
+      console.log('🔄 Iniciando verificación de fondo cada 30 segundos para detectar videos completados');
+      
+      const backgroundCheck = async () => {
+        if (!isGenerating || videoResult) return;
+        
+        console.log('🔍 Verificación de fondo ejecutándose...');
+        const success = await forceVideoCheck(setVideoResult, setIsGenerating);
+        
+        if (success) {
+          console.log('✅ Video encontrado en verificación de fondo');
+          if (backgroundCheckInterval) {
+            clearInterval(backgroundCheckInterval);
+            backgroundCheckInterval = null;
+          }
+        }
+      };
+      
+      // Start background checking after 5 minutes
+      setTimeout(() => {
+        if (isGenerating && !videoResult) {
+          backgroundCheck();
+          backgroundCheckInterval = setInterval(backgroundCheck, 30 * 1000);
+        }
+      }, 5 * 60 * 1000);
+    }
+    
+    return () => {
+      if (backgroundCheckInterval) {
+        clearInterval(backgroundCheckInterval);
+      }
+    };
+  }, [isGenerating, currentRequestId, videoResult, forceVideoCheck]);
 
   // Check for existing generation on mount and migrate legacy data
   useEffect(() => {
@@ -213,8 +257,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         throw new Error('No se pudo guardar el estado de generación');
       }
 
-      // ⭐ Start countdown con funciones de estado correctas
-      console.log('🎯 useVideoGenerator - Iniciando countdown con setVideoResult y setIsGenerating locales');
+      // Start countdown with enhanced functions
+      console.log('🎯 useVideoGenerator - Iniciando countdown MEJORADO');
       startCountdown(requestId, setVideoResult, setIsGenerating);
       startPeriodicChecking(requestId);
 
@@ -487,8 +531,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     cleanup();
   };
 
-  // ⭐ LOGGING CRÍTICO DEL ESTADO
-  console.log('🔍 useVideoGenerator - Estado actual:', {
+  // Enhanced logging
+  console.log('🔍 useVideoGenerator - Estado MEJORADO:', {
     isGenerating,
     hasVideoResult: !!videoResult,
     videoResultUrl: videoResult,

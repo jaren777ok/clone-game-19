@@ -11,6 +11,7 @@ import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import { useAuth } from '@/hooks/useAuth';
 import { FlowState } from '@/types/videoFlow';
 import { clearFlowState } from '@/utils/videoFlowUtils';
+import { hasReachedPollingTime } from '@/lib/countdownUtils';
 
 const VideoGeneratorFinal = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const VideoGeneratorFinal = () => {
   const [effectiveFlowState, setEffectiveFlowState] = useState<FlowState | null>(null);
   const { state, handlers } = useVideoGenerator({ flowState: effectiveFlowState });
 
-  // Determinar el estado efectivo del flujo
+  // Determine effective flow state
   useEffect(() => {
     const navigationState = location.state as FlowState | undefined;
     
@@ -81,7 +82,7 @@ const VideoGeneratorFinal = () => {
     }
   };
 
-  // ⭐ EFECTO CRÍTICO: Limpiar configuración cuando el video esté listo
+  // CRITICAL EFFECT: Clean configuration when video is ready
   useEffect(() => {
     if (state.videoResult) {
       console.log('🎉 VideoGeneratorFinal - Video completado detectado:', {
@@ -93,17 +94,20 @@ const VideoGeneratorFinal = () => {
     }
   }, [state.videoResult]);
 
-  console.log('🐛 DEBUG VideoGeneratorFinal - Estado actual:', {
+  // Enhanced state logging
+  console.log('🔍 VideoGeneratorFinal - Estado CRÍTICO:', {
     hasVideoResult: !!state.videoResult,
     videoResult: state.videoResult,
     isGenerating: state.isGenerating,
+    timeRemaining: state.timeRemaining,
     effectiveFlowState: effectiveFlowState,
     selectedStyle: effectiveFlowState?.selectedStyle,
     selectedStyleId: effectiveFlowState?.selectedStyle?.id,
-    hasHandleGenerateVideoWithFiles: !!handlers.handleGenerateVideoWithFiles
+    hasHandleGenerateVideoWithFiles: !!handlers.handleGenerateVideoWithFiles,
+    renderDecision: state.videoResult ? 'SUCCESS_SCREEN' : (state.isGenerating ? 'PROCESSING_SCREEN' : 'SCRIPT_SCREEN')
   });
 
-  // Si no tenemos configuración efectiva aún, mostrar loading
+  // If no effective configuration yet, show loading
   if (!effectiveFlowState) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -117,9 +121,9 @@ const VideoGeneratorFinal = () => {
     );
   }
 
-  // ⭐ PRIORIDAD CRÍTICA: Si hay videoResult, mostrar pantalla de éxito INMEDIATAMENTE
+  // CRITICAL PRIORITY: If videoResult exists, show success screen IMMEDIATELY
   if (state.videoResult) {
-    console.log('🎉 VideoGeneratorFinal - Mostrando pantalla de éxito con video:', state.videoResult);
+    console.log('🎉 VideoGeneratorFinal - MOSTRANDO PANTALLA DE ÉXITO INMEDIATAMENTE con video:', state.videoResult);
     return (
       <VideoResult 
         videoUrl={state.videoResult} 
@@ -128,19 +132,25 @@ const VideoGeneratorFinal = () => {
     );
   }
 
-  // Solo después, verificar si está generando
+  // Secondary check: If generating, show processing screen
   if (state.isGenerating) {
     console.log('🔄 VideoGeneratorFinal - Mostrando pantalla de procesamiento');
+    
+    // Determine if we should show manual check button (during intensive verification phase)
+    const startTime = Date.now() - (state.totalTime - state.timeRemaining) * 1000;
+    const showManualCheck = hasReachedPollingTime(startTime);
+    
     return (
       <VideoProcessingState 
         timeRemaining={state.timeRemaining}
         totalTime={state.totalTime}
         isRecovering={state.isRecovering}
+        onManualCheck={showManualCheck ? handlers.checkVideoManually : undefined}
       />
     );
   }
 
-  // Pantalla de script (estado inicial)
+  // Default: Show script screen
   console.log('📝 VideoGeneratorFinal - Mostrando pantalla de script');
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
