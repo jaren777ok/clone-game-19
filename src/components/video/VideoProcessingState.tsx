@@ -53,21 +53,35 @@ const VideoProcessingState = ({
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Manual Check Button - Only show when canCheckVideo is true */}
+          {/* Manual Check Button - Enhanced with vibrant green gradient */}
           {canCheckVideo && onManualCheck && (
             <div className="space-y-4">
-              <Button
-                onClick={onManualCheck}
-                disabled={isChecking}
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-12 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                <Play className="w-6 h-6 mr-3" />
-                {isChecking ? 'Verificando...' : 'Verificar Video'}
-              </Button>
+              {/* Container with gradient background and glow effects */}
+              <div className="relative mx-auto max-w-md">
+                {/* Outer glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-green-500 to-emerald-600 rounded-2xl blur-md opacity-75 animate-pulse"></div>
+                
+                {/* Inner container with gradient background */}
+                <div className="relative bg-gradient-to-r from-green-400/20 via-green-500/30 to-emerald-600/20 p-6 rounded-2xl border border-green-500/50 backdrop-blur-sm">
+                  <Button
+                    onClick={onManualCheck}
+                    disabled={isChecking}
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-green-500 via-green-600 to-emerald-700 hover:from-green-600 hover:via-green-700 hover:to-emerald-800 text-white font-bold py-4 px-12 rounded-xl shadow-2xl shadow-green-500/50 transform hover:scale-105 transition-all duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 border-0 relative overflow-hidden"
+                  >
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-[shimmer_2s_infinite]"></div>
+                    
+                    <Play className="w-6 h-6 mr-3 relative z-10" />
+                    <span className="relative z-10">
+                      {isChecking ? 'Verificando...' : 'Verificar Video'}
+                    </span>
+                  </Button>
+                </div>
+              </div>
               
-              <p className="text-blue-200 text-base font-medium">
-                Toca el botón para verificar si tu video ya está listo
+              <p className="text-green-300 text-base font-medium animate-pulse">
+                ✨ Toca el botón para verificar si tu video ya está listo
               </p>
             </div>
           )}
