@@ -56,7 +56,7 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Manual Check Button - Solo mostrar después de 25 minutos */}
+          {/* Manual Check Button - Solo mostrar después de 2 minutos */}
           {isInPollingPhase && onManualCheck && (
             <div className="flex justify-center">
               <Button
@@ -94,10 +94,10 @@ const VideoProcessingState = ({ timeRemaining, totalTime, isRecovering, onManual
               ) : (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    🎬 Generando video (primeros 25 minutos)
+                    🎬 Generando video (primeros 2 minutos)
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    🕒 Las verificaciones via webhook iniciarán a los 25 minutos
+                    🕒 Las verificaciones via webhook iniciarán a los 2 minutos
                   </p>
                   <p className="text-muted-foreground text-sm">
                     💻 Puedes cerrar la app y volver luego

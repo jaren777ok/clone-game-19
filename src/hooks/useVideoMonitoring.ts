@@ -36,7 +36,8 @@ export const useVideoMonitoring = () => {
     console.log('🎉 VIDEO DETECTADO VIA WEBHOOK - Limpiando estado:', {
       videoUrl: videoData.video_url,
       title: videoData.title,
-      requestId: videoData.request_id
+      requestId: videoData.request_id,
+      timestamp: new Date().toISOString()
     });
     
     isActiveRef.current = false;
@@ -72,7 +73,8 @@ export const useVideoMonitoring = () => {
       scriptLength: scriptToCheck.length,
       webhookActivated: webhookActivatedRef.current,
       isActive: isActiveRef.current,
-      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
+      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado',
+      timestamp: new Date().toISOString()
     });
     
     try {
@@ -99,7 +101,7 @@ export const useVideoMonitoring = () => {
     customStartTime?: number
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando monitoreo MEJORADO CON WEBHOOK - Verificaciones desde minuto 25:', {
+    console.log('🚀 Iniciando monitoreo MEJORADO CON WEBHOOK - Verificaciones desde minuto 2:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
       scriptLength: scriptToCheck.length,
@@ -119,10 +121,10 @@ export const useVideoMonitoring = () => {
       const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
       updateTimeRemaining(remaining);
       
-      // IMPORTANTE: Verificar si hemos llegado al tiempo de verificación (25 minutos)
+      // IMPORTANTE: Verificar si hemos llegado al tiempo de verificación (2 minutos)
       // y activar las verificaciones webhook si no están activadas
       if (!webhookActivatedRef.current && elapsed >= DELAYED_POLLING_START) {
-        console.log('⏰ PUNTO DE ACTIVACIÓN WEBHOOK ALCANZADO - Iniciando verificaciones webhook a los 25 minutos');
+        console.log('⏰ PUNTO DE ACTIVACIÓN WEBHOOK ALCANZADO - Iniciando verificaciones webhook a los 2 minutos');
         activateWebhookVerification(requestId, scriptToCheck, setVideoResult, setIsGenerating);
       }
       
@@ -148,15 +150,14 @@ export const useVideoMonitoring = () => {
       }
     }, 5000); // 5 segundos después de iniciar
 
-    // ⭐ IMPORTANTE: Programar el inicio de las verificaciones webhook a los 25 minutos exactos
-    // Ahora usamos setTimeout directamente con DELAYED_POLLING_START
+    // ⭐ IMPORTANTE: Programar el inicio de las verificaciones webhook a los 2 minutos exactos
     setTimeout(() => {
       if (!isActiveRef.current) return;
       
-      console.log('⏰ ALCANZADO TIEMPO PROGRAMADO PARA WEBHOOK - Iniciando verificación a los 25 minutos');
+      console.log('⏰ ALCANZADO TIEMPO PROGRAMADO PARA WEBHOOK - Iniciando verificación a los 2 minutos');
       activateWebhookVerification(requestId, scriptToCheck, setVideoResult, setIsGenerating);
       
-    }, DELAYED_POLLING_START * 1000); // ⭐ Iniciar a los 25 minutos (usar la constante)
+    }, DELAYED_POLLING_START * 1000); // ⭐ Iniciar a los 2 minutos (usar la constante)
 
   }, [updateTimeRemaining, user, videoDetected, performWebhookCheck]);
 
@@ -173,7 +174,8 @@ export const useVideoMonitoring = () => {
       requestId,
       userId: user?.id,
       scriptLength: scriptToCheck.length,
-      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
+      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado',
+      timestamp: new Date().toISOString()
     });
     
     webhookActivatedRef.current = true;
@@ -215,7 +217,7 @@ export const useVideoMonitoring = () => {
       console.log('❌ Webhook manual: Video no encontrado');
       toast({
         title: "Video no encontrado",
-        description: "El video aún no está disponible. La verificación automática via webhook continuará cada minuto desde el minuto 25.",
+        description: "El video aún no está disponible. La verificación automática via webhook continuará cada minuto desde el minuto 2.",
         variant: "default"
       });
     }
