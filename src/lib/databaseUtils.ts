@@ -2,76 +2,42 @@
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
-// ⭐ FUNCIÓN MEJORADA: Verificación por webhook con mejor logging y error handling
-export const checkVideoViaWebhook = async (user: User | null, requestId: string, script: string) => {
+// ⭐ FUNCIÓN PRINCIPAL: Verificación directa por base de datos (reemplaza webhook)
+export const checkVideoDirectly = async (user: User | null, requestId: string, script: string) => {
   if (!user) {
-    console.log('❌ checkVideoViaWebhook: No hay usuario autenticado');
+    console.log('❌ checkVideoDirectly: No hay usuario autenticado');
     return null;
   }
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado';
-  
-  console.log('🌐 INICIANDO VERIFICACIÓN POR WEBHOOK:', {
+  console.log('🔍 VERIFICACIÓN DIRECTA EN BD:', {
     userId: user.id,
     requestId: requestId,
     scriptLength: script.length,
-    webhookUrl: webhookUrl,
     timestamp: new Date().toISOString()
   });
 
   try {
-    // Preparar datos para el webhook - INCLUIR TODOS LOS DATOS NECESARIOS
-    const webhookData = {
-      request_id: requestId,
-      user_id: user.id,
-      script: script
-    };
+    // Buscar video directamente en la BD con los mismos filtros que usa la webhook
+    const { data: videoData, error } = await supabase
+      .from('generated_videos')
+      .select('video_url, request_id, title, created_at, script')
+      .eq('user_id', user.id)
+      .eq('request_id', requestId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    console.log('📤 Enviando datos a webhook:', {
-      ...webhookData,
-      scriptPreview: script.substring(0, 50) + '...',
-      timestamp: new Date().toISOString()
-    });
-
-    // Realizar la petición con timeout para evitar bloqueos
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
-    
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(webhookData),
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-
-    // Verificar respuesta
-    if (!response.ok) {
-      console.error('❌ Error en respuesta de webhook:', {
-        status: response.status, 
-        statusText: response.statusText,
-        url: webhookUrl
-      });
+    if (error) {
+      console.error('❌ Error en verificación directa:', error);
       return null;
     }
 
-    // Procesar datos
-    const data = await response.json();
-    console.log('📥 Respuesta de webhook recibida:', {
-      data: data,
-      timestamp: new Date().toISOString()
-    });
-
-    // Validar formato de respuesta: [{ "video_url": "url" }]
-    if (Array.isArray(data) && data.length > 0 && data[0].video_url) {
-      const videoUrl = data[0].video_url;
-      
-      console.log('✅ VIDEO ENCONTRADO VIA WEBHOOK:', {
-        videoUrl: videoUrl,
-        requestId: requestId,
+    if (videoData?.video_url) {
+      console.log('✅ VIDEO ENCONTRADO VIA VERIFICACIÓN DIRECTA:', {
+        videoUrl: videoData.video_url,
+        title: videoData.title,
+        requestId: videoData.request_id,
+        createdAt: videoData.created_at,
         timestamp: new Date().toISOString()
       });
 
@@ -79,35 +45,23 @@ export const checkVideoViaWebhook = async (user: User | null, requestId: string,
       await updateTrackingToCompleted(user, requestId);
 
       return {
-        video_url: videoUrl,
-        title: 'Video generado via webhook',
-        request_id: requestId,
-        created_at: new Date().toISOString()
+        video_url: videoData.video_url,
+        title: videoData.title || 'Video generado',
+        request_id: videoData.request_id,
+        created_at: videoData.created_at
       };
     }
 
-    console.log('❌ Webhook respuesta: Video no listo o formato incorrecto', {
-      dataPreview: JSON.stringify(data).substring(0, 100) + '...',
-      timestamp: new Date().toISOString()
-    });
+    console.log('❌ Video no encontrado en verificación directa');
     return null;
 
   } catch (error) {
-    // Manejo mejorado de errores
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      console.error('💥 Timeout en verificación por webhook (10s):', {
-        requestId, 
-        userId: user.id,
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      console.error('💥 Error en verificación por webhook:', {
-        error: error instanceof Error ? error.message : String(error),
-        requestId,
-        userId: user.id,
-        timestamp: new Date().toISOString()
-      });
-    }
+    console.error('💥 Error en verificación directa:', {
+      error: error instanceof Error ? error.message : String(error),
+      requestId,
+      userId: user.id,
+      timestamp: new Date().toISOString()
+    });
     return null;
   }
 };
@@ -140,58 +94,12 @@ const updateTrackingToCompleted = async (user: User, requestId: string) => {
   }
 };
 
+// FUNCIONES LEGACY: Mantener para compatibilidad y fallback
+
 // Función legacy para búsqueda directa (mantener para casos de recuperación inicial)
 export const verifyVideoExists = async (user: User | null, requestId: string, script: string) => {
-  if (!user) return null;
-
-  console.log('🎯 VERIFICACIÓN DIRECTA POR REQUEST_ID (Legacy):', {
-    userId: user.id,
-    requestId: requestId,
-    scriptLength: script.length,
-    timestamp: new Date().toISOString()
-  });
-
-  try {
-    const { data: videoByRequestId, error: errorByRequestId } = await supabase
-      .from('generated_videos')
-      .select('video_url, request_id, title, created_at, script')
-      .eq('user_id', user.id)
-      .eq('request_id', requestId)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (errorByRequestId) {
-      console.error('❌ Error en búsqueda por requestId:', errorByRequestId);
-      return null;
-    }
-
-    if (videoByRequestId && videoByRequestId.length > 0) {
-      const video = videoByRequestId[0];
-      
-      console.log('✅ VIDEO ENCONTRADO POR REQUEST_ID (Legacy):', {
-        videoUrl: video.video_url,
-        title: video.title,
-        requestId: video.request_id,
-        createdAt: video.created_at
-      });
-
-      await updateTrackingToCompleted(user, requestId);
-      
-      return {
-        video_url: video.video_url,
-        title: video.title,
-        request_id: video.request_id,
-        created_at: video.created_at
-      };
-    }
-
-    console.log('❌ NO SE ENCONTRÓ VIDEO CON REQUEST_ID (Legacy)');
-    return null;
-
-  } catch (error) {
-    console.error('💥 Error durante verificación legacy:', error);
-    return null;
-  }
+  console.log('⚠️ verifyVideoExists (legacy) - redirigiendo a checkVideoDirectly');
+  return await checkVideoDirectly(user, requestId, script);
 };
 
 // Función para recuperar videos "perdidos" - SOLO POR REQUEST_ID (legacy para recuperación inicial)
@@ -206,7 +114,7 @@ export const recoverLostVideo = async (user: User | null, requestId: string, scr
 
   try {
     // Verificar directamente si el video existe por request_id
-    const videoExists = await verifyVideoExists(user, requestId, script);
+    const videoExists = await checkVideoDirectly(user, requestId, script);
     
     if (videoExists) {
       console.log('🎉 VIDEO RECUPERADO EXITOSAMENTE (Legacy):', videoExists);
@@ -227,24 +135,11 @@ export const recoverLostVideo = async (user: User | null, requestId: string, scr
       for (const tracking of expiredTracking) {
         console.log('🔍 Verificando tracking expired:', tracking.request_id);
         
-        const { data: expiredVideo, error: videoError } = await supabase
-          .from('generated_videos')
-          .select('video_url, request_id, title, created_at')
-          .eq('user_id', user.id)
-          .eq('request_id', tracking.request_id)
-          .limit(1);
+        const expiredVideo = await checkVideoDirectly(user, tracking.request_id, script);
 
-        if (!videoError && expiredVideo && expiredVideo.length > 0) {
-          console.log('🎉 ENCONTRADO VIDEO CON TRACKING EXPIRED (Legacy):', expiredVideo[0]);
-          
-          await updateTrackingToCompleted(user, tracking.request_id);
-          
-          return {
-            video_url: expiredVideo[0].video_url,
-            title: expiredVideo[0].title,
-            request_id: expiredVideo[0].request_id,
-            created_at: expiredVideo[0].created_at
-          };
+        if (expiredVideo) {
+          console.log('🎉 ENCONTRADO VIDEO CON TRACKING EXPIRED (Legacy):', expiredVideo);
+          return expiredVideo;
         }
       }
     }
@@ -260,14 +155,14 @@ export const recoverLostVideo = async (user: User | null, requestId: string, scr
 
 // Mantener función legacy para compatibilidad
 export const checkVideoInDatabase = async (user: User | null, requestId: string, script: string) => {
-  console.log('⚠️ checkVideoInDatabase (legacy) - redirigiendo a verifyVideoExists');
-  return await verifyVideoExists(user, requestId, script);
+  console.log('⚠️ checkVideoInDatabase (legacy) - redirigiendo a checkVideoDirectly');
+  return await checkVideoDirectly(user, requestId, script);
 };
 
 export const checkFinalVideoResult = async (user: User | null, script: string) => {
   if (!user) return null;
   
-  console.log('🔍 VERIFICACIÓN FINAL VIA WEBHOOK:', {
+  console.log('🔍 VERIFICACIÓN FINAL VIA BD DIRECTA:', {
     userId: user.id,
     scriptPreview: script.substring(0, 50) + '...',
     timestamp: new Date().toISOString()
@@ -280,22 +175,28 @@ export const checkFinalVideoResult = async (user: User | null, script: string) =
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (!trackingError && recentTracking) {
-    console.log('🔍 Usando datos del tracking más reciente para webhook:', {
+    console.log('🔍 Usando datos del tracking más reciente para verificación directa:', {
       requestId: recentTracking.request_id,
       status: recentTracking.status,
       timestamp: new Date().toISOString()
     });
     
-    // Intentar verificar usando webhook
-    const videoResult = await checkVideoViaWebhook(user, recentTracking.request_id, script);
+    // Intentar verificar usando verificación directa
+    const videoResult = await checkVideoDirectly(user, recentTracking.request_id, script);
     if (videoResult) {
       return { video_url: videoResult.video_url, title: videoResult.title };
     }
   }
 
-  console.log('❌ No se encontró video con webhook en verificación final');
+  console.log('❌ No se encontró video con verificación directa final');
   return null;
+};
+
+// ⭐ FUNCIÓN LEGACY: checkVideoViaWebhook (mantener como fallback opcional)
+export const checkVideoViaWebhook = async (user: User | null, requestId: string, script: string) => {
+  console.log('⚠️ checkVideoViaWebhook (legacy fallback) - usando verificación directa en su lugar');
+  return await checkVideoDirectly(user, requestId, script);
 };

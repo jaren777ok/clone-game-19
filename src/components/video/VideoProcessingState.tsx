@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Video, Wifi, AlertTriangle, Clock, RefreshCw, Globe, Play, Zap } from 'lucide-react';
+import { Video, Wifi, AlertTriangle, Clock, RefreshCw, Database, Play, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CountdownTimer from './CountdownTimer';
 import { hasReachedPollingTime } from '@/lib/countdownUtils';
@@ -51,29 +51,29 @@ const VideoProcessingState = ({
             
             <p className="text-muted-foreground text-lg">
               {isRecovering 
-                ? 'Verificando si tu video ya está listo en segundo plano...'
-                : 'Sistema automático verificando cada minuto - sin intervención manual requerida'
+                ? 'Verificando si tu video ya está listo en la base de datos...'
+                : 'Sistema automático verificando cada minuto directamente en la base de datos'
               }
             </p>
           </div>
 
-          {/* Sistema Automático Info */}
-          <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-xl p-6 space-y-4">
+          {/* Sistema Automático Mejorado Info */}
+          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Clock className="w-6 h-6 text-blue-400 animate-pulse" />
-              <h3 className="text-xl font-semibold text-blue-300">Sistema Automático Activo</h3>
+              <Database className="w-6 h-6 text-green-400 animate-pulse" />
+              <h3 className="text-xl font-semibold text-green-300">Sistema Automático Mejorado</h3>
             </div>
             <div className="space-y-2 text-center">
               <p className="text-sm text-muted-foreground">
-                🔄 Verificación automática cada 60 segundos
+                🔄 Verificación automática cada 60 segundos (BD directa)
               </p>
               <p className="text-sm text-muted-foreground">
                 ⚡ Primera verificación a los 10 segundos
               </p>
               <p className="text-sm text-muted-foreground">
-                🎯 El video se detectará automáticamente cuando esté listo
+                📊 Sin llamadas externas - consulta directa a la base de datos
               </p>
-              <p className="text-sm text-blue-300 font-medium">
+              <p className="text-sm text-green-300 font-medium">
                 ⏰ Transcurridos: {minutesElapsed} min | Restantes: {minutesRemaining} min
               </p>
             </div>
@@ -81,23 +81,23 @@ const VideoProcessingState = ({
 
           {/* BOTÓN MANUAL COMO BACKUP */}
           {onManualCheck && (
-            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
+            <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-xl p-6 space-y-4">
               <div className="flex items-center justify-center space-x-2 mb-4">
-                <Zap className="w-6 h-6 text-green-400" />
-                <h3 className="text-lg font-semibold text-green-300">Verificación Manual (Backup)</h3>
+                <Zap className="w-6 h-6 text-blue-400" />
+                <h3 className="text-lg font-semibold text-blue-300">Verificación Manual (Backup)</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                El sistema verifica automáticamente, pero puedes forzar una verificación manual si lo deseas.
+                El sistema verifica automáticamente en la BD, pero puedes forzar una verificación manual.
               </p>
               <Button
                 onClick={onManualCheck}
                 size="lg"
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300"
               >
                 <Play className="w-5 h-5 mr-3" />
-                🔍 Verificar Ahora (Manual)
+                🔍 Verificar Ahora (BD directa)
               </Button>
-              <p className="text-xs text-green-400">
+              <p className="text-xs text-blue-400">
                 ✨ Solo como backup - el sistema automático es el principal
               </p>
             </div>
@@ -105,24 +105,24 @@ const VideoProcessingState = ({
 
           {/* Debug Information */}
           {debugInfo && (
-            <div className="bg-card/30 border border-blue-500/30 rounded-lg p-4">
+            <div className="bg-card/30 border border-green-500/30 rounded-lg p-4">
               <div className="flex items-center justify-center space-x-2 mb-2">
-                <Globe className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-medium text-blue-300">Estado del Sistema Automático</span>
+                <Database className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-medium text-green-300">Estado del Sistema Automático</span>
               </div>
-              <p className="text-xs text-blue-200 font-mono">{debugInfo}</p>
+              <p className="text-xs text-green-200 font-mono">{debugInfo}</p>
             </div>
           )}
 
           {/* Countdown Timer */}
           <CountdownTimer timeRemaining={timeRemaining} totalTime={totalTime} />
 
-          {/* Automatic System Information */}
-          <div className="bg-card/50 cyber-border border-blue-500/30 rounded-xl p-6">
+          {/* Improved System Information */}
+          <div className="bg-card/50 cyber-border border-green-500/30 rounded-xl p-6">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <AlertTriangle className="w-6 h-6 text-blue-400 animate-pulse" />
-              <h3 className="text-lg font-semibold text-blue-300">
-                Sistema Automático en Funcionamiento
+              <AlertTriangle className="w-6 h-6 text-green-400 animate-pulse" />
+              <h3 className="text-lg font-semibold text-green-300">
+                Sistema Mejorado en Funcionamiento
               </h3>
             </div>
             <div className="space-y-3 text-center">
@@ -130,22 +130,22 @@ const VideoProcessingState = ({
                 🕐 Verificación cada 60 segundos automáticamente
               </p>
               <p className="text-muted-foreground text-sm">
-                🔍 No requiere intervención manual - totalmente automático
+                📊 Consulta directa a la base de datos (más rápido y confiable)
               </p>
               <p className="text-muted-foreground text-sm">
                 ✅ Se detendrá automáticamente cuando encuentre el video
               </p>
               <p className="text-muted-foreground text-sm">
-                📊 Estado: {minutesElapsed} min transcurridos, verificando cada minuto
+                🚀 Sin dependencias externas - 100% automático
               </p>
             </div>
           </div>
 
           {/* Connection Status */}
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-2 h-2 rounded-full animate-pulse bg-blue-500"></div>
+            <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
             <span className="text-sm text-muted-foreground">
-              Sistema automático verificando cada 60 segundos
+              Sistema automático verificando BD directa cada 60 segundos
             </span>
           </div>
 
