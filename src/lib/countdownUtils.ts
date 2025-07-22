@@ -1,6 +1,6 @@
 
 export const COUNTDOWN_TIME = 39 * 60; // 39 minutes in seconds
-export const DELAYED_POLLING_START = 30 * 60; // 30 minutes in seconds - cuando iniciar verificaciones
+export const DELAYED_POLLING_START = 25 * 60; // 25 minutes in seconds - cuando iniciar verificaciones
 export const POLLING_INTERVAL_DELAYED = 60 * 1000; // 1 minute in milliseconds - verificaciones cada minuto
 
 export const calculateTimeRemaining = (startTime: number): number => {

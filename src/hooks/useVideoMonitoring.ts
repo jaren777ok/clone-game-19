@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
+import { COUNTDOWN_TIME, DELAYED_POLLING_START } from '@/lib/countdownUtils';
 import { checkVideoViaWebhook, recoverLostVideo, checkFinalVideoResult } from '@/lib/databaseUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
 
@@ -132,7 +132,7 @@ export const useVideoMonitoring = () => {
       // Continuar verificando cada minuto via webhook
       pollingIntervalRef.current = setInterval(webhookCheck, 60 * 1000); // Cada minuto
       
-    }, 25 * 60 * 1000); // ⭐ Iniciar a los 25 minutos
+    }, DELAYED_POLLING_START * 1000); // ⭐ Iniciar a los 25 minutos (usar la constante)
 
   }, [updateTimeRemaining, user, videoDetected]);
 
