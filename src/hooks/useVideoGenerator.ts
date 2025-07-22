@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { useVideoGenerationDatabase } from './useVideoGenerationDatabase';
 import { useVideoMonitoring } from './useVideoMonitoring';
-import { useVideoVerification } from './useVideoVerification';
 import { initiateVideoGeneration } from '@/lib/videoGenerationLogic';
 import { validateFlowState } from '@/lib/videoGenerationLogic';
 import { FlowState, ApiVersionCustomization } from '@/types/videoFlow';
@@ -24,8 +22,6 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   const [videoResult, setVideoResult] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [currentRequestId, setCurrentRequestId] = useState<string>('');
-  
-  const { forceVideoCheck } = useVideoVerification();
   
   const { 
     currentGeneration,
@@ -49,34 +45,24 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     cleanup 
   } = useVideoMonitoring();
 
-  // Enhanced wrapper functions with multi-strategy verification
-  const startCountdown = (requestId: string, setVideoResultParam: (result: string) => void, setIsGeneratingParam: (generating: boolean) => void, customStartTime?: number) => {
-    console.log('🚀 useVideoGenerator - Iniciando countdown MEJORADO con verificación automática:', {
-      requestId,
-      customStartTime,
-      hasSetVideoResult: !!setVideoResultParam,
-      hasSetIsGenerating: !!setIsGeneratingParam
-    });
-    baseStartCountdown(requestId, setVideoResultParam, setIsGeneratingParam, customStartTime);
+  // Wrapper functions to provide state setters to monitoring hooks
+  const startCountdown = (requestId: string, scriptToCheck: string, setVideoResultParam: (result: string) => void, setIsGeneratingParam: (generating: boolean) => void, customStartTime?: number) => {
+    baseStartCountdown(requestId, scriptToCheck, setVideoResultParam, setIsGeneratingParam, customStartTime);
   };
 
-  const startPeriodicChecking = () => {
-    baseStartPeriodicChecking();
+  const startPeriodicChecking = (requestId: string, scriptToCheck: string) => {
+    baseStartPeriodicChecking(requestId, scriptToCheck, setVideoResult, setIsGenerating);
   };
 
-  const checkFinalResult = () => {
-    baseCheckFinalResult();
+  const checkFinalResult = (scriptToCheck: string) => {
+    baseCheckFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
   };
 
   const checkVideoManually = () => {
-    if (currentRequestId) {
-      console.log('🔍 useVideoGenerator - Verificación manual MEJORADA');
-      return baseCheckVideoManually(currentRequestId, setVideoResult, setIsGenerating);
-    } else {
-      // Fallback: use multi-strategy verification even without specific requestId
-      console.log('🔍 useVideoGenerator - Verificación manual sin requestId específico - usando estrategia múltiple');
-      return forceVideoCheck(setVideoResult, setIsGenerating);
+    if (currentRequestId && script) {
+      return baseCheckVideoManually(currentRequestId, script, setVideoResult, setIsGenerating);
     }
+    return Promise.resolve(false);
   };
 
   const handleRecoverGeneration = () => {
@@ -89,63 +75,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     );
   };
 
-  // CRITICAL: Enhanced effect to monitor videoResult changes
-  useEffect(() => {
-    if (videoResult) {
-      console.log('🎉 useVideoGenerator - videoResult actualizado (CRÍTICO - AUTO DISPLAY):', {
-        videoUrl: videoResult,
-        isGenerating: isGenerating,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Force isGenerating = false when videoResult exists
-      if (isGenerating) {
-        console.log('🔄 useVideoGenerator - FORZANDO isGenerating = false (videoResult existe)');
-        setIsGenerating(false);
-      }
-    }
-  }, [videoResult, isGenerating]);
-
-  // CRITICAL: Enhanced background checking with improved timing
-  useEffect(() => {
-    let backgroundCheckInterval: NodeJS.Timeout | null = null;
-    
-    if (isGenerating && currentRequestId && !videoResult) {
-      console.log('🔄 Iniciando verificación de fondo MEJORADA cada 30 segundos para detectar videos completados');
-      
-      const backgroundCheck = async () => {
-        if (!isGenerating || videoResult) return;
-        
-        console.log('🔍 Verificación de fondo CRÍTICA ejecutándose...');
-        const success = await forceVideoCheck(setVideoResult, setIsGenerating);
-        
-        if (success) {
-          console.log('✅ Video encontrado en verificación de fondo CRÍTICA');
-          if (backgroundCheckInterval) {
-            clearInterval(backgroundCheckInterval);
-            backgroundCheckInterval = null;
-          }
-        }
-      };
-      
-      // Start background checking after 3 minutes (earlier than before)
-      setTimeout(() => {
-        if (isGenerating && !videoResult) {
-          backgroundCheck();
-          backgroundCheckInterval = setInterval(backgroundCheck, 30 * 1000);
-        }
-      }, 3 * 60 * 1000);
-    }
-    
-    return () => {
-      if (backgroundCheckInterval) {
-        clearInterval(backgroundCheckInterval);
-      }
-    };
-  }, [isGenerating, currentRequestId, videoResult, forceVideoCheck]);
-
   // Check for existing generation on mount and migrate legacy data
   useEffect(() => {
+    // Clean up any legacy localStorage data
     migrateLegacyData();
     
     if (currentGeneration && currentGeneration.status === 'processing') {
@@ -161,10 +93,6 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   // Handle video completion
   useEffect(() => {
     if (videoResult && currentRequestId) {
-      console.log('✅ useVideoGenerator - Manejando video completado:', {
-        videoResult,
-        currentRequestId
-      });
       handleVideoCompleted(currentRequestId);
     }
   }, [videoResult, currentRequestId, handleVideoCompleted]);
@@ -188,6 +116,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   const handleCancelGeneration = async () => {
     console.log('🛑 Cancelando generación de video por solicitud del usuario');
     
+    // Use the proper cancel recovery function that handles cleanup
     await handleCancelRecovery();
     
     setIsGenerating(false);
@@ -237,20 +166,14 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     setError('');
     setVideoResult('');
 
-    console.log('🚀 useVideoGenerator - Iniciando nuevo proceso de generación de video');
+    console.log('Iniciando nuevo proceso de generación de video');
     
     try {
-      // Generate unique requestId - UNA SOLA VEZ
+      // Generate unique requestId
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       const requestId = `${timestamp}-${random}`;
       setCurrentRequestId(requestId);
-
-      console.log('🔍 useVideoGenerator - Generado requestId único:', {
-        requestId: requestId,
-        timestamp: timestamp,
-        random: random
-      });
 
       // Create database entry IMMEDIATELY 
       const success = await handleStartGeneration(script.trim(), requestId);
@@ -258,25 +181,24 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         throw new Error('No se pudo guardar el estado de generación');
       }
 
-      // Start countdown with enhanced functions
-      console.log('🎯 useVideoGenerator - Iniciando countdown MEJORADO');
-      startCountdown(requestId, setVideoResult, setIsGenerating);
-      startPeriodicChecking();
+      // Start countdown immediately
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId, script.trim());
 
       toast({
         title: "Video en procesamiento",
         description: `Procesamiento iniciado. ID: ${requestId.substring(0, 8)}...`
       });
 
-      // Send to webhook in background
+      // Send to webhook in background (don't wait for confirmation)
       initiateVideoGeneration(
         script,
         user,
         flowState!,
-        toast,
-        requestId
+        toast
       ).catch(err => {
         console.error('Error enviando al webhook (background):', err);
+        // Webhook error doesn't stop the process - video will expire naturally if webhook fails
       });
       
     } catch (err) {
@@ -306,6 +228,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       styleId: flowState?.selectedStyle?.id
     });
 
+    // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
       toast({
         title: "Video en proceso",
@@ -340,13 +263,16 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     console.log('Iniciando generación de video con archivos manuales');
     
     try {
+      // Generate unique requestId
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       const requestId = `${timestamp}-${random}`;
       setCurrentRequestId(requestId);
 
+      // Decrypt API key
       const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
       
+      // Build payload for webhook with default dimensions for manual style
       const payload = {
         script: script.trim(),
         userId: user?.id || '',
@@ -359,6 +285,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         Estilo: flowState!.selectedStyle?.id,
         width: apiVersionCustomization?.width || 1280,
         height: apiVersionCustomization?.height || 720,
+        // 🔍 CRÍTICO: Incluir subtitleCustomization completo
         subtitleCustomization: flowState!.subtitleCustomization ? {
           fontFamily: flowState!.subtitleCustomization.fontFamily || "",
           subtitleEffect: flowState!.subtitleCustomization.subtitleEffect || "",
@@ -372,22 +299,35 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
           "Fixed size": flowState!.subtitleCustomization["Fixed size"] || 5.5,
           fill: flowState!.subtitleCustomization.fill || ""
         } : null,
+        // Campo split
         split: flowState!.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
 
+      console.log('🔍 DEBUG - Payload con subtitleCustomization:', {
+        requestId,
+        hasSubtitleCustomization: !!payload.subtitleCustomization,
+        subtitleCustomizationData: payload.subtitleCustomization,
+        split: payload.split,
+        styleId: payload.Estilo
+      });
+
+      // Send directly to webhook with files FIRST, with progress callback
+      // Use different webhook based on style
       if (flowState!.selectedStyle?.id === 'style-6') {
         await sendDirectToManualWebhook2(payload, images, videos, onProgress);
       } else {
         await sendDirectToManualWebhook(payload, images, videos, onProgress);
       }
       
+      // ONLY if webhook is successful, create database entry and start tracking
       const success = await handleStartGeneration(script.trim(), requestId);
       if (!success) {
         throw new Error('No se pudo guardar el estado de generación');
       }
 
-      startCountdown(requestId, setVideoResult, setIsGenerating);
-      startPeriodicChecking();
+      // Start countdown and monitoring ONLY after successful webhook call
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId, script.trim());
 
       toast({
         title: "Video en procesamiento",
@@ -421,6 +361,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       styleId: flowState?.selectedStyle?.id
     });
 
+    // Simple check for existing generation without triggering refresh
     if (currentGeneration && currentGeneration.status === 'processing' && timeRemaining > 0) {
       toast({
         title: "Video en proceso",
@@ -455,13 +396,16 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     console.log('Iniciando generación de video con URLs de Drive');
     
     try {
+      // Generate unique requestId
       const timestamp = Date.now();
       const random = Math.random().toString(36).substring(2, 8);
       const requestId = `${timestamp}-${random}`;
       setCurrentRequestId(requestId);
 
+      // Decrypt API key
       const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
       
+      // Build payload for webhook with default dimensions for manual style
       const payload = {
         script: script.trim(),
         userId: user?.id || '',
@@ -474,6 +418,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         Estilo: flowState!.selectedStyle?.id,
         width: apiVersionCustomization?.width || 1280,
         height: apiVersionCustomization?.height || 720,
+        // 🔍 CRÍTICO: Incluir subtitleCustomization completo
         subtitleCustomization: flowState!.subtitleCustomization ? {
           fontFamily: flowState!.subtitleCustomization.fontFamily || "",
           subtitleEffect: flowState!.subtitleCustomization.subtitleEffect || "",
@@ -487,22 +432,35 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
           "Fixed size": flowState!.subtitleCustomization["Fixed size"] || 5.5,
           fill: flowState!.subtitleCustomization.fill || ""
         } : null,
+        // Campo split
         split: flowState!.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
       };
 
+      console.log('🔍 DEBUG - Payload con subtitleCustomization (URLs):', {
+        requestId,
+        hasSubtitleCustomization: !!payload.subtitleCustomization,
+        subtitleCustomizationData: payload.subtitleCustomization,
+        split: payload.split,
+        styleId: payload.Estilo
+      });
+
+      // Send to webhook with Drive URLs instead of files
+      // Use different webhook based on style
       if (flowState!.selectedStyle?.id === 'style-6') {
         await sendDirectToManualWebhook2WithUrls(payload, driveUrls);
       } else {
         await sendDirectToManualWebhookWithUrls(payload, driveUrls);
       }
       
+      // ONLY if webhook is successful, create database entry and start tracking
       const success = await handleStartGeneration(script.trim(), requestId);
       if (!success) {
         throw new Error('No se pudo guardar el estado de generación');
       }
 
-      startCountdown(requestId, setVideoResult, setIsGenerating);
-      startPeriodicChecking();
+      // Start countdown and monitoring ONLY after successful webhook call
+      startCountdown(requestId, script.trim(), setVideoResult, setIsGenerating);
+      startPeriodicChecking(requestId, script.trim());
 
       toast({
         title: "Video en procesamiento",
@@ -532,16 +490,6 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     cleanup();
   };
 
-  // Enhanced logging
-  console.log('🔍 useVideoGenerator - Estado CRÍTICO MEJORADO:', {
-    isGenerating,
-    hasVideoResult: !!videoResult,
-    videoResultUrl: videoResult,
-    currentRequestId,
-    timeRemaining,
-    timestamp: new Date().toISOString()
-  });
-
   return {
     state: {
       script,
@@ -557,8 +505,6 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     },
     handlers: {
       setScript,
-      setVideoResult,
-      setIsGenerating,
       handleGenerateVideo,
       handleGenerateVideoWithFiles,
       handleGenerateVideoWithUrls,

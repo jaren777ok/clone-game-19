@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
@@ -11,8 +10,6 @@ import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import { useAuth } from '@/hooks/useAuth';
 import { FlowState } from '@/types/videoFlow';
 import { clearFlowState } from '@/utils/videoFlowUtils';
-import { hasReachedPollingTime } from '@/lib/countdownUtils';
-import { useVideoVerification } from '@/hooks/useVideoVerification';
 
 const VideoGeneratorFinal = () => {
   const navigate = useNavigate();
@@ -21,12 +18,13 @@ const VideoGeneratorFinal = () => {
   const { flowState: currentFlowState, goToStep } = useVideoCreationFlow();
   const [effectiveFlowState, setEffectiveFlowState] = useState<FlowState | null>(null);
   const { state, handlers } = useVideoGenerator({ flowState: effectiveFlowState });
-  const { forceVideoCheck } = useVideoVerification();
 
-  // Determine effective flow state
+  // Determinar el estado efectivo del flujo
   useEffect(() => {
+    // Prioridad 1: Estado pasado via navegación
     const navigationState = location.state as FlowState | undefined;
     
+    // DEBUG: Log navigation state
     console.log('🐛 DEBUG VideoGeneratorFinal - Navigation state:', {
       navigationState: navigationState,
       selectedStyle: navigationState?.selectedStyle,
@@ -44,6 +42,8 @@ const VideoGeneratorFinal = () => {
       return;
     }
 
+    // Prioridad 2: Estado actual del hook
+    // DEBUG: Log current flow state
     console.log('🐛 DEBUG VideoGeneratorFinal - Current flow state:', {
       currentFlowState: currentFlowState,
       selectedStyle: currentFlowState?.selectedStyle,
@@ -61,6 +61,7 @@ const VideoGeneratorFinal = () => {
       return;
     }
 
+    // Si no hay configuración válida, redirigir al flujo
     console.log('❌ No hay configuración válida, redirigiendo al flujo');
     navigate('/crear-video');
   }, [location.state, currentFlowState, navigate]);
@@ -72,45 +73,12 @@ const VideoGeneratorFinal = () => {
     }
   }, [effectiveFlowState?.generatedScript, state.script, handlers]);
 
-  // CRITICAL: Real-time automatic video detection while generating
-  useEffect(() => {
-    let realTimeCheckInterval: NodeJS.Timeout | null = null;
-    
-    if (state.isGenerating && !state.videoResult) {
-      console.log('🚨 INICIANDO VERIFICACIÓN AUTOMÁTICA EN TIEMPO REAL - Cada 30 segundos');
-      
-      const realTimeCheck = async () => {
-        if (!state.isGenerating || state.videoResult) return;
-        
-        console.log('🔍 Verificación automática en tiempo real ejecutándose...');
-        const success = await forceVideoCheck(handlers.setVideoResult, handlers.setIsGenerating);
-        
-        if (success) {
-          console.log('🎉 VIDEO ENCONTRADO CON VERIFICACIÓN AUTOMÁTICA EN TIEMPO REAL');
-          if (realTimeCheckInterval) {
-            clearInterval(realTimeCheckInterval);
-            realTimeCheckInterval = null;
-          }
-        }
-      };
-      
-      // Start checking immediately and then every 30 seconds
-      realTimeCheck();
-      realTimeCheckInterval = setInterval(realTimeCheck, 30 * 1000);
-    }
-    
-    return () => {
-      if (realTimeCheckInterval) {
-        clearInterval(realTimeCheckInterval);
-      }
-    };
-  }, [state.isGenerating, state.videoResult, forceVideoCheck, handlers]);
-
   const handleBack = () => {
     goToStep('neurocopy');
     navigate('/crear-video');
   };
 
+  // Limpiar configuración cuando se genera exitosamente un video
   const handleVideoGenerated = async () => {
     if (user) {
       console.log('🎉 Video generado exitosamente, limpiando configuración');
@@ -118,32 +86,22 @@ const VideoGeneratorFinal = () => {
     }
   };
 
-  // CRITICAL EFFECT: Clean configuration when video is ready
+  // Agregar el efecto para limpiar configuración cuando el video esté listo
   useEffect(() => {
     if (state.videoResult) {
-      console.log('🎉 VideoGeneratorFinal - Video completado detectado AUTOMÁTICAMENTE:', {
-        videoUrl: state.videoResult,
-        isGenerating: state.isGenerating,
-        timestamp: new Date().toISOString()
-      });
       handleVideoGenerated();
     }
   }, [state.videoResult]);
 
-  // Enhanced state logging
-  console.log('🔍 VideoGeneratorFinal - Estado CRÍTICO MEJORADO:', {
-    hasVideoResult: !!state.videoResult,
-    videoResult: state.videoResult,
-    isGenerating: state.isGenerating,
-    timeRemaining: state.timeRemaining,
+  // DEBUG: Log effective flow state
+  console.log('🐛 DEBUG VideoGeneratorFinal - Effective flow state:', {
     effectiveFlowState: effectiveFlowState,
     selectedStyle: effectiveFlowState?.selectedStyle,
     selectedStyleId: effectiveFlowState?.selectedStyle?.id,
-    hasHandleGenerateVideoWithFiles: !!handlers.handleGenerateVideoWithFiles,
-    renderDecision: state.videoResult ? 'SUCCESS_SCREEN_AUTO' : (state.isGenerating ? 'PROCESSING_SCREEN' : 'SCRIPT_SCREEN')
+    hasHandleGenerateVideoWithFiles: !!handlers.handleGenerateVideoWithFiles
   });
 
-  // If no effective configuration yet, show loading
+  // Si no tenemos configuración efectiva aún, mostrar loading
   if (!effectiveFlowState) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -157,9 +115,17 @@ const VideoGeneratorFinal = () => {
     );
   }
 
-  // CRITICAL PRIORITY: If videoResult exists, show success screen IMMEDIATELY AND AUTOMATICALLY
+  if (state.isGenerating) {
+    return (
+      <VideoProcessingState 
+        timeRemaining={state.timeRemaining}
+        totalTime={state.totalTime}
+        isRecovering={state.isRecovering}
+      />
+    );
+  }
+
   if (state.videoResult) {
-    console.log('🎉 VideoGeneratorFinal - MOSTRANDO PANTALLA DE ÉXITO AUTOMÁTICAMENTE con video:', state.videoResult);
     return (
       <VideoResult 
         videoUrl={state.videoResult} 
@@ -168,26 +134,6 @@ const VideoGeneratorFinal = () => {
     );
   }
 
-  // Secondary check: If generating, show processing screen
-  if (state.isGenerating) {
-    console.log('🔄 VideoGeneratorFinal - Mostrando pantalla de procesamiento con verificación automática activa');
-    
-    // Determine if we should show manual check button (during intensive verification phase)
-    const startTime = Date.now() - (state.totalTime - state.timeRemaining) * 1000;
-    const showManualCheck = hasReachedPollingTime(startTime);
-    
-    return (
-      <VideoProcessingState 
-        timeRemaining={state.timeRemaining}
-        totalTime={state.totalTime}
-        isRecovering={state.isRecovering}
-        onManualCheck={showManualCheck ? handlers.checkVideoManually : undefined}
-      />
-    );
-  }
-
-  // Default: Show script screen
-  console.log('📝 VideoGeneratorFinal - Mostrando pantalla de script');
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
@@ -203,6 +149,7 @@ const VideoGeneratorFinal = () => {
         )}
 
         <div className="max-w-4xl mx-auto">
+          {/* Mostrar información del flujo seleccionado */}
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-3 sm:p-6 mb-6 sm:mb-8 cyber-border mx-4 sm:mx-0">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="text-sm sm:text-lg font-semibold">Configuración seleccionada:</h2>
