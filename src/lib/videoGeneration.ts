@@ -59,9 +59,13 @@ export const markVideoCompleted = async (
   return await markVideoGenerationCompleted(requestId, user);
 };
 
-// Función para guardar el video en Supabase (actualizada para incluir request_id)
+// 🔥 IMPORTANTE: Esta función NO debe usarse en verificación manual
+// N8N ya guarda automáticamente los videos con títulos correctos
+// Solo usar para flujos directos que no pasen por N8N
 export const saveVideoToDatabase = async (script: string, videoUrl: string, user: User | null, requestId?: string) => {
   if (!user) return;
+
+  console.warn('⚠️ [SAVE_VIDEO] Esta función no debe usarse en verificación manual - N8N ya guarda automáticamente');
 
   try {
     const { error } = await supabase

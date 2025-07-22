@@ -99,7 +99,7 @@ export const useVideoMonitoring = () => {
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
   }, [user, updateTimeRemaining]);
 
-  // Verificación COMPLETAMENTE manual con webhook mejorada
+  // Verificación COMPLETAMENTE manual - SOLO VISUAL (sin guardar en DB)
   const checkVideoManually = useCallback(async (
     requestId: string,
     scriptToCheck: string,
@@ -116,7 +116,7 @@ export const useVideoMonitoring = () => {
       return false;
     }
 
-    console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL INICIADA');
+    console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL INICIADA (SOLO VISUAL)');
     setDebugInfo('🔍 Verificando estado del video...');
     setIsChecking(true);
 
@@ -157,28 +157,17 @@ export const useVideoMonitoring = () => {
 
       if (result.success) {
         if (result.videoUrl) {
-          console.log('🎥 [MONITORING] Video completado:', result.videoUrl);
+          console.log('🎥 [MONITORING] Video completado (SOLO VISUAL):', result.videoUrl);
           setDebugInfo('🎥 Video completado exitosamente');
           
-          // Guardar video en la base de datos
-          const { error: insertError } = await supabase
-            .from('generated_videos')
-            .insert({
-              user_id: user.id,
-              request_id: trackingData.request_id,
-              script: trackingData.script,
-              video_url: result.videoUrl,
-              title: `Video - ${new Date().toLocaleDateString()}`
-            });
-
-          if (insertError) {
-            console.error('❌ Error guardando video:', insertError);
-          }
+          // 🔥 CRÍTICO: NO GUARDAR EN BASE DE DATOS - N8N ya lo hace automáticamente
+          // El video ya está guardado por N8N con el título correcto
+          console.log('ℹ️ [MONITORING] Video NO guardado en DB - N8N ya lo hizo automáticamente');
 
           // Limpiar estado de generación
           clearGenerationState();
           
-          // Actualizar estado de la UI
+          // Actualizar estado de la UI (SOLO VISUAL)
           setVideoResult(result.videoUrl);
           setIsGenerating(false);
           
