@@ -14,6 +14,7 @@ export const useVideoMonitoring = () => {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(false);
+  const webhookActivatedRef = useRef(false);
 
   const updateTimeRemaining = useCallback((remaining: number) => {
     setTimeRemaining(remaining);
@@ -39,6 +40,7 @@ export const useVideoMonitoring = () => {
     });
     
     isActiveRef.current = false;
+    webhookActivatedRef.current = false;
     clearAllIntervals();
     
     setVideoResult(videoData.video_url);
@@ -50,6 +52,44 @@ export const useVideoMonitoring = () => {
       description: videoData.title || "Tu video ha sido generado exitosamente.",
     });
   }, [clearAllIntervals, toast]);
+
+  // Función dedicada para verificación webhook
+  const performWebhookCheck = useCallback(async (
+    requestId: string, 
+    scriptToCheck: string,
+    setVideoResult: (result: string) => void,
+    setIsGenerating: (generating: boolean) => void
+  ) => {
+    if (!isActiveRef.current || !user) return;
+    
+    const minutesElapsed = generationStartTime 
+      ? Math.floor((Date.now() - generationStartTime) / 60000) 
+      : 0;
+    
+    console.log('🌐 EJECUTANDO VERIFICACIÓN VIA WEBHOOK (minuto ' + minutesElapsed + '):', {
+      requestId,
+      userId: user.id,
+      scriptLength: scriptToCheck.length,
+      webhookActivated: webhookActivatedRef.current,
+      isActive: isActiveRef.current,
+      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
+    });
+    
+    try {
+      const videoData = await checkVideoViaWebhook(user, requestId, scriptToCheck);
+      if (videoData && isActiveRef.current) {
+        console.log('✅ VIDEO ENCONTRADO VIA WEBHOOK:', videoData);
+        videoDetected(videoData, setVideoResult, setIsGenerating);
+        return true;
+      } else {
+        console.log('❌ Webhook respuesta: Video no listo aún en minuto', minutesElapsed);
+      }
+    } catch (error) {
+      console.error('💥 Error en verificación webhook:', error);
+    }
+    
+    return false;
+  }, [user, generationStartTime, videoDetected]);
 
   const startCountdown = useCallback((
     requestId: string, 
@@ -69,6 +109,7 @@ export const useVideoMonitoring = () => {
     
     setGenerationStartTime(startTime);
     isActiveRef.current = true;
+    webhookActivatedRef.current = false;
     
     // Countdown visual cada segundo
     const updateCountdown = () => {
@@ -77,6 +118,13 @@ export const useVideoMonitoring = () => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
       updateTimeRemaining(remaining);
+      
+      // IMPORTANTE: Verificar si hemos llegado al tiempo de verificación (25 minutos)
+      // y activar las verificaciones webhook si no están activadas
+      if (!webhookActivatedRef.current && elapsed >= DELAYED_POLLING_START) {
+        console.log('⏰ PUNTO DE ACTIVACIÓN WEBHOOK ALCANZADO - Iniciando verificaciones webhook a los 25 minutos');
+        activateWebhookVerification(requestId, scriptToCheck, setVideoResult, setIsGenerating);
+      }
       
       if (remaining <= 0) {
         console.log('⏰ Tiempo agotado - verificación final via webhook');
@@ -100,41 +148,44 @@ export const useVideoMonitoring = () => {
       }
     }, 5000); // 5 segundos después de iniciar
 
-    // ⭐ NUEVA LÓGICA: VERIFICACIÓN VIA WEBHOOK DESDE EL MINUTO 25 CADA MINUTO
+    // ⭐ IMPORTANTE: Programar el inicio de las verificaciones webhook a los 25 minutos exactos
+    // Ahora usamos setTimeout directamente con DELAYED_POLLING_START
     setTimeout(() => {
       if (!isActiveRef.current) return;
       
-      console.log('🎯 INICIANDO VERIFICACIONES VIA WEBHOOK CADA MINUTO DESDE MINUTO 25');
-      
-      const webhookCheck = async () => {
-        if (!isActiveRef.current) return;
-        
-        const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-        console.log('🌐 Verificación via webhook (minuto ' + minutesElapsed + '):', {
-          requestId,
-          userId: user?.id,
-          minutesElapsed,
-          webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
-        });
-        
-        const videoData = await checkVideoViaWebhook(user, requestId, scriptToCheck);
-        if (videoData && isActiveRef.current) {
-          console.log('✅ VIDEO ENCONTRADO VIA WEBHOOK:', videoData);
-          videoDetected(videoData, setVideoResult, setIsGenerating);
-        } else {
-          console.log('❌ Webhook respuesta: Video no listo aún en minuto', minutesElapsed);
-        }
-      };
-      
-      // Ejecutar verificación inmediatamente al llegar al minuto 25
-      webhookCheck();
-      
-      // Continuar verificando cada minuto via webhook
-      pollingIntervalRef.current = setInterval(webhookCheck, 60 * 1000); // Cada minuto
+      console.log('⏰ ALCANZADO TIEMPO PROGRAMADO PARA WEBHOOK - Iniciando verificación a los 25 minutos');
+      activateWebhookVerification(requestId, scriptToCheck, setVideoResult, setIsGenerating);
       
     }, DELAYED_POLLING_START * 1000); // ⭐ Iniciar a los 25 minutos (usar la constante)
 
-  }, [updateTimeRemaining, user, videoDetected]);
+  }, [updateTimeRemaining, user, videoDetected, performWebhookCheck]);
+
+  // Función para activar verificaciones webhook
+  const activateWebhookVerification = useCallback((
+    requestId: string,
+    scriptToCheck: string,
+    setVideoResult: (result: string) => void,
+    setIsGenerating: (generating: boolean) => void
+  ) => {
+    if (!isActiveRef.current || webhookActivatedRef.current) return;
+    
+    console.log('🎯 ACTIVANDO VERIFICACIONES VIA WEBHOOK CADA MINUTO:', {
+      requestId,
+      userId: user?.id,
+      scriptLength: scriptToCheck.length,
+      webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
+    });
+    
+    webhookActivatedRef.current = true;
+    
+    // Ejecutar verificación inmediatamente
+    performWebhookCheck(requestId, scriptToCheck, setVideoResult, setIsGenerating);
+    
+    // Continuar verificando cada minuto via webhook
+    pollingIntervalRef.current = setInterval(() => {
+      performWebhookCheck(requestId, scriptToCheck, setVideoResult, setIsGenerating);
+    }, 60 * 1000); // Cada minuto
+  }, [user, performWebhookCheck]);
 
   // Función para verificación manual mejorada CON WEBHOOK
   const checkVideoManually = useCallback(async (
@@ -150,23 +201,27 @@ export const useVideoMonitoring = () => {
       webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado'
     });
     
+    // Asegurar que isActiveRef esté en true para esta operación
+    const wasActive = isActiveRef.current;
+    isActiveRef.current = true;
+    
     // Verificación principal via webhook
-    const videoData = await checkVideoViaWebhook(user, requestId, scriptToCheck);
-    if (videoData) {
-      console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN MANUAL VIA WEBHOOK:', videoData);
-      videoDetected(videoData, setVideoResult, setIsGenerating);
-      return true;
+    const found = await performWebhookCheck(requestId, scriptToCheck, setVideoResult, setIsGenerating);
+    
+    // Si no se encontró video, restaurar estado anterior y mostrar mensaje
+    if (!found) {
+      isActiveRef.current = wasActive;
+      
+      console.log('❌ Webhook manual: Video no encontrado');
+      toast({
+        title: "Video no encontrado",
+        description: "El video aún no está disponible. La verificación automática via webhook continuará cada minuto desde el minuto 25.",
+        variant: "default"
+      });
     }
     
-    console.log('❌ Webhook manual: Video no encontrado');
-    toast({
-      title: "Video no encontrado",
-      description: "El video aún no está disponible. La verificación automática via webhook continuará cada minuto desde el minuto 25.",
-      variant: "default"
-    });
-    
-    return false;
-  }, [user, videoDetected, toast]);
+    return found;
+  }, [user, performWebhookCheck, toast]);
 
   const startPeriodicChecking = useCallback((
     requestId: string, 
@@ -212,6 +267,7 @@ export const useVideoMonitoring = () => {
     }
     
     isActiveRef.current = false;
+    webhookActivatedRef.current = false;
     setIsGenerating(false);
     clearGenerationState();
   }, [user, toast]);
@@ -219,6 +275,7 @@ export const useVideoMonitoring = () => {
   const cleanup = useCallback(() => {
     console.log('🧹 Limpieza completa del monitoreo con webhook');
     isActiveRef.current = false;
+    webhookActivatedRef.current = false;
     clearAllIntervals();
   }, [clearAllIntervals]);
 

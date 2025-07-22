@@ -2,42 +2,68 @@
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
-// ⭐ NUEVA FUNCIÓN: Verificación por webhook
+// ⭐ FUNCIÓN MEJORADA: Verificación por webhook con mejor logging y error handling
 export const checkVideoViaWebhook = async (user: User | null, requestId: string, script: string) => {
-  if (!user) return null;
+  if (!user) {
+    console.log('❌ checkVideoViaWebhook: No hay usuario autenticado');
+    return null;
+  }
 
-  console.log('🌐 VERIFICACIÓN POR WEBHOOK:', {
+  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado';
+  
+  console.log('🌐 INICIANDO VERIFICACIÓN POR WEBHOOK:', {
     userId: user.id,
     requestId: requestId,
     scriptLength: script.length,
-    webhookUrl: 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado',
+    webhookUrl: webhookUrl,
     timestamp: new Date().toISOString()
   });
 
   try {
+    // Preparar datos para el webhook - INCLUIR TODOS LOS DATOS NECESARIOS
     const webhookData = {
       request_id: requestId,
       user_id: user.id,
       script: script
     };
 
-    console.log('📤 Enviando datos a webhook:', webhookData);
+    console.log('📤 Enviando datos a webhook:', {
+      ...webhookData,
+      scriptPreview: script.substring(0, 50) + '...',
+      timestamp: new Date().toISOString()
+    });
 
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/videogenerado', {
+    // Realizar la petición con timeout para evitar bloqueos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+    
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(webhookData)
+      body: JSON.stringify(webhookData),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
 
+    // Verificar respuesta
     if (!response.ok) {
-      console.error('❌ Error en respuesta de webhook:', response.status, response.statusText);
+      console.error('❌ Error en respuesta de webhook:', {
+        status: response.status, 
+        statusText: response.statusText,
+        url: webhookUrl
+      });
       return null;
     }
 
+    // Procesar datos
     const data = await response.json();
-    console.log('📥 Respuesta de webhook recibida:', data);
+    console.log('📥 Respuesta de webhook recibida:', {
+      data: data,
+      timestamp: new Date().toISOString()
+    });
 
     // Validar formato de respuesta: [{ "video_url": "url" }]
     if (Array.isArray(data) && data.length > 0 && data[0].video_url) {
@@ -45,7 +71,8 @@ export const checkVideoViaWebhook = async (user: User | null, requestId: string,
       
       console.log('✅ VIDEO ENCONTRADO VIA WEBHOOK:', {
         videoUrl: videoUrl,
-        requestId: requestId
+        requestId: requestId,
+        timestamp: new Date().toISOString()
       });
 
       // Auto-actualizar tracking a completed
@@ -59,11 +86,28 @@ export const checkVideoViaWebhook = async (user: User | null, requestId: string,
       };
     }
 
-    console.log('❌ Webhook respuesta: Video no listo o formato incorrecto');
+    console.log('❌ Webhook respuesta: Video no listo o formato incorrecto', {
+      dataPreview: JSON.stringify(data).substring(0, 100) + '...',
+      timestamp: new Date().toISOString()
+    });
     return null;
 
   } catch (error) {
-    console.error('💥 Error en verificación por webhook:', error);
+    // Manejo mejorado de errores
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.error('💥 Timeout en verificación por webhook (10s):', {
+        requestId, 
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      console.error('💥 Error en verificación por webhook:', {
+        error: error instanceof Error ? error.message : String(error),
+        requestId,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+    }
     return null;
   }
 };
@@ -71,7 +115,11 @@ export const checkVideoViaWebhook = async (user: User | null, requestId: string,
 // ⭐ FUNCIÓN: Auto-actualizar tracking a completed
 const updateTrackingToCompleted = async (user: User, requestId: string) => {
   try {
-    console.log('🔄 Auto-actualizando tracking a COMPLETED:', { userId: user.id, requestId });
+    console.log('🔄 Auto-actualizando tracking a COMPLETED:', { 
+      userId: user.id, 
+      requestId,
+      timestamp: new Date().toISOString()
+    });
     
     const { error } = await supabase
       .from('video_generation_tracking')
@@ -237,7 +285,8 @@ export const checkFinalVideoResult = async (user: User | null, script: string) =
   if (!trackingError && recentTracking) {
     console.log('🔍 Usando datos del tracking más reciente para webhook:', {
       requestId: recentTracking.request_id,
-      status: recentTracking.status
+      status: recentTracking.status,
+      timestamp: new Date().toISOString()
     });
     
     // Intentar verificar usando webhook
