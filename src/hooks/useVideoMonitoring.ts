@@ -3,9 +3,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
-import { checkFinalVideoResult } from '@/lib/databaseUtils';
 import { clearGenerationState } from '@/lib/videoGeneration';
-import { webhookMonitoringService } from '@/services/webhookMonitoringService';
+import { sendVideoVerificationWebhook } from '@/lib/webhookUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useVideoMonitoring = () => {
   const [timeRemaining, setTimeRemaining] = useState(COUNTDOWN_TIME);
@@ -26,34 +26,9 @@ export const useVideoMonitoring = () => {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
     }
+  }, []);
 
-    if (user) {
-      webhookMonitoringService.stopMonitoring(user.id);
-    }
-  }, [user]);
-
-  const videoDetected = useCallback((videoData: any, setVideoResult: (result: string) => void, setIsGenerating: (generating: boolean) => void) => {
-    console.log('🎉 [MONITORING] VIDEO DETECTADO:', {
-      videoUrl: videoData.video_url,
-      title: videoData.title,
-      timestamp: new Date().toISOString()
-    });
-    
-    clearAllIntervals();
-    
-    setVideoResult(videoData.video_url);
-    setIsGenerating(false);
-    clearGenerationState();
-    
-    setDebugInfo('✅ Video encontrado y proceso completado');
-    
-    toast({
-      title: "¡Video completado!",
-      description: videoData.title || "Tu video ha sido generado exitosamente.",
-    });
-  }, [clearAllIntervals, toast]);
-
-  // Sistema manual sin verificaciones automáticas
+  // Sistema completamente manual - solo countdown visual
   const startCountdown = useCallback((
     requestId: string, 
     scriptToCheck: string, 
@@ -68,119 +43,124 @@ export const useVideoMonitoring = () => {
 
     const startTime = customStartTime || Date.now();
     
-    console.log('🚀 [MONITORING] INICIANDO SISTEMA MANUAL (sin verificaciones automáticas):', {
+    console.log('🚀 [MONITORING] INICIANDO SISTEMA COMPLETAMENTE MANUAL:', {
       requestId,
       startTime: new Date(startTime).toISOString(),
       userId: user.id
     });
     
     setGenerationStartTime(startTime);
-    setDebugInfo('🚀 Sistema manual iniciado - usar botón para verificar');
+    setDebugInfo('🚀 Sistema manual activo - solo verificación con botón');
     
-    // Start countdown timer solo para mostrar tiempo transcurrido
+    // Solo countdown timer visual - SIN verificaciones automáticas
     const updateCountdown = () => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = Math.max(0, COUNTDOWN_TIME - elapsed);
       
       updateTimeRemaining(remaining);
       
+      // ELIMINAR: No más verificación automática cuando remaining <= 0
       if (remaining <= 0) {
-        console.log('⏰ [MONITORING] Tiempo agotado - verificación final automática');
-        checkFinalResult(scriptToCheck, setVideoResult, setIsGenerating);
-        return;
+        console.log('⏰ [MONITORING] Tiempo agotado - SISTEMA MANUAL: sin verificaciones automáticas');
+        setDebugInfo('⏰ Tiempo agotado - usa el botón para verificar manualmente');
+        // NO llamar checkFinalResult - mantener sistema manual
       }
     };
 
     updateCountdown();
     countdownIntervalRef.current = setInterval(updateCountdown, 1000);
+  }, [user, updateTimeRemaining]);
 
-    // Inicializar sesión manual (sin verificaciones automáticas)
-    webhookMonitoringService.startMonitoring(
-      user.id,
-      user,
-      (videoData) => videoDetected(videoData, setVideoResult, setIsGenerating),
-      setDebugInfo
-    );
-  }, [user, updateTimeRemaining, videoDetected, clearAllIntervals]);
-
-  // Verificación manual que usa la nueva webhook
+  // Verificación COMPLETAMENTE manual con webhook correcta
   const checkVideoManually = useCallback(async (
     requestId: string,
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    if (!user) return false;
-
-    console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL EJECUTADA');
-    
-    setDebugInfo('🔍 Ejecutando verificación manual...');
-    
-    const found = await webhookMonitoringService.performManualCheck(
-      user.id,
-      user,
-      (videoData) => videoDetected(videoData, setVideoResult, setIsGenerating),
-      setDebugInfo
-    );
-    
-    if (!found) {
-      toast({
-        title: "Verificación enviada",
-        description: "Se ha enviado la verificación a la webhook externa. El sistema te notificará cuando el video esté listo.",
-        variant: "default"
-      });
+    if (!user) {
+      console.log('❌ [MONITORING] No hay usuario para verificación manual');
+      return false;
     }
-    
-    return found;
-  }, [user, videoDetected, toast]);
 
-  const checkFinalResult = useCallback(async (
-    scriptToCheck: string,
-    setVideoResult: (result: string) => void,
-    setIsGenerating: (generating: boolean) => void
-  ) => {
-    console.log('🔍 [MONITORING] VERIFICACIÓN FINAL tras 39 minutos');
-    
-    setDebugInfo('🔍 Verificación final...');
-    
+    console.log('🔍 [MONITORING] VERIFICACIÓN MANUAL INICIADA');
+    setDebugInfo('🔍 Enviando verificación manual a webhook...');
+
     try {
-      const videoData = await checkFinalVideoResult(user, scriptToCheck);
-      
-      if (videoData?.video_url) {
-        console.log('✅ [MONITORING] Video encontrado en verificación final');
-        setVideoResult(videoData.video_url);
-        setDebugInfo('✅ Video encontrado en verificación final');
+      // Obtener datos frescos de tracking
+      const { data: trackingData, error } = await supabase
+        .from('video_generation_tracking')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'processing')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !trackingData) {
+        console.error('❌ [MONITORING] Error obteniendo datos de tracking:', error);
+        setDebugInfo('❌ Error: No se encontró tracking activo');
         toast({
-          title: "¡Video completado!",
-          description: videoData.title || "Tu video ha sido generado exitosamente.",
+          title: "Error de verificación",
+          description: "No se encontró un video en proceso para verificar.",
+          variant: "destructive"
         });
-      } else {
-        console.log('⏰ [MONITORING] Video NO encontrado después de 39 minutos');
-        setDebugInfo('⏰ Video NO encontrado después de 39 minutos');
+        return false;
+      }
+
+      console.log('📦 [MONITORING] Datos de tracking obtenidos:', {
+        requestId: trackingData.request_id,
+        userId: trackingData.user_id,
+        scriptLength: trackingData.script.length
+      });
+
+      // Enviar a webhook de verificación manual
+      const success = await sendVideoVerificationWebhook(
+        trackingData.request_id,
+        trackingData.user_id,
+        trackingData.script
+      );
+
+      if (success) {
+        console.log('✅ [MONITORING] Verificación manual enviada exitosamente');
+        setDebugInfo('✅ Verificación enviada - webhook procesará la respuesta');
+        
         toast({
-          title: "Video en proceso",
-          description: "Tu video está tardando un poco más de lo normal. Por favor, revisa la sección 'Videos Guardados' en 10-15 minutos.",
+          title: "Verificación enviada",
+          description: "Se ha enviado la verificación a la webhook externa. El sistema te notificará cuando el video esté listo.",
           variant: "default"
         });
+        
+        return true;
+      } else {
+        console.error('❌ [MONITORING] Error enviando verificación manual');
+        setDebugInfo('❌ Error enviando verificación a webhook');
+        
+        toast({
+          title: "Error de verificación",
+          description: "Hubo un problema enviando la verificación. Intenta de nuevo.",
+          variant: "destructive"
+        });
+        
+        return false;
       }
-    } catch (e) {
-      console.error('❌ [MONITORING] Error en verificación final:', e);
-      setDebugInfo(`❌ Error en verificación final: ${e}`);
+    } catch (error) {
+      console.error('💥 [MONITORING] Error en verificación manual:', error);
+      setDebugInfo(`💥 Error: ${error}`);
+      
       toast({
-        title: "Error en verificación",
-        description: "Hubo un problema al verificar el video. Por favor, revisa la sección 'Videos Guardados' en unos minutos.",
+        title: "Error de verificación",
+        description: "Hubo un problema con la verificación manual.",
         variant: "destructive"
       });
+      
+      return false;
     }
-    
-    setIsGenerating(false);
-    clearGenerationState();
-    clearAllIntervals();
-  }, [user, toast, clearAllIntervals]);
+  }, [user, toast]);
 
   const cleanup = useCallback(() => {
-    console.log('🧹 [MONITORING] Limpieza completa del monitoreo');
-    setDebugInfo('🧹 Sistema limpiado');
+    console.log('🧹 [MONITORING] Limpieza completa del monitoreo manual');
+    setDebugInfo('🧹 Sistema manual limpiado');
     clearAllIntervals();
   }, [clearAllIntervals]);
 
@@ -193,8 +173,8 @@ export const useVideoMonitoring = () => {
     generationStartTime,
     debugInfo,
     startCountdown,
-    startPeriodicChecking: () => {}, // Legacy compatibility
-    checkFinalResult,
+    startPeriodicChecking: () => {}, // Legacy compatibility - no hace nada
+    checkFinalResult: () => {}, // Legacy compatibility - no hace nada
     checkVideoManually,
     cleanup
   };
