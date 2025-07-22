@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -40,7 +41,12 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   const { 
     startCountdown: baseStartCountdown, 
     checkVideoManually: baseCheckVideoManually,
-    cleanup 
+    cleanup,
+    // Expose the monitoring properties
+    canCheckVideo,
+    isChecking,
+    timeUntilButton,
+    debugInfo: monitoringDebugInfo
   } = useVideoMonitoring();
 
   // Wrapper functions to provide state setters to monitoring hooks
@@ -508,6 +514,10 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       totalTime: COUNTDOWN_TIME,
       currentRequestId,
       isLoading,
+      // Add the monitoring properties to the state
+      canCheckVideo,
+      isChecking,
+      timeUntilButton,
       debugInfo: `RequestId: ${currentRequestId} | Generating: ${isGenerating} | TimeLeft: ${Math.floor(timeRemaining/60)}min`
     },
     handlers: {

@@ -27,7 +27,10 @@ const VideoGenerator = () => {
         totalTime={state.totalTime}
         isRecovering={state.isRecovering}
         onManualCheck={handlers.checkVideoManually}
-        debugInfo={state.debugInfo} // Pasar información de debug
+        debugInfo={state.debugInfo}
+        canCheckVideo={state.canCheckVideo}
+        isChecking={state.isChecking}
+        timeUntilButton={state.timeUntilButton}
       />
     );
   }

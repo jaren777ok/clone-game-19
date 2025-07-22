@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
@@ -123,6 +124,9 @@ const VideoGeneratorFinal = () => {
         isRecovering={state.isRecovering}
         onManualCheck={handlers.checkVideoManually}
         debugInfo={state.debugInfo}
+        canCheckVideo={state.canCheckVideo}
+        isChecking={state.isChecking}
+        timeUntilButton={state.timeUntilButton}
       />
     );
   }
