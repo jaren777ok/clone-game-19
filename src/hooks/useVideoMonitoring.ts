@@ -13,7 +13,6 @@ export const useVideoMonitoring = () => {
   const { toast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const intensivePollingRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(false);
 
   const updateTimeRemaining = useCallback((remaining: number) => {
@@ -29,10 +28,6 @@ export const useVideoMonitoring = () => {
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
-    }
-    if (intensivePollingRef.current) {
-      clearInterval(intensivePollingRef.current);
-      intensivePollingRef.current = null;
     }
   }, []);
 
@@ -64,7 +59,7 @@ export const useVideoMonitoring = () => {
     customStartTime?: number
   ) => {
     const startTime = customStartTime || Date.now();
-    console.log('🚀 Iniciando monitoreo mejorado de 39 minutos:', {
+    console.log('🚀 Iniciando monitoreo MEJORADO - Verificación desde minuto 25:', {
       requestId: requestId,
       startTime: new Date(startTime).toISOString(),
       scriptLength: scriptToCheck.length,
@@ -104,76 +99,74 @@ export const useVideoMonitoring = () => {
       }
     }, 5000); // 5 segundos después de iniciar
 
-    // VERIFICACIÓN REGULAR: Cada 2 minutos desde los 30 minutos
+    // ⭐ NUEVA LÓGICA: VERIFICACIÓN DESDE EL MINUTO 25 CADA MINUTO
     setTimeout(() => {
       if (!isActiveRef.current) return;
       
-      console.log('🔄 Iniciando verificaciones regulares cada 2 minutos');
+      console.log('🎯 INICIANDO VERIFICACIONES CADA MINUTO DESDE MINUTO 25');
+      
       const regularCheck = async () => {
         if (!isActiveRef.current) return;
         
         const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-        console.log('🔍 Verificación regular (minuto ' + minutesElapsed + ')');
+        console.log('🔍 Verificación cada minuto (minuto ' + minutesElapsed + ') - Buscando video:', {
+          requestId,
+          userId: user?.id,
+          minutesElapsed
+        });
         
         const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
         if (videoData && isActiveRef.current) {
+          console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN REGULAR:', videoData);
           videoDetected(videoData, setVideoResult, setIsGenerating);
+        } else {
+          console.log('❌ Video no encontrado aún en minuto', minutesElapsed);
         }
       };
       
-      regularCheck(); // Ejecutar inmediatamente
-      pollingIntervalRef.current = setInterval(regularCheck, 2 * 60 * 1000); // Cada 2 minutos
-    }, 30 * 60 * 1000); // Iniciar a los 30 minutos
-
-    // VERIFICACIÓN INTENSIVA: Cada 30 segundos desde los 35 minutos
-    setTimeout(() => {
-      if (!isActiveRef.current) return;
+      // Ejecutar verificación inmediatamente al llegar al minuto 25
+      regularCheck();
       
-      console.log('⚡ Iniciando verificaciones intensivas cada 30 segundos');
-      const intensiveCheck = async () => {
-        if (!isActiveRef.current) return;
-        
-        const minutesElapsed = Math.floor((Date.now() - startTime) / 60000);
-        console.log('🔍 Verificación intensiva (minuto ' + minutesElapsed + ')');
-        
-        const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
-        if (videoData && isActiveRef.current) {
-          videoDetected(videoData, setVideoResult, setIsGenerating);
-        }
-      };
+      // Continuar verificando cada minuto
+      pollingIntervalRef.current = setInterval(regularCheck, 60 * 1000); // Cada minuto
       
-      intensiveCheck(); // Ejecutar inmediatamente
-      intensivePollingRef.current = setInterval(intensiveCheck, 30 * 1000); // Cada 30 segundos
-    }, 35 * 60 * 1000); // Iniciar a los 35 minutos
+    }, 25 * 60 * 1000); // ⭐ Iniciar a los 25 minutos (no 30)
 
   }, [updateTimeRemaining, user, videoDetected]);
 
-  // Función para verificación manual
+  // Función para verificación manual mejorada
   const checkVideoManually = useCallback(async (
     requestId: string,
     scriptToCheck: string,
     setVideoResult: (result: string) => void,
     setIsGenerating: (generating: boolean) => void
   ) => {
-    console.log('🔍 VERIFICACIÓN MANUAL solicitada');
+    console.log('🔍 VERIFICACIÓN MANUAL SOLICITADA:', {
+      requestId,
+      userId: user?.id,
+      timestamp: new Date().toISOString()
+    });
     
-    // Primero intentar recuperar video perdido
-    const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
-    if (recoveredVideo) {
-      videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
-      return true;
-    }
-    
-    // Luego verificación estándar
+    // Verificación directa y completa
     const videoData = await verifyVideoExists(user, requestId, scriptToCheck);
     if (videoData) {
+      console.log('✅ VIDEO ENCONTRADO EN VERIFICACIÓN MANUAL:', videoData);
       videoDetected(videoData, setVideoResult, setIsGenerating);
       return true;
     }
     
+    // Intentar recuperación como fallback
+    const recoveredVideo = await recoverLostVideo(user, requestId, scriptToCheck);
+    if (recoveredVideo) {
+      console.log('🔄 VIDEO RECUPERADO EN VERIFICACIÓN MANUAL:', recoveredVideo);
+      videoDetected(recoveredVideo, setVideoResult, setIsGenerating);
+      return true;
+    }
+    
+    console.log('❌ Video no encontrado en verificación manual');
     toast({
       title: "Video no encontrado",
-      description: "El video aún no está disponible. Continuaremos verificando automáticamente.",
+      description: "El video aún no está disponible. La verificación automática continuará cada minuto desde el minuto 25.",
       variant: "default"
     });
     

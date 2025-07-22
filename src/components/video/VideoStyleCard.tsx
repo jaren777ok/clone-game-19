@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, CheckCircle2 } from 'lucide-react';
 import { VideoStyle } from '@/types/videoFlow';
+
 interface Props {
   style: VideoStyle;
   isSelected: boolean;
@@ -13,6 +14,7 @@ interface Props {
   onVideoEnded: (styleId: string) => void;
   onVideoRef: (styleId: string) => (ref: HTMLVideoElement | null) => void;
 }
+
 const VideoStyleCard: React.FC<Props> = ({
   style,
   isSelected,
@@ -23,6 +25,21 @@ const VideoStyleCard: React.FC<Props> = ({
   onVideoRef
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Función para obtener la URL del video actualizada
+  const getVideoUrl = (styleId: string, originalUrl: string) => {
+    switch (styleId) {
+      case 'style-5':
+        // Nuevo video para Estilo Manual 1
+        return 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/Estilo%205.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VzdGlsbyA1Lm1wNCIsImlhdCI6MTc1MzE2MDQ1MCwiZXhwIjoxNzg0Njk2NDUwfQ.n8K30BK5SdU6clddqOeg_ZnAnIh8J1FT9eBmz5Magog';
+      case 'style-7':
+        // Nuevo video para Estilo Multi-Avatar
+        return 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/Multi-Avatar%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL011bHRpLUF2YXRhciAxLm1wNCIsImlhdCI6MTc1MzE2MjM2OCwiZXhwIjoxNzg0Njk4MzY4fQ.MTyrQzOS5hgMnhH1ag_UP2vgoIJjrfMd_wV5wRT2HO8';
+      default:
+        return originalUrl;
+    }
+  };
+
   const getStyleRequirements = (styleId: string) => {
     switch (styleId) {
       case 'style-5':
@@ -74,19 +91,43 @@ const VideoStyleCard: React.FC<Props> = ({
           </div>;
     }
   };
-  return <Card className={`cyber-border hover:cyber-glow transition-all cursor-pointer transform hover:scale-[1.02] ${isSelected ? 'cyber-glow-intense' : ''}`}>
+
+  return (
+    <Card className={`cyber-border hover:cyber-glow transition-all cursor-pointer transform hover:scale-[1.02] ${isSelected ? 'cyber-glow-intense' : ''}`}>
       <CardContent className="p-4 sm:p-6">
         {/* Video preview */}
         <div className="aspect-[9/16] mb-4 sm:mb-6 rounded-xl overflow-hidden bg-black relative group">
-          {isSelected && <div className="absolute top-2 right-2 z-10">
+          {isSelected && (
+            <div className="absolute top-2 right-2 z-10">
               <CheckCircle2 className="w-5 h-5 text-primary bg-black/50 rounded-full" />
-            </div>}
-          <video ref={onVideoRef(style.id)} src={style.video_url} className="w-full h-full object-cover" muted loop playsInline onEnded={() => onVideoEnded(style.id)} preload="metadata" />
+            </div>
+          )}
+          <video 
+            ref={onVideoRef(style.id)} 
+            src={getVideoUrl(style.id, style.video_url)} 
+            className="w-full h-full object-cover" 
+            muted 
+            loop 
+            playsInline 
+            onEnded={() => onVideoEnded(style.id)} 
+            preload="metadata" 
+          />
           
           {/* Play/Pause overlay */}
-          <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 ${!isPlaying || isHovered ? 'opacity-100' : 'opacity-0'}`} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-            <button onClick={e => onTogglePlay(style.id, e)} className="w-12 sm:w-16 h-12 sm:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors">
-              {isPlaying ? <Pause className="w-6 sm:w-8 h-6 sm:h-8 text-white" /> : <Play className="w-6 sm:w-8 h-6 sm:h-8 text-white ml-1" />}
+          <div 
+            className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 ${!isPlaying || isHovered ? 'opacity-100' : 'opacity-0'}`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            <button 
+              onClick={e => onTogglePlay(style.id, e)}
+              className="w-12 sm:w-16 h-12 sm:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors"
+            >
+              {isPlaying ? (
+                <Pause className="w-6 sm:w-8 h-6 sm:h-8 text-white" />
+              ) : (
+                <Play className="w-6 sm:w-8 h-6 sm:h-8 text-white ml-1" />
+              )}
             </button>
           </div>
         </div>
@@ -101,10 +142,16 @@ const VideoStyleCard: React.FC<Props> = ({
           </div>
         </div>
 
-        <Button onClick={() => onSelect(style)} className="w-full cyber-glow h-10 sm:h-12 text-sm sm:text-base font-medium" variant={isSelected ? "default" : "outline"}>
+        <Button 
+          onClick={() => onSelect(style)} 
+          className="w-full cyber-glow h-10 sm:h-12 text-sm sm:text-base font-medium" 
+          variant={isSelected ? "default" : "outline"}
+        >
           {isSelected ? "Continuar al Generador" : "Elegir Estilo"}
         </Button>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 export default VideoStyleCard;
