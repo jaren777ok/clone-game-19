@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { FlowState, HeyGenApiKey, Avatar, Voice, VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization, SubtitleCustomization } from '@/types/videoFlow';
 import { useApiKeys } from '@/hooks/useApiKeys';
@@ -136,11 +135,9 @@ export const useVideoCreationFlow = () => {
       // Estilo Multi-Avatar - ir a selección del segundo avatar
       console.log('🔄 Multi-Avatar detectado: navegando a multi-avatar');
       nextStep = 'multi-avatar';
-    } else if (style.id === 'style-5' || style.id === 'style-6') {
-      // Estilos Manual - ir directo a neurocopy
-      nextStep = 'neurocopy';
     } else {
-      // Otros estilos - ir a personalización de subtítulos
+      // TODOS los demás estilos (incluyendo manuales) van a personalización de subtítulos
+      console.log('📝 Navegando a personalización de subtítulos para estilo:', style.name);
       nextStep = 'subtitle-customization';
     }
     
