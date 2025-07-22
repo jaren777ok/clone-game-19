@@ -908,7 +908,7 @@ export const sendToMultiAvatarWebhook = async (payload: WebhookPayload): Promise
   }
 };
 
-// Nueva función para verificación manual de video con manejo de respuesta JSON
+// Nueva función para verificación manual de video con manejo mejorado de errores
 export const sendVideoVerificationWebhook = async (
   requestId: string,
   userId: string,
@@ -956,31 +956,32 @@ export const sendVideoVerificationWebhook = async (
           message: 'Video encontrado y listo'
         };
       } else {
-        console.log('⏳ Video aún no está listo');
+        console.log('⏳ Video aún no está listo - respuesta sin video_url');
         return {
           success: true,
           message: 'El video aún no está listo'
         };
       }
     } else {
-      console.error('❌ Error en verificación manual:', response.status, response.statusText);
+      // Tratar errores de respuesta como "video no listo" en lugar de errores
+      console.log('⏳ Video aún no está listo - respuesta del servidor:', response.status);
       return {
-        success: false,
-        message: 'Error de conexión con el servidor'
+        success: true,
+        message: 'El video aún no está listo'
       };
     }
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('❌ Timeout en verificación manual después de 30 segundos');
+      console.log('⏳ Video aún no está listo - timeout de conexión');
       return {
-        success: false,
-        message: 'Tiempo de espera agotado'
+        success: true,
+        message: 'El video aún no está listo'
       };
     } else {
-      console.error('❌ Error enviando verificación manual:', error);
+      console.log('⏳ Video aún no está listo - error de conexión:', error);
       return {
-        success: false,
-        message: 'Error de conexión'
+        success: true,
+        message: 'El video aún no está listo'
       };
     }
   }

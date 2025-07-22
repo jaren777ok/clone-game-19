@@ -164,21 +164,23 @@ export const useVideoMonitoring = () => {
           console.log('⏳ [MONITORING] Video aún no está listo');
           setDebugInfo('⏳ Video en proceso - intenta de nuevo más tarde');
           
+          // Usar toast informativo en lugar de destructivo
           toast({
             title: "Video en proceso",
-            description: result.message || "El video aún no está listo. Intenta de nuevo más tarde.",
+            description: "El video aún no está listo. Intenta de nuevo más tarde.",
             variant: "default"
           });
           
           return false;
         }
       } else {
-        console.error('❌ [MONITORING] Error en verificación manual');
-        setDebugInfo('❌ Error en verificación');
+        // Solo casos críticos llegan aquí (no debería pasar con la nueva lógica)
+        console.error('❌ [MONITORING] Error crítico en verificación manual');
+        setDebugInfo('❌ Error crítico en verificación');
         
         toast({
           title: "Error de verificación",
-          description: result.message || "Hubo un problema con la verificación. Intenta de nuevo.",
+          description: "Hubo un problema crítico con la verificación. Intenta de nuevo.",
           variant: "destructive"
         });
         

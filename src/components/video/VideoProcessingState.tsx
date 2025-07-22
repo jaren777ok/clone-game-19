@@ -21,9 +21,6 @@ const VideoProcessingState = ({
   debugInfo,
   isChecking 
 }: VideoProcessingStateProps) => {
-  const minutesRemaining = Math.floor(timeRemaining / 60);
-  const minutesElapsed = Math.floor((totalTime - timeRemaining) / 60);
-  
   return (
     <div className="min-h-screen bg-background relative overflow-hidden py-16">
       {/* Animated background */}
@@ -78,9 +75,6 @@ const VideoProcessingState = ({
               </p>
               <p className="text-muted-foreground text-sm">
                 ⚡ Tu video puede estar listo antes del tiempo estimado
-              </p>
-              <p className="text-green-300 text-sm font-medium">
-                ⏰ Tiempo transcurrido: {minutesElapsed} min | Tiempo restante: {minutesRemaining} min
               </p>
             </div>
           </div>
