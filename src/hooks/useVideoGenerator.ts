@@ -45,7 +45,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     canCheckVideo,
     isChecking,
     timeUntilButton,
-    debugInfo: monitoringDebugInfo
+    debugInfo: monitoringDebugInfo,
+    setGenerationStartTime // Add this to directly set the start time
   } = useVideoMonitoring();
 
   // Wrapper functions to provide state setters to monitoring hooks
@@ -76,13 +77,35 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     migrateLegacyData();
     
     if (currentGeneration && currentGeneration.status === 'processing') {
+      console.log('🔍 [RECOVERY] Recuperando generación existente:', {
+        requestId: currentGeneration.request_id,
+        startTime: currentGeneration.start_time,
+        timeRemaining: timeRemaining
+      });
+      
       setScript(currentGeneration.script);
       setCurrentRequestId(currentGeneration.request_id);
       
       if (timeRemaining > 0) {
         setIsGenerating(true);
-        // Initialize startCountdown with the original start time so the button can appear
-        startCountdown(currentGeneration.request_id, currentGeneration.script, setVideoResult, setIsGenerating, new Date(currentGeneration.start_time).getTime());
+        
+        // CRÍTICO: Convertir el start_time de la DB a timestamp y establecerlo
+        const dbStartTime = new Date(currentGeneration.start_time).getTime();
+        console.log('🔍 [RECOVERY] Estableciendo tiempo de inicio desde DB:', {
+          dbStartTime: dbStartTime,
+          dbStartTimeISO: new Date(dbStartTime).toISOString(),
+          timeElapsed: (Date.now() - dbStartTime) / 1000 / 60, // minutos
+          shouldShowButton: (Date.now() - dbStartTime) / 1000 >= 30 * 60
+        });
+        
+        // Inicializar el countdown con el tiempo original de la DB
+        startCountdown(
+          currentGeneration.request_id, 
+          currentGeneration.script, 
+          setVideoResult, 
+          setIsGenerating, 
+          dbStartTime
+        );
       }
     }
   }, [currentGeneration, timeRemaining]);

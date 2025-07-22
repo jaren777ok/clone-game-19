@@ -18,8 +18,23 @@ export const useVideoMonitoring = () => {
 
   // Calculate if the check button should be visible
   const canCheckVideo = useMemo(() => {
-    if (!generationStartTime) return false;
-    return canShowCheckButton(generationStartTime);
+    if (!generationStartTime) {
+      console.log('🔍 [BUTTON] No generationStartTime, botón no visible');
+      return false;
+    }
+    
+    const timeElapsed = (Date.now() - generationStartTime) / 1000;
+    const shouldShow = timeElapsed >= 30 * 60; // 30 minutos
+    
+    console.log('🔍 [BUTTON] Calculando visibilidad del botón:', {
+      generationStartTime: new Date(generationStartTime).toISOString(),
+      timeElapsed: timeElapsed,
+      timeElapsedMinutes: timeElapsed / 60,
+      shouldShow: shouldShow,
+      minimumWaitTime: 30 * 60
+    });
+    
+    return shouldShow;
   }, [generationStartTime, timeRemaining]);
 
   // Calculate time until button appears
@@ -59,9 +74,11 @@ export const useVideoMonitoring = () => {
     console.log('🚀 [MONITORING] INICIANDO SISTEMA COMPLETAMENTE MANUAL:', {
       requestId,
       startTime: new Date(startTime).toISOString(),
-      userId: user.id
+      userId: user.id,
+      isCustomTime: !!customStartTime
     });
     
+    // CRÍTICO: Establecer el generationStartTime
     setGenerationStartTime(startTime);
     setDebugInfo('🚀 Sistema manual activo - el botón aparecerá en 30 minutos');
     
@@ -217,6 +234,7 @@ export const useVideoMonitoring = () => {
   const cleanup = useCallback(() => {
     console.log('🧹 [MONITORING] Limpieza completa del monitoreo manual');
     setDebugInfo('🧹 Sistema manual limpiado');
+    setGenerationStartTime(null);
     clearAllIntervals();
   }, [clearAllIntervals]);
 
@@ -235,6 +253,7 @@ export const useVideoMonitoring = () => {
     startPeriodicChecking: () => {}, // Legacy compatibility - no hace nada
     checkFinalResult: () => {}, // Legacy compatibility - no hace nada
     checkVideoManually,
-    cleanup
+    cleanup,
+    setGenerationStartTime // Export this so it can be set externally if needed
   };
 };
