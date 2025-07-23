@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
@@ -105,9 +106,8 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
           </div>
           <div className="space-y-2">
             <Label htmlFor="apiKey" className="text-sm sm:text-base">Clave API de HeyGen</Label>
-            <Input
+            <PasswordInput
               id="apiKey"
-              type="password"
               value={formData.apiKey}
               onChange={(e) => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
               placeholder="Ingresa tu clave API de HeyGen"
