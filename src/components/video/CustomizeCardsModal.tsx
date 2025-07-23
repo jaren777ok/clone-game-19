@@ -87,18 +87,18 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
               </Label>
               <span className={cn(
                 "text-xs",
-                titulo.length > 70 ? "text-destructive" : "text-muted-foreground"
+                titulo.length > 62 ? "text-destructive" : "text-muted-foreground"
               )}>
-                {titulo.length}/70
+                {titulo.length}/62
               </span>
             </div>
             <Input
               id="titulo"
               value={titulo}
-              onChange={(e) => setTitulo(transformQuotes(e.target.value.slice(0, 70)))}
+              onChange={(e) => setTitulo(transformQuotes(e.target.value.slice(0, 62)))}
               placeholder="Ingresa el título de la noticia"
               className="cyber-border focus:cyber-glow h-12"
-              maxLength={70}
+              maxLength={62}
             />
           </div>
 
