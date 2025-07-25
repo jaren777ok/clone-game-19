@@ -2,6 +2,7 @@ import { Smartphone, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ui/theme-toggle";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const Dashboard = () => {
       {/* Dark overlay for better readability */}
       <div className="absolute inset-0 bg-black/30"></div>
 
-      {/* Header with user info and logout */}
+      {/* Header with user info, theme toggle and logout */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 sm:space-x-4">
         <div className="hidden sm:flex items-center space-x-2 text-muted-foreground">
           <User className="w-4 h-4" />
@@ -52,6 +53,7 @@ const Dashboard = () => {
         <div className="sm:hidden flex items-center text-muted-foreground">
           <User className="w-4 h-4" />
         </div>
+        <ThemeToggle />
         <Button
           variant="outline"
           size="sm"
