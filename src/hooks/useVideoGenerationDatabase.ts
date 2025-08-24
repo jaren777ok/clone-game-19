@@ -59,7 +59,7 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
 
       if (generation && generation.status === 'processing') {
         // Calculate remaining time
-        const remaining = calculateRemainingTime(generation.start_time);
+        const remaining = calculateRemainingTime(generation.created_at);
         setTimeRemaining(remaining);
         
         // Only show recovery option if there's significant time remaining
@@ -95,7 +95,7 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
     }
 
     const interval = setInterval(() => {
-      const remaining = calculateRemainingTime(currentGeneration.start_time);
+      const remaining = calculateRemainingTime(currentGeneration.created_at);
       setTimeRemaining(remaining);
       
       // Auto-expire if time is up
@@ -158,7 +158,7 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
       }
 
       // Start countdown with the original start time
-      const startTime = new Date(currentGeneration.start_time).getTime();
+      const startTime = new Date(currentGeneration.created_at).getTime();
       startCountdown(currentGeneration.request_id, currentGeneration.script, setVideoResult, setIsGenerating, startTime);
     } catch (error) {
       console.error('Error recovering generation:', error);

@@ -47,7 +47,13 @@ const SavedVideos = () => {
 
       if (error) throw error;
 
-      setVideos(data || []);
+      setVideos((data || []).map(video => ({
+        id: video.id,
+        title: video.title,
+        script: video.title || '',
+        video_url: video.video_url || '',
+        created_at: video.created_at
+      } as SavedVideo)));
     } catch (error) {
       console.error('Error fetching videos:', error);
       toast({

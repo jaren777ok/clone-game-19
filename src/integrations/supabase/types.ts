@@ -1117,12 +1117,17 @@ export type Database = {
       }
       user_video_configs: {
         Row: {
+          api_key_id: string | null
           avatar_data: Json | null
+          card_customization: Json | null
           config_data: Json
           created_at: string
           current_step: string | null
+          generated_script: string | null
           id: string
           manual_customization: Json | null
+          presenter_customization: Json | null
+          second_avatar_data: Json | null
           session_id: string | null
           style_data: Json | null
           subtitle_customization: Json | null
@@ -1131,12 +1136,17 @@ export type Database = {
           voice_data: Json | null
         }
         Insert: {
+          api_key_id?: string | null
           avatar_data?: Json | null
+          card_customization?: Json | null
           config_data?: Json
           created_at?: string
           current_step?: string | null
+          generated_script?: string | null
           id?: string
           manual_customization?: Json | null
+          presenter_customization?: Json | null
+          second_avatar_data?: Json | null
           session_id?: string | null
           style_data?: Json | null
           subtitle_customization?: Json | null
@@ -1145,12 +1155,17 @@ export type Database = {
           voice_data?: Json | null
         }
         Update: {
+          api_key_id?: string | null
           avatar_data?: Json | null
+          card_customization?: Json | null
           config_data?: Json
           created_at?: string
           current_step?: string | null
+          generated_script?: string | null
           id?: string
           manual_customization?: Json | null
+          presenter_customization?: Json | null
+          second_avatar_data?: Json | null
           session_id?: string | null
           style_data?: Json | null
           subtitle_customization?: Json | null
@@ -1158,7 +1173,15 @@ export type Database = {
           user_id?: string
           voice_data?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_video_configs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "heygen_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       video_generation_tracking: {
         Row: {

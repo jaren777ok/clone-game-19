@@ -179,17 +179,20 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
   try {
     const { data, error } = await supabase
       .from('user_video_configs')
-      .select(`
-        *,
-        heygen_api_keys:api_key_id (
-          id,
-          api_key_name,
-          api_key_encrypted,
-          created_at
-        )
-      `)
+      .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
+    
+    // Fetch API key separately if needed
+    let apiKeyData = null;
+    if (data?.api_key_id) {
+      const { data: keyData } = await supabase
+        .from('heygen_api_keys')
+        .select('id, api_key_name, api_key_encrypted, created_at')
+        .eq('id', data.api_key_id)
+        .maybeSingle();
+      apiKeyData = keyData;
+    }
 
     if (error) {
       console.error('❌ Error cargando configuración de video:', error);
@@ -203,37 +206,37 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
 
     // 🔍 DEBUG: Verificar datos cargados desde Supabase
     console.log('🔍 DEBUG - Datos cargados desde Supabase:', {
-      step: data.current_step,
-      hasApiKey: !!data.heygen_api_keys,
-      hasAvatar: !!data.avatar_data,
-      hasVoice: !!data.voice_data,
-      hasStyle: !!data.style_data,
-      hasManualCustomization: !!data.manual_customization,
-      hasSubtitleCustomization: !!data.subtitle_customization,
-      subtitleCustomizationRaw: data.subtitle_customization,
-      subtitleCustomizationPreview: data.subtitle_customization ? {
-        fontFamily: (data.subtitle_customization as any)?.fontFamily,
-        subtitleEffect: (data.subtitle_customization as any)?.subtitleEffect,
-        textColor: (data.subtitle_customization as any)?.textColor,
-        backgroundColor: (data.subtitle_customization as any)?.backgroundColor,
-        hasBackgroundColor: (data.subtitle_customization as any)?.hasBackgroundColor
+      step: (data as any).current_step,
+      hasApiKey: !!apiKeyData,
+      hasAvatar: !!(data as any).avatar_data,
+      hasVoice: !!(data as any).voice_data,
+      hasStyle: !!(data as any).style_data,
+      hasManualCustomization: !!(data as any).manual_customization,
+      hasSubtitleCustomization: !!(data as any).subtitle_customization,
+      subtitleCustomizationRaw: (data as any).subtitle_customization,
+      subtitleCustomizationPreview: (data as any).subtitle_customization ? {
+        fontFamily: ((data as any).subtitle_customization as any)?.fontFamily,
+        subtitleEffect: ((data as any).subtitle_customization as any)?.subtitleEffect,
+        textColor: ((data as any).subtitle_customization as any)?.textColor,
+        backgroundColor: ((data as any).subtitle_customization as any)?.backgroundColor,
+        hasBackgroundColor: ((data as any).subtitle_customization as any)?.hasBackgroundColor
       } : null
     });
 
     console.log('✅ Configuración cargada exitosamente:', {
-      step: data.current_step,
-      hasApiKey: !!data.heygen_api_keys,
-      hasAvatar: !!data.avatar_data,
-      hasVoice: !!data.voice_data,
-      hasStyle: !!data.style_data,
-      hasManualCustomization: !!data.manual_customization,
-      hasSubtitleCustomization: !!data.subtitle_customization
+      step: (data as any).current_step,
+      hasApiKey: !!apiKeyData,
+      hasAvatar: !!(data as any).avatar_data,
+      hasVoice: !!(data as any).voice_data,
+      hasStyle: !!(data as any).style_data,
+      hasManualCustomization: !!(data as any).manual_customization,
+      hasSubtitleCustomization: !!(data as any).subtitle_customization
     });
 
     // Reconstruct manual customization with base64 files from Supabase
     let manualCustomization: ManualCustomization | null = null;
-    if (data.manual_customization) {
-      const manualData = data.manual_customization as any;
+    if ((data as any).manual_customization) {
+      const manualData = (data as any).manual_customization as any;
       manualCustomization = {
         images: manualData.images || [],
         videos: manualData.videos || [],
@@ -249,7 +252,7 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
     }
 
     // 🔍 DEBUG: Verificar subtitle customization antes de crear FlowState
-    const subtitleCustomization = data.subtitle_customization ? data.subtitle_customization as unknown as SubtitleCustomization : null;
+    const subtitleCustomization = (data as any).subtitle_customization ? (data as any).subtitle_customization as unknown as SubtitleCustomization : null;
     
     console.log('🔍 DEBUG - Subtitle customization convertida:', {
       exists: !!subtitleCustomization,
@@ -258,21 +261,16 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
 
     // Reconstruir el FlowState desde los datos de la DB
     const flowState: FlowState = {
-      step: data.current_step as FlowState['step'],
-      selectedApiKey: data.heygen_api_keys ? {
-        id: data.heygen_api_keys.id,
-        api_key_name: data.heygen_api_keys.api_key_name,
-        api_key_encrypted: data.heygen_api_keys.api_key_encrypted,
-        created_at: data.heygen_api_keys.created_at
-      } : null,
-      selectedAvatar: data.avatar_data ? data.avatar_data as unknown as Avatar : null,
-      selectedSecondAvatar: data.second_avatar_data ? data.second_avatar_data as unknown as Avatar : null,
-      selectedVoice: data.voice_data ? data.voice_data as unknown as Voice : null,
-      selectedStyle: data.style_data ? data.style_data as unknown as VideoStyle : null,
+      step: (data as any).current_step as FlowState['step'],
+      selectedApiKey: apiKeyData,
+      selectedAvatar: (data as any).avatar_data ? (data as any).avatar_data as unknown as Avatar : null,
+      selectedSecondAvatar: (data as any).second_avatar_data ? (data as any).second_avatar_data as unknown as Avatar : null,
+      selectedVoice: (data as any).voice_data ? (data as any).voice_data as unknown as Voice : null,
+      selectedStyle: (data as any).style_data ? (data as any).style_data as unknown as VideoStyle : null,
       subtitleCustomization: subtitleCustomization,
-      generatedScript: data.generated_script,
-      cardCustomization: data.card_customization ? data.card_customization as unknown as CardCustomization : null,
-      presenterCustomization: data.presenter_customization ? data.presenter_customization as unknown as PresenterCustomization : null,
+      generatedScript: (data as any).generated_script,
+      cardCustomization: (data as any).card_customization ? (data as any).card_customization as unknown as CardCustomization : null,
+      presenterCustomization: (data as any).presenter_customization ? (data as any).presenter_customization as unknown as PresenterCustomization : null,
       apiVersionCustomization: null, // Not persisted in DB, only in localStorage
       manualCustomization
     };

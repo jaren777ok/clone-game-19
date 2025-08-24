@@ -6,11 +6,14 @@ export interface VideoGenerationTrackingData {
   user_id: string;
   request_id: string;
   script: string;
-  start_time: string;
-  last_check_time: string;
   status: 'processing' | 'completed' | 'expired';
   created_at: string;
   updated_at: string;
+  heygen_video_id?: string;
+  video_id?: string;
+  error_message?: string;
+  progress?: number;
+  webhook_data?: any;
 }
 
 // Create a new video generation tracking record
@@ -38,7 +41,7 @@ export const createVideoGenerationTracking = async (
       return null;
     }
 
-    return data;
+    return data as VideoGenerationTrackingData;
   } catch (error) {
     console.error('Error creating video generation tracking:', error);
     return null;
@@ -66,7 +69,7 @@ export const getCurrentProcessingVideo = async (
       return null;
     }
 
-    return data;
+    return data as VideoGenerationTrackingData;
   } catch (error) {
     console.error('Error getting current processing video:', error);
     return null;
@@ -84,7 +87,7 @@ export const updateLastCheckTime = async (
     const { error } = await supabase
       .from('video_generation_tracking')
       .update({ 
-        last_check_time: new Date().toISOString() 
+        status: 'processing'
       })
       .eq('request_id', requestId)
       .eq('user_id', user.id);
@@ -111,10 +114,7 @@ export const markVideoGenerationCompleted = async (
   try {
     const { error } = await supabase
       .from('video_generation_tracking')
-      .update({ 
-        status: 'completed',
-        last_check_time: new Date().toISOString()
-      })
+      .update({ status: 'completed' })
       .eq('request_id', requestId)
       .eq('user_id', user.id);
 
@@ -140,10 +140,7 @@ export const markVideoGenerationExpired = async (
   try {
     const { error } = await supabase
       .from('video_generation_tracking')
-      .update({ 
-        status: 'expired',
-        last_check_time: new Date().toISOString()
-      })
+      .update({ status: 'expired' })
       .eq('request_id', requestId)
       .eq('user_id', user.id);
 
@@ -186,9 +183,34 @@ export const cleanupExpiredGenerations = async (user: User | null): Promise<void
       .update({ status: 'expired' })
       .eq('user_id', user.id)
       .eq('status', 'processing')
-      .lt('start_time', expiredTime)
-      .lt('start_time', gracePeriodTime); // Only clean videos older than grace period
+      .lt('created_at', expiredTime)
+      .lt('created_at', gracePeriodTime);
   } catch (error) {
     console.error('Error cleaning up expired generations:', error);
+  }
+};
+
+// Get expired generations for recovery attempts
+export const getExpiredGenerations = async (user: User | null): Promise<VideoGenerationTrackingData[]> => {
+  if (!user) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('video_generation_tracking')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'expired')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error getting expired generations:', error);
+      return [];
+    }
+
+    return (data || []) as VideoGenerationTrackingData[];
+  } catch (error) {
+    console.error('Error getting expired generations:', error);
+    return [];
   }
 };

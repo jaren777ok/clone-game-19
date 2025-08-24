@@ -79,7 +79,7 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     if (currentGeneration && currentGeneration.status === 'processing') {
       console.log('🔍 [RECOVERY] Recuperando generación existente:', {
         requestId: currentGeneration.request_id,
-        startTime: currentGeneration.start_time,
+        startTime: currentGeneration.created_at,
         timeRemaining: timeRemaining
       });
       
@@ -89,8 +89,8 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       if (timeRemaining > 0) {
         setIsGenerating(true);
         
-        // CRÍTICO: Convertir el start_time de la DB a timestamp y establecerlo
-        const dbStartTime = new Date(currentGeneration.start_time).getTime();
+        // CRÍTICO: Convertir el created_at de la DB a timestamp y establecerlo
+        const dbStartTime = new Date(currentGeneration.created_at).getTime();
         console.log('🔍 [RECOVERY] Estableciendo tiempo de inicio desde DB:', {
           dbStartTime: dbStartTime,
           dbStartTimeISO: new Date(dbStartTime).toISOString(),
