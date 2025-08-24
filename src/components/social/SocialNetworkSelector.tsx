@@ -91,7 +91,7 @@ const SocialNetworkSelector = ({
         <div className="text-center space-y-4">
           <div className="relative">
             <img
-              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20instgram.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gaW5zdGdyYW0ucG5nIiwiaWF0IjoxNzUxMzk4MTUwLCJleHAiOjE3ODI5MzQxNTB9.Zc9zwKjj7-jrHDdK4LaOW0j4nacsBwm5hIXUP0LzsD0"
+              src="https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/logo%20instgram%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9sb2dvIGluc3RncmFtICgxKS5wbmciLCJpYXQiOjE3NTYwMDEwNTUsImV4cCI6MTkxMzY4MTA1NX0.btDFXhu1ftZSzuvIrz_PfMlT14xoKwOdOhZ6Mg8Iw_M"
               alt="Instagram"
               className="w-16 h-16 mx-auto rounded-2xl cyber-border"
             />
@@ -173,7 +173,7 @@ const SocialNetworkSelector = ({
         <div className="text-center space-y-4">
           <div className="relative">
             <img
-              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20yt.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28geXQucG5nIiwiaWF0IjoxNzUxMzk4MjIzLCJleHAiOjE3ODI5MzQyMjN9.wxVt3uunbNNLkN4ZTjzUVshpwMOdpf6U9ea58ZlsXKY"
+              src="https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/logo%20yt%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9sb2dvIHl0ICgxKS5wbmciLCJpYXQiOjE3NTYwMDEwOTIsImV4cCI6MTkxMzY4MTA5Mn0.uTc3D_I7yERxUMwAvYIO2tY_naLfdXTPVD-mQRkUf3o"
               alt="YouTube"
               className="w-16 h-16 mx-auto rounded-2xl cyber-border"
             />
@@ -220,7 +220,7 @@ const SocialNetworkSelector = ({
         <div className="text-center space-y-4">
           <div className="relative">
             <img
-              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20facebook.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gZmFjZWJvb2sucG5nIiwiaWF0IjoxNzUxMzk4MjQyLCJleHAiOjE3ODI5MzQyNDJ9.-4ih8q6TBcFURk9TFfHmF5yBYqNjMQO5wTtUIuU-3rI"
+              src="https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/logo%20facebook%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9sb2dvIGZhY2Vib29rICgxKS5wbmciLCJpYXQiOjE3NTYwMDExMDgsImV4cCI6MTkxMzY4MTEwOH0.0uK1Fp42b64mIYRVFpQ1MuDsUvE2z1E0SXBczPPY1mo"
               alt="Facebook"
               className="w-16 h-16 mx-auto rounded-2xl cyber-border"
             />

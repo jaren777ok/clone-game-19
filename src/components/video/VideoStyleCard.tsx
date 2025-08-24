@@ -31,10 +31,10 @@ const VideoStyleCard: React.FC<Props> = ({
     switch (styleId) {
       case 'style-5':
         // Nuevo video para Estilo Manual 1
-        return 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/Estilo%205.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VzdGlsbyA1Lm1wNCIsImlhdCI6MTc1MzE2MDQ1MCwiZXhwIjoxNzg0Njk2NDUwfQ.n8K30BK5SdU6clddqOeg_ZnAnIh8J1FT9eBmz5Magog';
+        return 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/Estilo%205.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9Fc3RpbG8gNS5tcDQiLCJpYXQiOjE3NTYwMDA4MTUsImV4cCI6MTkxMzY4MDgxNX0.IdOcweWE5MV-FEEAidTQyIoMPYsGBRZ9JEYyz96flb8';
       case 'style-7':
         // Nuevo video para Estilo Multi-Avatar
-        return 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/Multi-Avatar%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL011bHRpLUF2YXRhciAxLm1wNCIsImlhdCI6MTc1MzE2MjM2OCwiZXhwIjoxNzg0Njk4MzY4fQ.MTyrQzOS5hgMnhH1ag_UP2vgoIJjrfMd_wV5wRT2HO8';
+        return 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/Multi-Avatar%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9NdWx0aS1BdmF0YXIgMS5tcDQiLCJpYXQiOjE3NTYwMDA5MDgsImV4cCI6MTkxMzY4MDkwOH0.O5fP9E924kBta0bjyjWFJWCunzbOaUi9MLgG0Des_0I';
       default:
         return originalUrl;
     }

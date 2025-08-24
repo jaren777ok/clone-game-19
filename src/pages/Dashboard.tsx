@@ -36,7 +36,7 @@ const Dashboard = () => {
         className="absolute inset-0 w-full h-full object-cover opacity-20"
       >
         <source
-          src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/fondo%20del%20dashboard.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2ZvbmRvIGRlbCBkYXNoYm9hcmQubXA0IiwiaWF0IjoxNzUwNTUyMzAwLCJleHAiOjE3ODIwODgzMDB9.zK0ijbIhmiLjTodcNP2pJeTOxzd1wOGNH8oEdzHYKqc"
+          src="https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondo%20del%20dashboard%20(3).mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kbyBkZWwgZGFzaGJvYXJkICgzKS5tcDQiLCJpYXQiOjE3NTU5OTk5MzUsImV4cCI6MTkxMzY3OTkzNX0.fRHg24rbU6PRsL6vA2lAZYfRcxqRzIb5fyR_AIu4um8"
           type="video/mp4"
         />
       </video>

@@ -30,37 +30,37 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
     {
       id: 'style-1',
       name: 'Estilo Noticia',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/Estilo%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VzdGlsbyAxLm1wNCIsImlhdCI6MTc1MDcxOTI1NiwiZXhwIjoxNzgyMjU1MjU2fQ.9-Ji-AgsIbAv9Jl0FZW6dNikiNevfGVu_M1LVN6PA4A'
+      video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/Estilo%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9Fc3RpbG8gMS5tcDQiLCJpYXQiOjE3NTYwMDAyNDEsImV4cCI6MTkxMzY4MDI0MX0.wf5jhgI_7u8xbO9iTDc41_z_UD3ZezVplBxTzdmr_8U'
     },
     {
       id: 'style-2',
       name: 'Estilo Noticiero',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%202.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyAyLm1wNCIsImlhdCI6MTc1MDU3NDI2NiwiZXhwIjoxNzgyMTEwMjY2fQ.DnoUX_dchVZkgiprnWvBeElxmn_k183nU8H5W1E0IiE'
+      video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/ESTILO%202.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9FU1RJTE8gMi5tcDQiLCJpYXQiOjE3NTYwMDA0MzksImV4cCI6MTkxMzY4MDQzOX0.36mopUOs_sN7xCOjZYyAtl1aZvPeG2-ZqHMZosKnJqg'
     },
     {
       id: 'style-3',
       name: 'Estilo Educativo 1',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%201%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAxIE1PREVMTy5tcDQiLCJpYXQiOjE3NTA5MTEwMDUsImV4cCI6MTc4MjQ0NzAwNX0.MaSLRN9cAZKjSiJLS2wJfJLVANAZ9c_1JPIEBe-O42A'
+      video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/EDUCATIVO%201%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9FRFVDQVRJVk8gMSBNT0RFTE8ubXA0IiwiaWF0IjoxNzU2MDAwNjE5LCJleHAiOjE5MTM2ODA2MTl9.OdWDM7cVu2dxJGfXHdM9SFHQDuLtk0hQ79GQzJ66o6w'
     },
     {
       id: 'style-4',
       name: 'Estilo Educativo 2',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAyIE1PREVMTy5tcDQiLCJpYXQiOjE3NTA5MjE0NDMsImV4cCI6MTc4MjQ1NzQ0M30.KM76FvzzPnRficUwxk4tf1oKaV65RmlRPa-9BkG_2JY'
+      video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9FRFVDQVRJVk8gMiBNT0RFTE8ubXA0IiwiaWF0IjoxNzU2MDAwNzIzLCJleHAiOjE5MTM2ODA3MjN9.cUZAyWSOKKRLUO7s3aCk9IclZZo6BxJeLGq5Of99OpU'
     },
     {
       id: 'style-5',
       name: 'Estilo Manual',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%205.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyA1Lm1wNCIsImlhdCI6MTc1MjU0MjMzMiwiZXhwIjoxNzg0MDc4MzMyfQ.l-ciTjUPjYMwPEn1qyplkMgmaHzB1rcf45_AB1xgsms'
+      video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/Estilo%205.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9Fc3RpbG8gNS5tcDQiLCJpYXQiOjE3NTYwMDA4MTUsImV4cCI6MTkxMzY4MDgxNX0.IdOcweWE5MV-FEEAidTQyIoMPYsGBRZ9JEYyz96flb8'
     },
     {
       id: 'style-6',
       name: 'Estilo Manual 2',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/ESTILO%206.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VTVElMTyA2Lm1wNCIsImlhdCI6MTc1MjU1NTQ4MywiZXhwIjoxNzg0MDkxNDgzfQ.-wuuV1jVNbFCYi4-4c9wNZ_oJtZrRhbUwIWJFQKuhE4'
+      video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/ESTILO%206.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9FU1RJTE8gNi5tcDQiLCJpYXQiOjE3NTYwMDA4NjEsImV4cCI6MTkxMzY4MDg2MX0.r9vGsfAg2MTfBqyvtTALI-91DNDtgBRL1URrZbEyswk'
     },
     {
       id: 'style-7',
       name: 'Estilo Multi-Avatar',
-      video_url: 'https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/EDUCATIVO%201%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL0VEVUNBVElWTyAxIE1PREVMTy5tcDQiLCJpYXQiOjE3NTA5MTEwMDUsImV4cCI6MTc4MjQ0NzAwNX0.MaSLRN9cAZKjSiJLS2wJfJLVANAZ9c_1JPIEBe-O42A'
+      video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/Multi-Avatar%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9NdWx0aS1BdmF0YXIgMS5tcDQiLCJpYXQiOjE3NTYwMDA5MDgsImV4cCI6MTkxMzY4MDkwOH0.O5fP9E924kBta0bjyjWFJWCunzbOaUi9MLgG0Des_0I'
     }
   ];
 
