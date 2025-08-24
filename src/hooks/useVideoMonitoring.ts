@@ -143,16 +143,16 @@ export const useVideoMonitoring = () => {
       }
 
       console.log('📦 [MONITORING] Datos de tracking obtenidos:', {
-        requestId: trackingData.request_id,
+        requestId: (trackingData as any).request_id,
         userId: trackingData.user_id,
-        scriptLength: trackingData.script.length
+        scriptLength: (trackingData as any).script?.length || 0
       });
 
       // Enviar a webhook de verificación manual y procesar respuesta
       const result = await sendVideoVerificationWebhook(
-        trackingData.request_id,
+        (trackingData as any).request_id,
         trackingData.user_id,
-        trackingData.script
+        (trackingData as any).script || ''
       );
 
       if (result.success) {

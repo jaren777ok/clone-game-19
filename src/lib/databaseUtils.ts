@@ -20,7 +20,7 @@ export const checkVideoDirectly = async (user: User | null, requestId: string, s
     // Buscar video directamente en la BD con los mismos filtros que usa la webhook
     const { data: videoData, error } = await supabase
       .from('generated_videos')
-      .select('video_url, request_id, title, created_at, script')
+      .select('video_url, request_id, title, created_at')
       .eq('user_id', user.id)
       .eq('request_id', requestId)
       .order('created_at', { ascending: false })
@@ -36,7 +36,7 @@ export const checkVideoDirectly = async (user: User | null, requestId: string, s
       console.log('✅ VIDEO ENCONTRADO VIA VERIFICACIÓN DIRECTA:', {
         videoUrl: videoData.video_url,
         title: videoData.title,
-        requestId: videoData.request_id,
+        requestId: (videoData as any).request_id,
         createdAt: videoData.created_at,
         timestamp: new Date().toISOString()
       });
@@ -47,7 +47,7 @@ export const checkVideoDirectly = async (user: User | null, requestId: string, s
       return {
         video_url: videoData.video_url,
         title: videoData.title || 'Video generado',
-        request_id: videoData.request_id,
+        request_id: (videoData as any).request_id,
         created_at: videoData.created_at
       };
     }
@@ -75,14 +75,13 @@ const updateTrackingToCompleted = async (user: User, requestId: string) => {
       timestamp: new Date().toISOString()
     });
     
-    const { error } = await supabase
-      .from('video_generation_tracking')
-      .update({ 
-        status: 'completed',
-        last_check_time: new Date().toISOString()
-      })
-      .eq('user_id', user.id)
-      .eq('request_id', requestId);
+        const { error } = await supabase
+          .from('video_generation_tracking')
+          .update({ 
+            status: 'completed'
+          })
+          .eq('user_id', user.id)
+          .eq('request_id', requestId);
 
     if (error) {
       console.error('❌ Error actualizando tracking:', error);
@@ -133,9 +132,9 @@ export const recoverLostVideo = async (user: User | null, requestId: string, scr
 
     if (!expiredError && expiredTracking && expiredTracking.length > 0) {
       for (const tracking of expiredTracking) {
-        console.log('🔍 Verificando tracking expired:', tracking.request_id);
+        console.log('🔍 Verificando tracking expired:', (tracking as any).request_id);
         
-        const expiredVideo = await checkVideoDirectly(user, tracking.request_id, script);
+        const expiredVideo = await checkVideoDirectly(user, (tracking as any).request_id, script);
 
         if (expiredVideo) {
           console.log('🎉 ENCONTRADO VIDEO CON TRACKING EXPIRED (Legacy):', expiredVideo);
@@ -179,13 +178,13 @@ export const checkFinalVideoResult = async (user: User | null, script: string) =
 
   if (!trackingError && recentTracking) {
     console.log('🔍 Usando datos del tracking más reciente para verificación directa:', {
-      requestId: recentTracking.request_id,
-      status: recentTracking.status,
+      requestId: (recentTracking as any).request_id,
+      status: (recentTracking as any).status,
       timestamp: new Date().toISOString()
     });
     
     // Intentar verificar usando verificación directa
-    const videoResult = await checkVideoDirectly(user, recentTracking.request_id, script);
+    const videoResult = await checkVideoDirectly(user, (recentTracking as any).request_id, script);
     if (videoResult) {
       return { video_url: videoResult.video_url, title: videoResult.title };
     }

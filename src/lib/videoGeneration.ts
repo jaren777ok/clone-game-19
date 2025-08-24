@@ -72,7 +72,7 @@ export const saveVideoToDatabase = async (script: string, videoUrl: string, user
       .from('generated_videos')
       .insert({
         user_id: user.id,
-        script: script.trim(),
+        title: script.substring(0, 50) + '...',
         video_url: videoUrl,
         request_id: requestId || null
       });

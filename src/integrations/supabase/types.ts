@@ -351,6 +351,7 @@ export type Database = {
           duration: number | null
           heygen_video_id: string | null
           id: string
+          request_id: string | null
           status: string
           thumbnail_url: string | null
           title: string
@@ -364,6 +365,7 @@ export type Database = {
           duration?: number | null
           heygen_video_id?: string | null
           id?: string
+          request_id?: string | null
           status?: string
           thumbnail_url?: string | null
           title: string
@@ -377,6 +379,7 @@ export type Database = {
           duration?: number | null
           heygen_video_id?: string | null
           id?: string
+          request_id?: string | null
           status?: string
           thumbnail_url?: string | null
           title?: string
@@ -1114,28 +1117,46 @@ export type Database = {
       }
       user_video_configs: {
         Row: {
+          avatar_data: Json | null
           config_data: Json
           created_at: string
+          current_step: string | null
           id: string
+          manual_customization: Json | null
           session_id: string | null
+          style_data: Json | null
+          subtitle_customization: Json | null
           updated_at: string
           user_id: string
+          voice_data: Json | null
         }
         Insert: {
+          avatar_data?: Json | null
           config_data?: Json
           created_at?: string
+          current_step?: string | null
           id?: string
+          manual_customization?: Json | null
           session_id?: string | null
+          style_data?: Json | null
+          subtitle_customization?: Json | null
           updated_at?: string
           user_id: string
+          voice_data?: Json | null
         }
         Update: {
+          avatar_data?: Json | null
           config_data?: Json
           created_at?: string
+          current_step?: string | null
           id?: string
+          manual_customization?: Json | null
           session_id?: string | null
+          style_data?: Json | null
+          subtitle_customization?: Json | null
           updated_at?: string
           user_id?: string
+          voice_data?: Json | null
         }
         Relationships: []
       }
@@ -1146,6 +1167,8 @@ export type Database = {
           heygen_video_id: string | null
           id: string
           progress: number | null
+          request_id: string | null
+          script: string | null
           status: string
           updated_at: string
           user_id: string
@@ -1158,6 +1181,8 @@ export type Database = {
           heygen_video_id?: string | null
           id?: string
           progress?: number | null
+          request_id?: string | null
+          script?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -1170,6 +1195,8 @@ export type Database = {
           heygen_video_id?: string | null
           id?: string
           progress?: number | null
+          request_id?: string | null
+          script?: string | null
           status?: string
           updated_at?: string
           user_id?: string
