@@ -216,6 +216,69 @@ export type Database = {
         }
         Relationships: []
       }
+      blotato_accounts: {
+        Row: {
+          api_key_encrypted: string
+          created_at: string
+          facebook_account_id: string | null
+          facebook_page_id: string | null
+          id: string
+          instagram_account_id: string | null
+          tiktok_account_id: string | null
+          updated_at: string
+          user_id: string
+          youtube_account_id: string | null
+        }
+        Insert: {
+          api_key_encrypted: string
+          created_at?: string
+          facebook_account_id?: string | null
+          facebook_page_id?: string | null
+          id?: string
+          instagram_account_id?: string | null
+          tiktok_account_id?: string | null
+          updated_at?: string
+          user_id: string
+          youtube_account_id?: string | null
+        }
+        Update: {
+          api_key_encrypted?: string
+          created_at?: string
+          facebook_account_id?: string | null
+          facebook_page_id?: string | null
+          id?: string
+          instagram_account_id?: string | null
+          tiktok_account_id?: string | null
+          updated_at?: string
+          user_id?: string
+          youtube_account_id?: string | null
+        }
+        Relationships: []
+      }
+      chats: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contactos_gohighlevel: {
         Row: {
           conversacion_id: string
@@ -281,6 +344,48 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_videos: {
+        Row: {
+          config_data: Json | null
+          created_at: string
+          duration: number | null
+          heygen_video_id: string | null
+          id: string
+          status: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          config_data?: Json | null
+          created_at?: string
+          duration?: number | null
+          heygen_video_id?: string | null
+          id?: string
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          config_data?: Json | null
+          created_at?: string
+          duration?: number | null
+          heygen_video_id?: string | null
+          id?: string
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       gohighlevel_config: {
         Row: {
           account_id: string
@@ -301,6 +406,33 @@ export type Database = {
         Update: {
           account_id?: string
           api_key?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      heygen_api_keys: {
+        Row: {
+          api_key_encrypted: string
+          api_key_name: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_encrypted: string
+          api_key_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_encrypted?: string
+          api_key_name?: string
           created_at?: string
           id?: string
           updated_at?: string
@@ -337,6 +469,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string
+          id: string
+          images: string[] | null
+          role: string
+          timestamp: string
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          role: string
+          timestamp?: string
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          role?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meta_ads_adsets: {
         Row: {
@@ -941,6 +1111,80 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_video_configs: {
+        Row: {
+          config_data: Json
+          created_at: string
+          id: string
+          session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config_data?: Json
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config_data?: Json
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      video_generation_tracking: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          heygen_video_id: string | null
+          id: string
+          progress: number | null
+          status: string
+          updated_at: string
+          user_id: string
+          video_id: string | null
+          webhook_data: Json | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          heygen_video_id?: string | null
+          id?: string
+          progress?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          video_id?: string | null
+          webhook_data?: Json | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          heygen_video_id?: string | null
+          id?: string
+          progress?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          video_id?: string | null
+          webhook_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_generation_tracking_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "generated_videos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
