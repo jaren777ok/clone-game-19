@@ -50,7 +50,7 @@ const SavedVideos = () => {
       setVideos((data || []).map(video => ({
         id: video.id,
         title: video.title,
-        script: video.title || '',
+        script: video.script || video.title || '',
         video_url: video.video_url || '',
         created_at: video.created_at
       } as SavedVideo)));

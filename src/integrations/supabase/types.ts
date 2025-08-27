@@ -352,6 +352,7 @@ export type Database = {
           heygen_video_id: string | null
           id: string
           request_id: string | null
+          script: string | null
           status: string
           thumbnail_url: string | null
           title: string
@@ -366,6 +367,7 @@ export type Database = {
           heygen_video_id?: string | null
           id?: string
           request_id?: string | null
+          script?: string | null
           status?: string
           thumbnail_url?: string | null
           title: string
@@ -380,6 +382,7 @@ export type Database = {
           heygen_video_id?: string | null
           id?: string
           request_id?: string | null
+          script?: string | null
           status?: string
           thumbnail_url?: string | null
           title?: string
