@@ -26,7 +26,7 @@ export const generateScript = async (instructions: string, userId?: string): Pro
       console.log('SessionID agregado al payload:', sessionId);
     }
     
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/guion_base', {
+    const response = await fetch('https://cris.cloude.es/webhook/guion_base', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'

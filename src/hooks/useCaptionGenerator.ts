@@ -23,7 +23,7 @@ export const useCaptionGenerator = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5 minutos timeout
 
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/caption', {
+      const response = await fetch('https://cris.cloude.es/webhook/caption', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

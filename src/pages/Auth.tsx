@@ -123,6 +123,18 @@ const Auth = () => {
             >
               {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </Button>
+            
+            {/* Enlace de recuperación de contraseña */}
+            <div className="text-center">
+              <a 
+                href="https://inmuebla-ia-login.lovable.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors underline"
+              >
+                ¿Olvidaste tu Contraseña?
+              </a>
+            </div>
           </CardContent>
         </Card>
       </div>

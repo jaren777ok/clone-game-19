@@ -42,7 +42,7 @@ export const sendToWebhook = async (payload: WebhookPayload): Promise<boolean> =
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/veroia', {
+    const response = await fetch('https://cris.cloude.es/webhook/veroia', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -82,7 +82,7 @@ export const sendToEstiloNoticiaWebhook = async (payload: EstiloNoticiaPayload):
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/Estilo1', {
+    const response = await fetch('https://cris.cloude.es/webhook/Estilo1', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -121,7 +121,7 @@ export const sendToEstiloEducativoWebhook = async (payload: WebhookPayload): Pro
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/ESTILO_EDUCATIVO1', {
+    const response = await fetch('https://cris.cloude.es/webhook/ESTILO_EDUCATIVO1', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -160,7 +160,7 @@ export const sendToEducativo2Webhook = async (payload: WebhookPayload): Promise<
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/EDUCATIVO_2', {
+    const response = await fetch('https://cris.cloude.es/webhook/EDUCATIVO_2', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -336,7 +336,7 @@ export const sendToConvertFilesWebhook = async (
   console.log('🖼️ Images:', images.length);
   console.log('🎥 Videos:', videos.length);
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/DRIVE';
+  const webhookUrl = 'https://cris.cloude.es/webhook/DRIVE';
   
   // Create FormData for the webhook
   const formData = new FormData();
@@ -418,7 +418,7 @@ export const sendDirectToManualWebhook = async (
     payloadKeys: Object.keys(payload)
   });
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL';
+  const webhookUrl = 'https://cris.cloude.es/webhook/MANUAL';
   
   // Create FormData for the webhook
   const formData = new FormData();
@@ -518,7 +518,7 @@ export const sendDirectToManualWebhookWithUrls = async (
     payloadKeys: Object.keys(payload)
   });
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL';
+  const webhookUrl = 'https://cris.cloude.es/webhook/MANUAL';
   
   // Create FormData for the webhook
   const formData = new FormData();
@@ -621,7 +621,7 @@ export const sendToManualWebhook2 = async (
   console.log('🖼️ Images loaded:', imageFiles.length);
   console.log('🎥 Videos loaded:', videoFiles.length);
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
+  const webhookUrl = 'https://cris.cloude.es/webhook/MANUAL2';
   
   // Create FormData for the webhook
   const formData = new FormData();
@@ -718,7 +718,7 @@ export const sendDirectToManualWebhook2 = async (
     payloadKeys: Object.keys(payload)
   });
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
+  const webhookUrl = 'https://cris.cloude.es/webhook/MANUAL2';
   
   // Create FormData for the webhook
   const formData = new FormData();
@@ -818,7 +818,7 @@ export const sendDirectToManualWebhook2WithUrls = async (
     payloadKeys: Object.keys(payload)
   });
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/MANUAL2';
+  const webhookUrl = 'https://cris.cloude.es/webhook/MANUAL2';
   
   // Prepare the full payload with URLs and subtitleCustomization
   const fullPayload = {
@@ -878,7 +878,7 @@ export const sendToMultiAvatarWebhook = async (payload: WebhookPayload): Promise
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/MultiAvatar', {
+    const response = await fetch('https://cris.cloude.es/webhook/MultiAvatar', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
@@ -917,7 +917,7 @@ export const sendVideoVerificationWebhook = async (
   console.log('🔍 Enviando verificación manual de video...');
   console.log('📦 Datos:', { requestId, userId, scriptLength: script.length });
 
-  const webhookUrl = 'https://primary-production-f0d1.up.railway.app/webhook/videogenerado';
+  const webhookUrl = 'https://cris.cloude.es/webhook/videogenerado';
   
   const payload = {
     requestId,

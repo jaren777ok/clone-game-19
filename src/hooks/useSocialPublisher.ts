@@ -69,7 +69,7 @@ export const useSocialPublisher = () => {
         controller.abort();
       }, 5 * 60 * 1000); // 5 minutos
 
-      const response = await fetch('https://primary-production-f0d1.up.railway.app/webhook/REDES', {
+      const response = await fetch('https://cris.cloude.es/webhook/REDES', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
