@@ -1,4 +1,4 @@
-import { Smartphone, LogOut, User } from "lucide-react";
+import { Smartphone, LogOut, User, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,19 @@ const Dashboard = () => {
 
       {/* Dark overlay for better readability */}
       <div className="absolute inset-0 bg-black/30"></div>
+
+      {/* Saved Videos Button - Top Left Corner */}
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/videos-guardados")}
+          className="cyber-border hover:cyber-glow bg-background/80 backdrop-blur-sm px-2 sm:px-4"
+        >
+          <Bookmark className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Videos Guardados</span>
+        </Button>
+      </div>
 
       {/* Header with user info, theme toggle and logout */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 sm:space-x-4">
