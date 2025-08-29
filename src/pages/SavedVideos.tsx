@@ -157,6 +157,10 @@ const SavedVideos = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 cyber-border focus:cyber-glow"
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                spellCheck="false"
               />
             </div>
             <div className="flex items-center text-muted-foreground">
