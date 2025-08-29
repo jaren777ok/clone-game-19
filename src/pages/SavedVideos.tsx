@@ -1,13 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Bookmark, Search, Loader2, Video, Sparkles } from 'lucide-react';
+import { ArrowLeft, Bookmark, Calendar, Loader2, Video, Sparkles, Filter, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import VideoCard from '@/components/video/VideoCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format, subDays, subMonths, isAfter, isBefore, parseISO } from 'date-fns';
 
 interface SavedVideo {
   id: string;
@@ -17,10 +20,18 @@ interface SavedVideo {
   created_at: string;
 }
 
+type DateFilterType = 'all' | 'week' | 'month' | 'three-months' | 'custom';
+
+interface DateRange {
+  from: Date | undefined;
+  to?: Date | undefined;
+}
+
 const SavedVideos = () => {
   const [videos, setVideos] = useState<SavedVideo[]>([]);
   const [filteredVideos, setFilteredVideos] = useState<SavedVideo[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
+  const [customDateRange, setCustomDateRange] = useState<DateRange>({ from: undefined, to: undefined });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -31,8 +42,8 @@ const SavedVideos = () => {
   }, [user]);
 
   useEffect(() => {
-    filterVideos();
-  }, [videos, searchTerm]);
+    filterVideosByDate();
+  }, [videos, dateFilter, customDateRange]);
 
   const fetchVideos = async () => {
     if (!user) return;
@@ -66,17 +77,46 @@ const SavedVideos = () => {
     }
   };
 
-  const filterVideos = () => {
-    if (!searchTerm.trim()) {
+  const filterVideosByDate = () => {
+    if (dateFilter === 'all') {
       setFilteredVideos(videos);
       return;
     }
 
-    const searchLower = searchTerm.toLowerCase();
+    const now = new Date();
+    let startDate: Date;
+
+    switch (dateFilter) {
+      case 'week':
+        startDate = subDays(now, 7);
+        break;
+      case 'month':
+        startDate = subMonths(now, 1);
+        break;
+      case 'three-months':
+        startDate = subMonths(now, 3);
+        break;
+      case 'custom':
+        if (!customDateRange.from) {
+          setFilteredVideos(videos);
+          return;
+        }
+        const filtered = videos.filter(video => {
+          const videoDate = parseISO(video.created_at);
+          const afterStart = customDateRange.from ? isAfter(videoDate, customDateRange.from) || videoDate.toDateString() === customDateRange.from.toDateString() : true;
+          const beforeEnd = customDateRange.to ? isBefore(videoDate, customDateRange.to) || videoDate.toDateString() === customDateRange.to.toDateString() : true;
+          return afterStart && beforeEnd;
+        });
+        setFilteredVideos(filtered);
+        return;
+      default:
+        setFilteredVideos(videos);
+        return;
+    }
+
     const filtered = videos.filter(video => {
-      const titleMatch = video.title?.toLowerCase().includes(searchLower);
-      const scriptMatch = video.script.toLowerCase().includes(searchLower);
-      return titleMatch || scriptMatch;
+      const videoDate = parseISO(video.created_at);
+      return isAfter(videoDate, startDate) || videoDate.toDateString() === startDate.toDateString();
     });
     setFilteredVideos(filtered);
   };
@@ -85,11 +125,29 @@ const SavedVideos = () => {
     setVideos(prevVideos => prevVideos.filter(video => video.id !== videoId));
   };
 
-  const getSearchResultsText = () => {
-    if (!searchTerm.trim()) {
+  const getDateFilterText = () => {
+    if (dateFilter === 'all') {
       return `${videos.length} videos guardados`;
     }
-    return `${filteredVideos.length} de ${videos.length} videos encontrados`;
+    return `${filteredVideos.length} de ${videos.length} videos filtrados`;
+  };
+
+  const getFilterDescription = () => {
+    switch (dateFilter) {
+      case 'week': return 'Últimos 7 días';
+      case 'month': return 'Último mes'; 
+      case 'three-months': return 'Últimos 3 meses';
+      case 'custom': 
+        if (!customDateRange.from) return 'Rango personalizado';
+        if (!customDateRange.to) return `desde ${format(customDateRange.from, 'dd/MM/yyyy')}`;
+        return `${format(customDateRange.from, 'dd/MM/yyyy')} - ${format(customDateRange.to, 'dd/MM/yyyy')}`;
+      default: return 'Todos los videos';
+    }
+  };
+
+  const resetDateFilter = () => {
+    setDateFilter('all');
+    setCustomDateRange({ from: undefined, to: undefined });
   };
 
   if (isLoading) {
@@ -147,40 +205,81 @@ const SavedVideos = () => {
           </p>
         </div>
 
-        {/* Search and Stats */}
+        {/* Date Filter and Stats */}
         <div className="max-w-4xl mx-auto mb-8">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Buscar por título o guion..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 cyber-border focus:cyber-glow"
-                autoComplete="off"
-                data-form-type="other"
-                data-lpignore="true"
-                spellCheck="false"
-              />
+            <div className="flex items-center gap-3">
+              <Select value={dateFilter} onValueChange={(value: DateFilterType) => setDateFilter(value)}>
+                <SelectTrigger className="w-48 cyber-border focus:cyber-glow">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filtrar por fecha" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border">
+                  <SelectItem value="all">Todos los videos</SelectItem>
+                  <SelectItem value="week">Últimos 7 días</SelectItem>
+                  <SelectItem value="month">Último mes</SelectItem>
+                  <SelectItem value="three-months">Últimos 3 meses</SelectItem>
+                  <SelectItem value="custom">Rango personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {dateFilter === 'custom' && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="cyber-border hover:cyber-glow">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      {customDateRange.from ? (
+                        customDateRange.to ? (
+                          `${format(customDateRange.from, 'dd/MM')} - ${format(customDateRange.to, 'dd/MM')}`
+                        ) : (
+                          format(customDateRange.from, 'dd/MM/yyyy')
+                        )
+                      ) : (
+                        'Seleccionar fechas'
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover border border-border" align="start">
+                    <CalendarComponent
+                      initialFocus
+                      mode="range"
+                      defaultMonth={customDateRange.from}
+                      selected={customDateRange}
+                      onSelect={(range) => setCustomDateRange(range || { from: undefined, to: undefined })}
+                      numberOfMonths={2}
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+
+              {dateFilter !== 'all' && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetDateFilter}
+                  className="h-8 px-2 hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
+            
             <div className="flex items-center text-muted-foreground">
               <Video className="w-4 h-4 mr-2" />
               <span className="text-sm">
-                {getSearchResultsText()}
+                {getDateFilterText()}
               </span>
             </div>
           </div>
 
-          {/* Search info */}
-          {searchTerm.trim() && (
+          {/* Filter info */}
+          {dateFilter !== 'all' && (
             <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-6">
               <div className="flex items-center text-sm">
-                <Search className="w-4 h-4 mr-2 text-primary" />
+                <Filter className="w-4 h-4 mr-2 text-primary" />
                 <span className="text-foreground">
-                  Buscando: <strong>"{searchTerm}"</strong>
-                </span>
-                <span className="text-muted-foreground ml-2">
-                  (en títulos y guiones)
+                  Filtro activo: <strong>{getFilterDescription()}</strong>
                 </span>
               </div>
             </div>
@@ -215,14 +314,14 @@ const SavedVideos = () => {
                     No se encontraron videos
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    No hay videos que coincidan con tu búsqueda: <strong>"{searchTerm}"</strong>
+                    No hay videos en el período seleccionado: <strong>{getFilterDescription()}</strong>
                   </p>
                   <Button
                     variant="outline"
-                    onClick={() => setSearchTerm('')}
+                    onClick={resetDateFilter}
                     className="cyber-border hover:cyber-glow"
                   >
-                    Limpiar búsqueda
+                    Ver todos los videos
                   </Button>
                 </>
               )}
@@ -261,7 +360,7 @@ const SavedVideos = () => {
                 </div>
                 <div className="flex items-start">
                   <span className="text-primary mr-2">•</span>
-                  Usa la búsqueda para encontrar videos por título o contenido
+                  Usa los filtros de fecha para encontrar videos por período de creación
                 </div>
                 <div className="flex items-start">
                   <span className="text-primary mr-2">•</span>
