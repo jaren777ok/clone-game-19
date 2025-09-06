@@ -56,11 +56,6 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
 
   const handleUseThisScript = () => {
     if (generatedScript) {
-      console.log('📝 DEBUG NeuroCopy - Usando script generado:', {
-        scriptLength: generatedScript.length,
-        scriptPreview: generatedScript.substring(0, 100) + '...',
-        sessionId
-      });
       onUseScript(generatedScript);
     }
   };
@@ -98,7 +93,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
               Describe lo que necesitas para tu video e ingresa enlaces de referencia si los tienes
             </p>
             <p className="text-xs text-muted-foreground/80">
-              💡 Potencia tu copywriting: Incluye enlaces de Instagram, TikTok o Noticias para análisis avanzado de tendencias y engagement
+              💡 Potencia tu copywriting: Usa videos de la competencia y hazlo aún más viral!
             </p>
             {sessionId && (
               <p className="text-xs text-muted-foreground/60 mt-2">
@@ -118,7 +113,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
                     id="instructions"
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
-                    placeholder="Describe el tipo de video que quieres crear, incluye enlaces de referencia, tema principal, tono deseado, duración aproximada, etc..."
+                    placeholder="Describe tu idea de contenido e Incluye enlaces de videos de Instagram, TikTok o Noticias para hacer tu guion"
                     className="w-full h-32 p-4 border rounded-lg bg-background/50 backdrop-blur-sm cyber-border focus:cyber-glow resize-none"
                     disabled={isGenerating}
                   />
