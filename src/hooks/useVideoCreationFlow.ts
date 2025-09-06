@@ -84,7 +84,7 @@ export const useVideoCreationFlow = () => {
     setFlowState(prev => ({
       ...prev,
       selectedApiKey: apiKey,
-      step: 'avatar',
+      step: 'neurocopy',
       selectedAvatar: null,
       selectedSecondAvatar: null,
       selectedVoice: null,
@@ -119,27 +119,31 @@ export const useVideoCreationFlow = () => {
 
   const selectVoice = useCallback((voice: Voice) => {
     console.log('🎤 Seleccionando Voz:', voice.voice_name);
-    setFlowState(prev => ({
-      ...prev,
-      selectedVoice: voice,
-      step: 'style'
-    }));
+    
+    setFlowState(prev => {
+      let nextStep: FlowState['step'];
+      
+      if (prev.selectedStyle?.id === 'style-7') {
+        // Estilo Multi-Avatar - ir a selección del segundo avatar
+        console.log('🔄 Multi-Avatar detectado: navegando a multi-avatar');
+        nextStep = 'multi-avatar';
+      } else {
+        // Todos los demás estilos van a personalización de subtítulos
+        console.log('📝 Navegando a personalización de subtítulos');
+        nextStep = 'subtitle-customization';
+      }
+      
+      return {
+        ...prev,
+        selectedVoice: voice,
+        step: nextStep
+      };
+    });
   }, []);
 
   const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
-    
-    let nextStep: FlowState['step'];
-    
-    if (style.id === 'style-7') {
-      // Estilo Multi-Avatar - ir a selección del segundo avatar
-      console.log('🔄 Multi-Avatar detectado: navegando a multi-avatar');
-      nextStep = 'multi-avatar';
-    } else {
-      // TODOS los demás estilos (incluyendo manuales) van a personalización de subtítulos
-      console.log('📝 Navegando a personalización de subtítulos para estilo:', style.name);
-      nextStep = 'subtitle-customization';
-    }
+    console.log('📝 Navegando a selección de avatar para estilo:', style.name);
     
     setFlowState(prev => ({
       ...prev,
@@ -148,7 +152,7 @@ export const useVideoCreationFlow = () => {
       presenterCustomization: presenterCustomization || null,
       apiVersionCustomization: apiVersionCustomization || null,
       manualCustomization: manualCustomization || null,
-      step: nextStep
+      step: 'avatar'
     }));
   }, []);
 
@@ -158,7 +162,7 @@ export const useVideoCreationFlow = () => {
     setFlowState(prev => ({
       ...prev,
       subtitleCustomization,
-      step: 'neurocopy'
+      step: 'generator'
     }));
   }, []);
 
@@ -170,13 +174,11 @@ export const useVideoCreationFlow = () => {
   const selectGeneratedScript = useCallback((script: string) => {
     console.log('📝 Seleccionando Script generado, longitud:', script.length);
     
-    setFlowState(prev => {
-      return {
-        ...prev,
-        generatedScript: script,
-        step: 'generator'
-      };
-    });
+    setFlowState(prev => ({
+      ...prev,
+      generatedScript: script,
+      step: 'style'
+    }));
   }, []);
 
   const goToStep = useCallback((step: FlowState['step']) => {

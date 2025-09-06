@@ -33,18 +33,21 @@ const VideoCreationFlow = () => {
 
   const handleBack = () => {
     switch (flowState.step) {
-      case 'avatar':
+      case 'neurocopy':
         goToStep('api-key');
         break;
-      case 'multi-avatar':
-        // Para Multi-Avatar, regresar a style selection
-        console.log('🔄 Multi-Avatar: Regresando a style desde multi-avatar');
+      case 'style':
+        goToStep('neurocopy');
+        break;
+      case 'avatar':
         goToStep('style');
         break;
       case 'voice':
         goToStep('avatar');
         break;
-      case 'style':
+      case 'multi-avatar':
+        // Para Multi-Avatar, regresar a voice selection
+        console.log('🔄 Multi-Avatar: Regresando a voice desde multi-avatar');
         goToStep('voice');
         break;
       case 'subtitle-customization':
@@ -53,21 +56,12 @@ const VideoCreationFlow = () => {
           console.log('🔄 Multi-Avatar: Regresando a multi-avatar desde subtitle-customization');
           goToStep('multi-avatar');
         } else {
-          // Para otros estilos, regresar a style
-          goToStep('style');
-        }
-        break;
-      case 'neurocopy':
-        if (flowState.selectedStyle?.id === 'style-5' || flowState.selectedStyle?.id === 'style-6') {
-          // Estilos manuales van directo desde style
-          goToStep('style');
-        } else {
-          // Otros estilos vienen desde subtitle-customization
-          goToStep('subtitle-customization');
+          // Para otros estilos, regresar a voice
+          goToStep('voice');
         }
         break;
       case 'generator':
-        goToStep('neurocopy');
+        goToStep('subtitle-customization');
         break;
       default:
         navigate('/');
@@ -127,10 +121,10 @@ const VideoCreationFlow = () => {
               Ir al Generador de Videos
             </button>
             <button
-              onClick={() => goToStep('neurocopy')}
+              onClick={() => goToStep('subtitle-customization')}
               className="w-full border border-border text-muted-foreground px-6 py-3 rounded-lg hover:bg-muted transition-colors"
             >
-              Revisar Guión
+              Revisar Configuración
             </button>
           </div>
         </div>
@@ -150,25 +144,39 @@ const VideoCreationFlow = () => {
         />
       );
 
-    case 'avatar':
+    case 'neurocopy':
       if (!flowState.selectedApiKey) {
         goToStep('api-key');
+        return null;
+      }
+      return (
+        <NeuroCopyGenerator
+          onBack={handleBack}
+          onUseScript={selectGeneratedScript}
+        />
+      );
+
+    case 'style':
+      if (!flowState.generatedScript) {
+        goToStep('neurocopy');
+        return null;
+      }
+      return (
+        <StyleSelector
+          onSelectStyle={selectStyle}
+          onBack={handleBack}
+        />
+      );
+
+    case 'avatar':
+      if (!flowState.selectedStyle) {
+        goToStep('style');
         return null;
       }
       return (
         <AvatarSelector
           selectedApiKey={flowState.selectedApiKey}
           onSelectAvatar={selectAvatar}
-          onBack={handleBack}
-        />
-      );
-
-    case 'multi-avatar':
-      return (
-        <SecondAvatarSelector
-          selectedApiKey={flowState.selectedApiKey}
-          selectedFirstAvatar={flowState.selectedAvatar!}
-          onSelectSecondAvatar={selectSecondAvatar}
           onBack={handleBack}
         />
       );
@@ -186,39 +194,25 @@ const VideoCreationFlow = () => {
         />
       );
 
-    case 'style':
-      if (!flowState.selectedVoice) {
-        goToStep('voice');
-        return null;
-      }
+    case 'multi-avatar':
       return (
-        <StyleSelector
-          onSelectStyle={selectStyle}
+        <SecondAvatarSelector
+          selectedApiKey={flowState.selectedApiKey}
+          selectedFirstAvatar={flowState.selectedAvatar!}
+          onSelectSecondAvatar={selectSecondAvatar}
           onBack={handleBack}
         />
       );
 
     case 'subtitle-customization':
-      if (!flowState.selectedStyle) {
-        goToStep('style');
+      if (!flowState.selectedVoice) {
+        goToStep('voice');
         return null;
       }
       return (
         <SubtitleCustomizer
           onSelectCustomization={selectSubtitleCustomization}
           onBack={handleBack}
-        />
-      );
-
-    case 'neurocopy':
-      if (!flowState.selectedStyle) {
-        goToStep('style');
-        return null;
-      }
-      return (
-        <NeuroCopyGenerator
-          onBack={handleBack}
-          onUseScript={selectGeneratedScript}
         />
       );
 

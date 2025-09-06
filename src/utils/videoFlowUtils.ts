@@ -40,165 +40,80 @@ export const determineInitialStep = (
         hasGeneratedScript: !!savedState.generatedScript
       });
 
-      // Manejo especial para style-7 (Multi-Avatar)
-      if (savedState.selectedStyle?.id === 'style-7') {
-        console.log('🎭 Detectado estilo Multi-Avatar (style-7)');
-        
-        // Si tiene primer avatar, voz, estilo pero NO segundo avatar → ir a multi-avatar
-        if (savedState.selectedAvatar && 
-            savedState.selectedVoice && 
-            savedState.selectedStyle && 
-            !savedState.selectedSecondAvatar) {
+      // NEW FLOW ORDER: api-key → neurocopy → style → avatar → voice → multi-avatar → subtitle-customization → generator
+
+      // Check if flow is complete (has script + all required selections)
+      if (savedState.generatedScript && savedState.selectedStyle && savedState.selectedAvatar && savedState.selectedVoice && savedState.subtitleCustomization) {
+        // Special check for multi-avatar style
+        if (savedState.selectedStyle.id === 'style-7' && savedState.selectedSecondAvatar) {
+          console.log('✅ Configuración completa para Multi-Avatar, dirigiendo a generator');
+          return { ...savedState, step: 'generator' };
+        } else if (savedState.selectedStyle.id !== 'style-7') {
+          console.log('✅ Configuración completa para estilo normal, dirigiendo a generator');
+          return { ...savedState, step: 'generator' };
+        }
+      }
+
+      // Check subtitle customization step
+      if (savedState.generatedScript && savedState.selectedStyle && savedState.selectedAvatar && savedState.selectedVoice) {
+        // For style-7, need second avatar before subtitle customization
+        if (savedState.selectedStyle.id === 'style-7' && !savedState.selectedSecondAvatar) {
           console.log('➡️ Multi-Avatar: Falta segundo avatar, dirigiendo a multi-avatar');
-          return {
-            ...savedState,
-            step: 'multi-avatar',
-            generatedScript: null
-          };
+          return { ...savedState, step: 'multi-avatar', subtitleCustomization: null };
         }
-        
-        // Si tiene ambos avatares pero no personalización de subtítulos
-        if (savedState.selectedAvatar && 
-            savedState.selectedSecondAvatar && 
-            savedState.selectedVoice && 
-            savedState.selectedStyle && 
-            !savedState.subtitleCustomization) {
-          console.log('➡️ Multi-Avatar: Ambos avatares presentes, dirigiendo a subtitle-customization');
-          return {
-            ...savedState,
-            step: 'subtitle-customization',
-            generatedScript: null
-          };
-        }
-        
-        // Si tiene todo incluyendo personalización de subtítulos pero no script
-        if (savedState.selectedAvatar && 
-            savedState.selectedSecondAvatar && 
-            savedState.selectedVoice && 
-            savedState.selectedStyle && 
-            savedState.subtitleCustomization && 
-            !savedState.generatedScript) {
-          console.log('➡️ Multi-Avatar: Todo configurado, dirigiendo a neurocopy');
-          return {
-            ...savedState,
-            step: 'neurocopy',
-            generatedScript: null
-          };
-        }
-        
-        // Si tiene todo incluyendo script generado → ir a generator
-        if (savedState.selectedAvatar && 
-            savedState.selectedSecondAvatar && 
-            savedState.selectedVoice && 
-            savedState.selectedStyle && 
-            savedState.subtitleCustomization && 
-            savedState.generatedScript) {
-          console.log('➡️ Multi-Avatar: Configuración completa, dirigiendo a generator');
-          return {
-            ...savedState,
-            step: 'generator'
-          };
+        // For style-7 with second avatar, or other styles, go to subtitle customization
+        if (!savedState.subtitleCustomization) {
+          console.log('➡️ Dirigiendo a subtitle-customization');
+          return { ...savedState, step: 'subtitle-customization', subtitleCustomization: null };
         }
       }
-      
-      // For manual styles (style-5 and style-6), check if manual customization is complete
-      if ((savedState.selectedStyle?.id === 'style-5' || savedState.selectedStyle?.id === 'style-6') && savedState.manualCustomization && savedState.apiVersionCustomization) {
-        console.log('📦 Found saved manual customization, checking local files...');
-        
-        // Files are now loaded directly from Supabase as base64
-        if (savedState.manualCustomization.images.length > 0 && savedState.manualCustomization.videos.length > 0) {
-          console.log('✅ Archivos cargados desde Supabase:', {
-            images: savedState.manualCustomization.images.length,
-            videos: savedState.manualCustomization.videos.length,
-            sessionId: savedState.manualCustomization.sessionId
-          });
-          
-          // If has all selections including generated script, go to generator
-          if (savedState.generatedScript) {
-            return {
-              ...savedState,
-              step: 'generator'
-            };
-          }
-          // If has all selections but no script, go to neurocopy
-          return {
-            ...savedState,
-            step: 'neurocopy',
-            generatedScript: null
-          };
-        } else {
-          console.log('❌ No se encontraron archivos válidos, regresando a neurocopy');
-          return {
-            ...savedState,
-            step: 'neurocopy'
-          };
-        }
+
+      // Check voice selection step
+      if (savedState.generatedScript && savedState.selectedStyle && savedState.selectedAvatar && !savedState.selectedVoice) {
+        console.log('➡️ Dirigiendo a voice');
+        return { ...savedState, step: 'voice', selectedVoice: null, selectedSecondAvatar: null, subtitleCustomization: null };
       }
-      
-      // For non-manual styles (excluding style-7 which is handled above)
-      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice && savedState.selectedStyle && savedState.selectedStyle.id !== 'style-7') {
-        // If has all selections including generated script, go to generator
-        if (savedState.generatedScript) {
-          return {
-            ...savedState,
-            step: 'generator'
-          };
-        }
-        
-        // All styles now require subtitle customization
-        if (savedState.subtitleCustomization) {
-          // Has subtitle customization, go to neurocopy
-          return {
-            ...savedState,
-            step: 'neurocopy',
-            generatedScript: null
-          };
-        } else {
-          // Needs subtitle customization
-          return {
-            ...savedState,
-            step: 'subtitle-customization',
-            generatedScript: null
-          };
-        }
+
+      // Check avatar selection step
+      if (savedState.generatedScript && savedState.selectedStyle && !savedState.selectedAvatar) {
+        console.log('➡️ Dirigiendo a avatar');
+        return { ...savedState, step: 'avatar', selectedAvatar: null, selectedSecondAvatar: null, selectedVoice: null, subtitleCustomization: null };
       }
-      // If has key, avatar, and voice, go to style
-      if (savedState.selectedApiKey && savedState.selectedAvatar && savedState.selectedVoice) {
-        return {
-          ...savedState,
-          step: 'style',
-          selectedStyle: null,
-          generatedScript: null,
+
+      // Check style selection step
+      if (savedState.generatedScript && !savedState.selectedStyle) {
+        console.log('➡️ Dirigiendo a style');
+        return { 
+          ...savedState, 
+          step: 'style', 
+          selectedStyle: null, 
+          selectedAvatar: null, 
+          selectedSecondAvatar: null, 
+          selectedVoice: null, 
           subtitleCustomization: null,
           cardCustomization: null,
-          presenterCustomization: null
+          presenterCustomization: null,
+          apiVersionCustomization: null,
+          manualCustomization: null
         };
       }
-      // If has key and avatar, go to voice
-      if (savedState.selectedApiKey && savedState.selectedAvatar) {
-        return {
-          ...savedState,
-          step: 'voice',
-          selectedVoice: null,
-          selectedStyle: null,
-          subtitleCustomization: null,
+
+      // Check neurocopy step - if has API key but no script
+      if (savedState.selectedApiKey && !savedState.generatedScript) {
+        console.log('➡️ Dirigiendo a neurocopy');
+        return { 
+          ...savedState, 
+          step: 'neurocopy',
           generatedScript: null,
-          cardCustomization: null,
-          presenterCustomization: null
-        };
-      }
-      // If only has key, go to avatar
-      if (savedState.selectedApiKey) {
-        return {
-          ...savedState,
-          step: 'avatar',
-          selectedAvatar: null,
-          selectedVoice: null,
-          selectedStyle: null,
+          selectedStyle: null, 
+          selectedAvatar: null, 
+          selectedSecondAvatar: null, 
+          selectedVoice: null, 
           subtitleCustomization: null,
-          generatedScript: null,
           cardCustomization: null,
-          presenterCustomization: null
+          presenterCustomization: null,
+          apiVersionCustomization: null,
+          manualCustomization: null
         };
       }
     }
