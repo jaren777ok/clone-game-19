@@ -110,7 +110,11 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
         textColor: (configData.subtitle_customization as any).textColor
       } : null,
       current_step: configData.current_step,
-      has_manual_customization: !!configData.manual_customization
+      has_manual_customization: !!configData.manual_customization,
+      // 📝 DEBUG: Verificar script
+      has_generated_script: !!configData.generated_script,
+      generated_script_length: configData.generated_script?.length || 0,
+      generated_script_preview: configData.generated_script ? configData.generated_script.substring(0, 100) + '...' : 'No script'
     });
 
     console.log('🔄 Ejecutando upsert en Supabase...', {
@@ -148,6 +152,9 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
       current_step: data?.current_step,
       has_manual_customization: !!data?.manual_customization,
       has_subtitle_customization: !!data?.subtitle_customization,
+      // 📝 DEBUG: Verificar script guardado
+      has_generated_script: !!(data as any)?.generated_script,
+      generated_script_length: (data as any)?.generated_script?.length || 0,
       manual_customization_preview: data?.manual_customization ? {
         sessionId: (data.manual_customization as any)?.sessionId,
         imagesCount: (data.manual_customization as any)?.images?.length,
@@ -213,6 +220,10 @@ export const loadVideoConfig = async (user: User | null): Promise<FlowState | nu
       hasStyle: !!(data as any).style_data,
       hasManualCustomization: !!(data as any).manual_customization,
       hasSubtitleCustomization: !!(data as any).subtitle_customization,
+      // 📝 DEBUG: Verificar script cargado
+      hasGeneratedScript: !!(data as any).generated_script,
+      generatedScriptLength: (data as any).generated_script?.length || 0,
+      generatedScriptPreview: (data as any).generated_script ? (data as any).generated_script.substring(0, 100) + '...' : 'No script',
       subtitleCustomizationRaw: (data as any).subtitle_customization,
       subtitleCustomizationPreview: (data as any).subtitle_customization ? {
         fontFamily: ((data as any).subtitle_customization as any)?.fontFamily,

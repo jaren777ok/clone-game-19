@@ -56,6 +56,11 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
 
   const handleUseThisScript = () => {
     if (generatedScript) {
+      console.log('📝 DEBUG NeuroCopy - Usando script generado:', {
+        scriptLength: generatedScript.length,
+        scriptPreview: generatedScript.substring(0, 100) + '...',
+        sessionId
+      });
       onUseScript(generatedScript);
     }
   };

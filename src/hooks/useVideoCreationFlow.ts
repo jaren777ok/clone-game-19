@@ -171,15 +171,32 @@ export const useVideoCreationFlow = () => {
     console.warn('selectManualCustomization is deprecated in the new flow');
   }, []);
 
-  const selectGeneratedScript = useCallback((script: string) => {
-    console.log('📝 Seleccionando Script generado, longitud:', script.length);
+  const selectGeneratedScript = useCallback(async (script: string) => {
+    console.log('📝 DEBUG selectGeneratedScript - Guardando script:', {
+      scriptLength: script.length,
+      scriptPreview: script.substring(0, 100) + '...',
+      userId: user?.id
+    });
     
-    setFlowState(prev => ({
-      ...prev,
+    const newFlowState = {
+      ...flowState,
       generatedScript: script,
-      step: 'style'
-    }));
-  }, []);
+      step: 'style' as const
+    };
+    
+    setFlowState(newFlowState);
+    
+    // Forzar guardado inmediato del script en la base de datos
+    if (user) {
+      try {
+        console.log('💾 DEBUG - Guardando script inmediatamente en la base de datos');
+        await saveFlowState(user, newFlowState);
+        console.log('✅ DEBUG - Script guardado exitosamente en la base de datos');
+      } catch (error) {
+        console.error('❌ DEBUG - Error guardando script:', error);
+      }
+    }
+  }, [flowState, user, saveFlowState]);
 
   const goToStep = useCallback((step: FlowState['step']) => {
     console.log('🔄 Navegando a paso:', step);

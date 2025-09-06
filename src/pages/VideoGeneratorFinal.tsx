@@ -11,6 +11,7 @@ import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import { useAuth } from '@/hooks/useAuth';
 import { FlowState } from '@/types/videoFlow';
 import { clearFlowState } from '@/utils/videoFlowUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 const VideoGeneratorFinal = () => {
   const navigate = useNavigate();
@@ -69,10 +70,49 @@ const VideoGeneratorFinal = () => {
 
   // Pre-fill script with generated script from flow
   useEffect(() => {
-    if (effectiveFlowState?.generatedScript && !state.script) {
-      handlers.setScript(effectiveFlowState.generatedScript);
+    const script = effectiveFlowState?.generatedScript;
+    
+    console.log('📝 DEBUG VideoGeneratorFinal - Script desde effectiveFlowState:', {
+      hasScript: !!script,
+      scriptLength: script?.length || 0,
+      scriptPreview: script ? script.substring(0, 100) + '...' : 'No script',
+      currentFormScript: state.script?.length || 0
+    });
+    
+    if (script && !state.script) {
+      console.log('✅ DEBUG - Estableciendo script en el formulario');
+      handlers.setScript(script);
+    } else if (!script && !state.script) {
+      console.warn('⚠️ DEBUG - No se encontró script en effectiveFlowState ni en el formulario');
+      // Fallback: Intentar recuperar desde la base de datos
+      const recoverScript = async () => {
+        if (user) {
+          console.log('🔄 DEBUG - Intentando recuperar script desde la base de datos');
+          try {
+            const { data } = await supabase
+              .from('user_video_configs')
+              .select('generated_script')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            if (data?.generated_script) {
+              console.log('✅ DEBUG - Script recuperado desde la base de datos:', {
+                scriptLength: data.generated_script.length,
+                scriptPreview: data.generated_script.substring(0, 100) + '...'
+              });
+              handlers.setScript(data.generated_script);
+            } else {
+              console.warn('⚠️ DEBUG - No se encontró script en la base de datos');
+            }
+          } catch (error) {
+            console.error('❌ DEBUG - Error recuperando script desde la base de datos:', error);
+          }
+        }
+      };
+      
+      recoverScript();
     }
-  }, [effectiveFlowState?.generatedScript, state.script, handlers]);
+  }, [effectiveFlowState?.generatedScript, state.script, handlers, user]);
 
   const handleBack = () => {
     goToStep('neurocopy');
