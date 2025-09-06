@@ -132,7 +132,7 @@ const SocialNetworkSelector = ({
         <div className="text-center space-y-4">
           <div className="relative">
             <img
-              src="https://wnvpvjkzjkgiaztgtlxy.supabase.co/storage/v1/object/sign/videos-de-app/logo%20tik%20tok%20(2).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9iMGRjNjgyNS1lZDgyLTQ2ZDgtYTlmYy0xNzc2ZmUwN2IxMzEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlb3MtZGUtYXBwL2xvZ28gdGlrIHRvayAoMikucG5nIiwiaWF0IjoxNzUxMzkzMTcxLCJleHAiOjE3ODI5MjkxNzF9.-gDibqoF1aR9pGRlgqoEKm4-1-r0GW_Xq73EyS1MCeQ"
+              src="https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/logo%20tik%20tok%20(2)%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9sb2dvIHRpayB0b2sgKDIpICgxKS5wbmciLCJpYXQiOjE3NTcxODk0MzksImV4cCI6MTkxNDg2OTQzOX0.aWGwMRxyCzlUdQOppQ0DHj4lIO4tXmKkWTWY-a09XaU"
               alt="TikTok"
               className="w-16 h-16 mx-auto rounded-2xl cyber-border"
             />
