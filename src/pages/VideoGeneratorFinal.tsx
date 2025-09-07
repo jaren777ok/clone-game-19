@@ -68,26 +68,24 @@ const VideoGeneratorFinal = () => {
     navigate('/crear-video');
   }, [location.state, currentFlowState, navigate]);
 
-  // Pre-fill script with generated script from flow
+  // Script handling: mejorado con limpieza automática y recuperación robusta
   useEffect(() => {
-    const script = effectiveFlowState?.generatedScript;
-    
-    console.log('📝 DEBUG VideoGeneratorFinal - Script desde effectiveFlowState:', {
-      hasScript: !!script,
-      scriptLength: script?.length || 0,
-      scriptPreview: script ? script.substring(0, 100) + '...' : 'No script',
-      currentFormScript: state.script?.length || 0
-    });
-    
-    if (script && !state.script) {
-      console.log('✅ DEBUG - Estableciendo script en el formulario');
-      handlers.setScript(script);
-    } else if (!script && !state.script) {
-      console.warn('⚠️ DEBUG - No se encontró script en effectiveFlowState ni en el formulario');
-      // Fallback: Intentar recuperar desde la base de datos
-      const recoverScript = async () => {
-        if (user) {
-          console.log('🔄 DEBUG - Intentando recuperar script desde la base de datos');
+    const initializeScript = async () => {
+      try {
+        let scriptToUse = '';
+        
+        // 1. Prioridad: script desde el estado de navegación (más reciente)
+        if (effectiveFlowState?.generatedScript) {
+          scriptToUse = effectiveFlowState.generatedScript;
+          console.log('📝 Script cargado desde estado de navegación:', {
+            scriptLength: scriptToUse.length,
+            scriptPreview: scriptToUse.substring(0, 100) + '...'
+          });
+        }
+        
+        // 2. Fallback: intentar recuperar desde la base de datos si no hay script
+        if (!scriptToUse && user) {
+          console.log('🔍 Script no encontrado en estado, intentando recuperar desde BD...');
           try {
             const { data } = await supabase
               .from('user_video_configs')
@@ -96,23 +94,53 @@ const VideoGeneratorFinal = () => {
               .maybeSingle();
             
             if (data?.generated_script) {
-              console.log('✅ DEBUG - Script recuperado desde la base de datos:', {
-                scriptLength: data.generated_script.length,
-                scriptPreview: data.generated_script.substring(0, 100) + '...'
+              scriptToUse = data.generated_script;
+              console.log('📝 Script recuperado desde la base de datos:', {
+                scriptLength: scriptToUse.length,
+                scriptPreview: scriptToUse.substring(0, 100) + '...'
               });
-              handlers.setScript(data.generated_script);
-            } else {
-              console.warn('⚠️ DEBUG - No se encontró script en la base de datos');
             }
           } catch (error) {
-            console.error('❌ DEBUG - Error recuperando script desde la base de datos:', error);
+            console.error('❌ Error recuperando script desde BD:', error);
           }
         }
-      };
-      
-      recoverScript();
+        
+        // 3. Aplicar el script encontrado
+        if (scriptToUse && scriptToUse !== state.script) {
+          handlers.setScript(scriptToUse);
+          console.log('✅ Script aplicado exitosamente');
+        } else if (!scriptToUse) {
+          console.warn('⚠️ No se encontró script ni en estado ni en BD');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error inicializando script:', error);
+      }
+    };
+
+    // Solo ejecutar si tenemos configuración válida
+    if (effectiveFlowState && effectiveFlowState.step !== 'loading') {
+      initializeScript();
     }
-  }, [effectiveFlowState?.generatedScript, state.script, handlers, user]);
+  }, [effectiveFlowState, user, state.script, handlers]);
+  
+  // Detectar refresh y limpiar configuración automáticamente
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Solo limpiar si no hay generación activa
+      if (user && !state.isGenerating) {
+        // No hacer await en beforeunload - usar fire and forget
+        void supabase
+          .from('user_video_configs')
+          .delete()
+          .eq('user_id', user.id);
+        console.log('🧹 Limpieza programada en beforeunload');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [user, state.isGenerating]);
 
   const handleBack = () => {
     goToStep('neurocopy');

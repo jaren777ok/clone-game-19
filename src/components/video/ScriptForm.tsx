@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Clock, Zap, X, AlertCircle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,6 +45,17 @@ const ScriptForm = ({
   onGenerateWithUrls
 }: ScriptFormProps) => {
   const [showManualModal, setShowManualModal] = useState(false);
+  
+  // Pre-llenar el script desde la configuración guardada
+  useEffect(() => {
+    if (flowState?.generatedScript && !script) {
+      console.log('📝 Pre-llenando script desde configuración:', {
+        scriptLength: flowState.generatedScript.length,
+        scriptPreview: flowState.generatedScript.substring(0, 100) + '...'
+      });
+      setScript(flowState.generatedScript);
+    }
+  }, [flowState?.generatedScript, script, setScript]);
 
   const formatTimeRemaining = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);

@@ -173,6 +173,24 @@ export const saveVideoConfig = async (user: User, flowState: FlowState): Promise
   }
 };
 
+// Nueva función para guardado inmediato sin debounce
+export const saveVideoConfigImmediate = async (user: User, flowState: FlowState): Promise<void> => {
+  console.log('💾 IMMEDIATE SAVE - Guardando configuración inmediatamente:', {
+    userId: user.id,
+    step: flowState.step,
+    hasScript: !!flowState.generatedScript,
+    scriptLength: flowState.generatedScript?.length || 0
+  });
+  
+  try {
+    await saveVideoConfig(user, flowState);
+    console.log('✅ IMMEDIATE SAVE - Configuración guardada exitosamente');
+  } catch (error) {
+    console.error('❌ IMMEDIATE SAVE - Error guardando configuración:', error);
+    throw error;
+  }
+};
+
 export const loadVideoConfig = async (user: User | null): Promise<FlowState | null> => {
   if (!user) {
     console.log('⚠️ No hay usuario autenticado para cargar configuración');

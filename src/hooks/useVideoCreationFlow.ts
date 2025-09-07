@@ -8,6 +8,7 @@ import {
   saveFlowState, 
   clearFlowState 
 } from '@/utils/videoFlowUtils';
+import { saveVideoConfigImmediate } from '@/lib/videoConfigDatabase';
 // Removed localStorage dependency - now using Supabase for file storage
 
 export const useVideoCreationFlow = () => {
@@ -79,12 +80,12 @@ export const useVideoCreationFlow = () => {
   }, [flowState, isInitialized, user]);
 
   // Navigation functions
-  const selectApiKey = useCallback((apiKey: HeyGenApiKey) => {
+  const selectApiKey = useCallback(async (apiKey: HeyGenApiKey) => {
     console.log('🔑 Seleccionando API Key:', apiKey.api_key_name);
-    setFlowState(prev => ({
-      ...prev,
+    const newFlowState = {
+      ...flowState,
       selectedApiKey: apiKey,
-      step: 'neurocopy',
+      step: 'neurocopy' as const,
       selectedAvatar: null,
       selectedSecondAvatar: null,
       selectedVoice: null,
@@ -95,8 +96,19 @@ export const useVideoCreationFlow = () => {
       presenterCustomization: null,
       apiVersionCustomization: null,
       manualCustomization: null
-    }));
-  }, []);
+    };
+    
+    setFlowState(newFlowState);
+    
+    // Guardado inmediato para cambios críticos
+    if (user) {
+      try {
+        await saveVideoConfigImmediate(user, newFlowState);
+      } catch (error) {
+        console.error('Error guardando API Key inmediatamente:', error);
+      }
+    }
+  }, [flowState, user]);
 
   const selectAvatar = useCallback((avatar: Avatar) => {
     console.log('👤 Seleccionando Avatar:', avatar.avatar_name);
@@ -186,17 +198,17 @@ export const useVideoCreationFlow = () => {
     
     setFlowState(newFlowState);
     
-    // Forzar guardado inmediato del script en la base de datos
+    // Guardado inmediato del script crítico
     if (user) {
       try {
-        console.log('💾 DEBUG - Guardando script inmediatamente en la base de datos');
-        await saveFlowState(user, newFlowState);
-        console.log('✅ DEBUG - Script guardado exitosamente en la base de datos');
+        console.log('💾 DEBUG - Guardando script inmediatamente');
+        await saveVideoConfigImmediate(user, newFlowState);
+        console.log('✅ DEBUG - Script guardado exitosamente');
       } catch (error) {
         console.error('❌ DEBUG - Error guardando script:', error);
       }
     }
-  }, [flowState, user, saveFlowState]);
+  }, [flowState, user]);
 
   const goToStep = useCallback((step: FlowState['step']) => {
     console.log('🔄 Navegando a paso:', step);

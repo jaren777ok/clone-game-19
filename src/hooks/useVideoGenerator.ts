@@ -9,6 +9,7 @@ import { FlowState, ApiVersionCustomization } from '@/types/videoFlow';
 import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
 import { migrateLegacyData } from '@/lib/migrationUtils';
 import { sendDirectToManualWebhook, sendDirectToManualWebhookWithUrls, sendDirectToManualWebhook2, sendDirectToManualWebhook2WithUrls } from '@/lib/webhookUtils';
+import { clearVideoConfig } from '@/lib/videoConfigDatabase';
 
 interface UseVideoGeneratorProps {
   flowState?: FlowState;
@@ -110,12 +111,21 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
     }
   }, [currentGeneration, timeRemaining]);
 
-  // Handle video completion
+  // Handle video completion and clear config
   useEffect(() => {
     if (videoResult && currentRequestId) {
       handleVideoCompleted(currentRequestId);
+      
+      // Limpiar configuración después de video exitoso
+      if (user) {
+        clearVideoConfig(user).then(() => {
+          console.log('✅ Configuración limpiada después de video exitoso');
+        }).catch(error => {
+          console.error('Error limpiando configuración:', error);
+        });
+      }
     }
-  }, [videoResult, currentRequestId, handleVideoCompleted]);
+  }, [videoResult, currentRequestId, handleVideoCompleted, user]);
 
   // Handle video expiration - only expire if generation has been running and timeRemaining is truly 0
   useEffect(() => {
