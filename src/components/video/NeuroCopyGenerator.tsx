@@ -95,11 +95,6 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
             <p className="text-xs text-muted-foreground/80">
               💡 Potencia tu copywriting: Usa videos de la competencia y hazlo aún más viral!
             </p>
-            {sessionId && (
-              <p className="text-xs text-muted-foreground/60 mt-2">
-                Sesión: {sessionId.substring(0, 40)}...
-              </p>
-            )}
           </div>
 
           <Card className="cyber-border mb-6">

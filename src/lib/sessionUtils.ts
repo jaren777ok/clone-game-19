@@ -20,15 +20,7 @@ export const generateSessionId = (userId: string): string => {
 };
 
 export const getOrCreateSessionId = (userId: string): string => {
-  // Intentar obtener sessionId existente
-  const existingSessionId = sessionStorage.getItem(SESSION_KEY);
-  
-  if (existingSessionId) {
-    console.log('SessionID existente recuperado:', existingSessionId);
-    return existingSessionId;
-  }
-  
-  // Generar nuevo sessionId
+  // Siempre generar un nuevo sessionId en cada carga de página
   const newSessionId = generateSessionId(userId);
   sessionStorage.setItem(SESSION_KEY, newSessionId);
   
