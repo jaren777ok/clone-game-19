@@ -9,10 +9,13 @@ interface BlotatoApiKeyStepProps {
   onApiKeySaved: () => void;
   onSaveApiKey: (apiKey: string) => Promise<{ success: boolean; error?: any }>;
   isLoading: boolean;
+  existingApiKey?: string;
+  isEditing?: boolean;
+  onCancel?: () => void;
 }
 
-const BlotatoApiKeyStep = ({ onApiKeySaved, onSaveApiKey, isLoading }: BlotatoApiKeyStepProps) => {
-  const [apiKey, setApiKey] = useState('');
+const BlotatoApiKeyStep = ({ onApiKeySaved, onSaveApiKey, isLoading, existingApiKey, isEditing, onCancel }: BlotatoApiKeyStepProps) => {
+  const [apiKey, setApiKey] = useState(existingApiKey || '');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -34,10 +37,21 @@ const BlotatoApiKeyStep = ({ onApiKeySaved, onSaveApiKey, isLoading }: BlotatoAp
         <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
           <Key className="w-8 h-8 text-background" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Configurar Blotato</h3>
+        <h3 className="text-xl font-semibold mb-2">
+          {isEditing ? 'Editar API Key de Blotato' : 'Configurar Blotato'}
+        </h3>
         <p className="text-muted-foreground">
-          Para publicar en redes sociales necesitas configurar tu clave API de Blotato
+          {isEditing 
+            ? 'Actualiza tu clave API de Blotato' 
+            : 'Para publicar en redes sociales necesitas configurar tu clave API de Blotato'
+          }
         </p>
+        {isEditing && existingApiKey && (
+          <div className="mt-3 text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
+            <p className="font-medium">Clave actual configurada:</p>
+            <code className="text-xs">***{existingApiKey.slice(-8)}</code>
+          </div>
+        )}
       </div>
 
       {/* Información de ayuda */}
@@ -66,27 +80,40 @@ const BlotatoApiKeyStep = ({ onApiKeySaved, onSaveApiKey, isLoading }: BlotatoAp
           <Input
             id="apiKey"
             type="password"
-            placeholder="Ingresa tu clave API de Blotato"
+            placeholder={isEditing ? "Ingresa la nueva clave API" : "Ingresa tu clave API de Blotato"}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             className="cyber-border focus:cyber-glow"
           />
         </div>
 
-        <Button
-          onClick={handleSave}
-          disabled={!apiKey.trim() || saving || isLoading}
-          className="w-full cyber-border hover:cyber-glow-intense"
-        >
-          {saving ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              Guardando...
-            </>
-          ) : (
-            'Guardar API Key'
+        <div className={isEditing ? "flex gap-3" : ""}>
+          <Button
+            onClick={handleSave}
+            disabled={!apiKey.trim() || saving || isLoading}
+            className={`cyber-border hover:cyber-glow-intense ${isEditing ? 'flex-1' : 'w-full'}`}
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                {isEditing ? 'Actualizando...' : 'Guardando...'}
+              </>
+            ) : (
+              isEditing ? 'Actualizar API Key' : 'Guardar API Key'
+            )}
+          </Button>
+          
+          {isEditing && onCancel && (
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              disabled={saving}
+              className="cyber-border hover:cyber-glow"
+            >
+              Cancelar
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
     </div>
   );

@@ -33,7 +33,8 @@ const SocialPublishModal = ({
   const [initialStepDetermined, setInitialStepDetermined] = useState(false);
   const [youtubeTitle, setYoutubeTitle] = useState<string>('');
   const [needsYouTubeTitle, setNeedsYouTubeTitle] = useState(false);
-  const { blotatoAccount, loading, saveBlotatoApiKey, updateSocialAccounts } = useBlotatoAccounts();
+  const [isEditingConfig, setIsEditingConfig] = useState(false);
+  const { blotatoAccount, loading, saveBlotatoApiKey, updateSocialAccounts, refetch } = useBlotatoAccounts();
   
   // Caption generator hook
   const {
@@ -100,14 +101,50 @@ const SocialPublishModal = ({
     }
   }, [isOpen, resetCaption, resetPublishState]);
 
-  const handleApiKeySaved = () => {
-    console.log('✅ API key saved, moving to step 2');
+  const handleApiKeySaved = async () => {
+    console.log('✅ API key saved');
+    await refetch();
+    
+    if (isEditingConfig) {
+      console.log('↩️ Returning to step 5 after editing API key');
+      setIsEditingConfig(false);
+      setCurrentStep(5);
+    } else {
+      console.log('➡️ Moving to step 2');
+      setCurrentStep(2);
+    }
+  };
+
+  const handleAccountsSaved = async () => {
+    console.log('✅ Accounts saved');
+    await refetch();
+    
+    if (isEditingConfig) {
+      console.log('↩️ Returning to step 5 after editing accounts');
+      setIsEditingConfig(false);
+      setCurrentStep(5);
+    } else {
+      console.log('➡️ Moving to step 3');
+      setCurrentStep(3);
+    }
+  };
+
+  const handleEditApiKey = () => {
+    console.log('✏️ Editing API key from step 5');
+    setIsEditingConfig(true);
+    setCurrentStep(1);
+  };
+
+  const handleEditAccounts = () => {
+    console.log('✏️ Editing accounts from step 5');
+    setIsEditingConfig(true);
     setCurrentStep(2);
   };
 
-  const handleAccountsSaved = () => {
-    console.log('✅ Accounts saved, moving to step 3');
-    setCurrentStep(3);
+  const handleCancelEdit = () => {
+    console.log('❌ Cancelled editing, returning to step 5');
+    setIsEditingConfig(false);
+    setCurrentStep(5);
   };
 
   const handleCaptionGenerated = () => {
@@ -176,6 +213,9 @@ const SocialPublishModal = ({
               onApiKeySaved={handleApiKeySaved}
               onSaveApiKey={saveBlotatoApiKey}
               isLoading={loading}
+              existingApiKey={blotatoAccount?.api_key_encrypted}
+              isEditing={isEditingConfig}
+              onCancel={isEditingConfig ? handleCancelEdit : undefined}
             />
           )}
 
@@ -189,6 +229,8 @@ const SocialPublishModal = ({
               existingFacebookId={blotatoAccount?.facebook_account_id}
               existingFacebookPageId={blotatoAccount?.facebook_page_id}
               isLoading={loading}
+              isEditing={isEditingConfig}
+              onCancel={isEditingConfig ? handleCancelEdit : undefined}
             />
           )}
 
@@ -216,6 +258,8 @@ const SocialPublishModal = ({
             <SocialNetworkSelector
               onPublish={handlePublish}
               onYouTubeSelected={handleYouTubeSelected}
+              onEditApiKey={handleEditApiKey}
+              onEditAccounts={handleEditAccounts}
               videoUrl={videoUrl}
               caption={editedCaption || generatedCaption}
               blotatoApiKey={blotatoAccount.api_key_encrypted}

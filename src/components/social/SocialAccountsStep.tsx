@@ -21,6 +21,8 @@ interface SocialAccountsStepProps {
   existingFacebookId?: string;
   existingFacebookPageId?: string;
   isLoading: boolean;
+  isEditing?: boolean;
+  onCancel?: () => void;
 }
 
 const SocialAccountsStep = ({ 
@@ -31,7 +33,9 @@ const SocialAccountsStep = ({
   existingYoutubeId,
   existingFacebookId,
   existingFacebookPageId,
-  isLoading 
+  isLoading,
+  isEditing,
+  onCancel
 }: SocialAccountsStepProps) => {
   const [instagramId, setInstagramId] = useState(existingInstagramId || '');
   const [tiktokId, setTiktokId] = useState(existingTiktokId || '');
@@ -81,9 +85,11 @@ const SocialAccountsStep = ({
             <Facebook className="w-3 h-3 text-background" />
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-2">Configurar Cuentas Sociales</h3>
+        <h3 className="text-xl font-semibold mb-2">
+          {isEditing ? 'Editar Cuentas Sociales' : 'Configurar Cuentas Sociales'}
+        </h3>
         <p className="text-muted-foreground">
-          Conecta tus cuentas sociales desde Blotato
+          {isEditing ? 'Actualiza los IDs de tus cuentas sociales' : 'Conecta tus cuentas sociales desde Blotato'}
         </p>
       </div>
 
@@ -207,20 +213,33 @@ const SocialAccountsStep = ({
         * Configura al menos una cuenta para continuar
       </div>
 
-      <Button
-        onClick={handleSave}
-        disabled={!hasAtLeastOneAccount || facebookIncomplete || saving || isLoading}
-        className="w-full cyber-border hover:cyber-glow-intense"
-      >
-        {saving ? (
-          <>
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-            Guardando...
-          </>
-        ) : (
-          'Guardar Cuentas'
+      <div className={isEditing ? "flex gap-3" : ""}>
+        <Button
+          onClick={handleSave}
+          disabled={!hasAtLeastOneAccount || facebookIncomplete || saving || isLoading}
+          className={`cyber-border hover:cyber-glow-intense ${isEditing ? 'flex-1' : 'w-full'}`}
+        >
+          {saving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              {isEditing ? 'Actualizando...' : 'Guardando...'}
+            </>
+          ) : (
+            isEditing ? 'Actualizar Cuentas' : 'Guardar Cuentas'
+          )}
+        </Button>
+        
+        {isEditing && onCancel && (
+          <Button
+            onClick={onCancel}
+            variant="outline"
+            disabled={saving}
+            className="cyber-border hover:cyber-glow"
+          >
+            Cancelar
+          </Button>
         )}
-      </Button>
+      </div>
     </div>
   );
 };

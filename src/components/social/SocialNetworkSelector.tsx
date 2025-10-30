@@ -2,10 +2,13 @@
 import React from 'react';
 import { Share2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import BlotatoConfigMenu from './BlotatoConfigMenu';
 
 interface SocialNetworkSelectorProps {
   onPublish: (platform: 'Instagram' | 'TikTok' | 'YouTube' | 'Facebook', videoUrl: string, apiKey: string, accountId: string, caption: string, pageId?: string) => Promise<{ success: boolean; error?: string }>;
   onYouTubeSelected: () => void;
+  onEditApiKey?: () => void;
+  onEditAccounts?: () => void;
   videoUrl: string;
   caption: string;
   blotatoApiKey: string;
@@ -26,6 +29,8 @@ interface SocialNetworkSelectorProps {
 const SocialNetworkSelector = ({
   onPublish,
   onYouTubeSelected,
+  onEditApiKey,
+  onEditAccounts,
   videoUrl,
   caption,
   blotatoApiKey,
@@ -74,8 +79,17 @@ const SocialNetworkSelector = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Config Button */}
       <div className="text-center">
+        <div className="flex justify-end mb-2">
+          {onEditApiKey && onEditAccounts && (
+            <BlotatoConfigMenu 
+              onEditApiKey={onEditApiKey}
+              onEditAccounts={onEditAccounts}
+            />
+          )}
+        </div>
+        
         <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4">
           <Share2 className="w-8 h-8 text-background" />
         </div>
