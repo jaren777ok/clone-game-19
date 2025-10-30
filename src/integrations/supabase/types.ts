@@ -279,6 +279,80 @@ export type Database = {
         }
         Relationships: []
       }
+      company_accounts: {
+        Row: {
+          company_code: string
+          company_name: string
+          created_at: string
+          dress_code_image_url: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_code: string
+          company_name: string
+          created_at?: string
+          dress_code_image_url?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_code?: string
+          company_name?: string
+          created_at?: string
+          dress_code_image_url?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      company_metrics: {
+        Row: {
+          avg_satisfaction: number | null
+          company_id: string
+          conversion_rate: number | null
+          created_at: string
+          id: string
+          total_revenue: number | null
+          total_sales: number | null
+          total_sessions: number | null
+          updated_at: string
+        }
+        Insert: {
+          avg_satisfaction?: number | null
+          company_id: string
+          conversion_rate?: number | null
+          created_at?: string
+          id?: string
+          total_revenue?: number | null
+          total_sales?: number | null
+          total_sessions?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avg_satisfaction?: number | null
+          company_id?: string
+          conversion_rate?: number | null
+          created_at?: string
+          id?: string
+          total_revenue?: number | null
+          total_sales?: number | null
+          total_sessions?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contactos_gohighlevel: {
         Row: {
           conversacion_id: string
@@ -344,6 +418,90 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations_ghl: {
+        Row: {
+          content: string
+          id: string
+          sender: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          sender: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          sender?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      document_embeddings_duplicate: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: number
+          metadata: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          content: string
+          created_at: string | null
+          document_id: string
+          embedding: string | null
+          id: number
+          metadata: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          document_id: string
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          document_id?: string
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       generated_videos: {
         Row: {
           config_data: Json | null
@@ -389,6 +547,33 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      ghl_credentials: {
+        Row: {
+          account_id: string
+          api_key: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          api_key: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          api_key?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -446,6 +631,48 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_documents: {
+        Row: {
+          document_id: string
+          file_size: number
+          file_type: string
+          filename: string
+          id: string
+          processed_at: string | null
+          upload_status: string
+          uploaded_at: string
+          user_id: string
+          vectorization_status: string
+          webhook_response: Json | null
+        }
+        Insert: {
+          document_id: string
+          file_size: number
+          file_type: string
+          filename: string
+          id?: string
+          processed_at?: string | null
+          upload_status?: string
+          uploaded_at?: string
+          user_id: string
+          vectorization_status?: string
+          webhook_response?: Json | null
+        }
+        Update: {
+          document_id?: string
+          file_size?: number
+          file_type?: string
+          filename?: string
+          id?: string
+          processed_at?: string | null
+          upload_status?: string
+          uploaded_at?: string
+          user_id?: string
+          vectorization_status?: string
+          webhook_response?: Json | null
+        }
+        Relationships: []
+      }
       meeting_configurations: {
         Row: {
           company_info: string
@@ -471,6 +698,39 @@ export type Database = {
           id?: string
           meeting_objective?: string
           number_of_people?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meeting_sessions: {
+        Row: {
+          company_info: string
+          created_at: string
+          id: string
+          meeting_objective: string
+          number_of_people: number
+          session_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_info: string
+          created_at?: string
+          id?: string
+          meeting_objective: string
+          number_of_people: number
+          session_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_info?: string
+          created_at?: string
+          id?: string
+          meeting_objective?: string
+          number_of_people?: number
+          session_name?: string
           updated_at?: string
           user_id?: string
         }
@@ -679,7 +939,9 @@ export type Database = {
           id: string
           label: string | null
           last_used_at: string | null
+          page_icon_url: string | null
           page_id: string
+          page_name: string | null
           updated_at: string
           user_id: string
         }
@@ -691,7 +953,9 @@ export type Database = {
           id?: string
           label?: string | null
           last_used_at?: string | null
+          page_icon_url?: string | null
           page_id: string
+          page_name?: string | null
           updated_at?: string
           user_id: string
         }
@@ -703,7 +967,9 @@ export type Database = {
           id?: string
           label?: string | null
           last_used_at?: string | null
+          page_icon_url?: string | null
           page_id?: string
+          page_name?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -895,17 +1161,17 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_creatives_analysis_session"
+            columns: ["analysis_session_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_sessions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "meta_ads_creatives_adset_supabase_id_fkey"
             columns: ["adset_supabase_id"]
             isOneToOne: false
             referencedRelation: "meta_ads_adsets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "meta_ads_creatives_analysis_session_id_fkey"
-            columns: ["analysis_session_id"]
-            isOneToOne: false
-            referencedRelation: "analysis_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -953,6 +1219,42 @@ export type Database = {
         }
         Relationships: []
       }
+      n8n_clonegame: {
+        Row: {
+          id: number
+          message: Json
+          session_id: string
+        }
+        Insert: {
+          id?: number
+          message: Json
+          session_id: string
+        }
+        Update: {
+          id?: number
+          message?: Json
+          session_id?: string
+        }
+        Relationships: []
+      }
+      n8n_grupo_sierra: {
+        Row: {
+          id: number
+          message: Json
+          session_id: string
+        }
+        Insert: {
+          id?: number
+          message: Json
+          session_id: string
+        }
+        Update: {
+          id?: number
+          message?: Json
+          session_id?: string
+        }
+        Relationships: []
+      }
       pipeline_stages: {
         Row: {
           color: string
@@ -981,6 +1283,42 @@ export type Database = {
           name?: string
           page_id?: string | null
           position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      premium_access_requests: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string | null
+          phone_number: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          message?: string | null
+          phone_number: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string | null
+          phone_number?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -1072,27 +1410,187 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string
+          company_code: string | null
           created_at: string
+          display_name: string | null
           email: string | null
           full_name: string | null
           id: string
+          profile_photo_url: string | null
+          timezone: string | null
           updated_at: string
         }
         Insert: {
+          account_type?: string
+          company_code?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          profile_photo_url?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
+          account_type?: string
+          company_code?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          profile_photo_url?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      saved_prompts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          prompt_type: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          prompt_type: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          prompt_type?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scheduled_sessions: {
+        Row: {
+          calendar_id: string | null
+          client_company: string | null
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          company_id: string
+          completed_session_id: string | null
+          created_at: string | null
+          created_by: string | null
+          duration_minutes: number | null
+          id: string
+          meeting_notes: string | null
+          meeting_objective: string
+          scheduled_date: string
+          scheduled_time: string
+          session_title: string
+          status: string | null
+          time_zone: string | null
+          updated_at: string | null
+          vendor_id: string | null
+          zoom_link: string | null
+        }
+        Insert: {
+          calendar_id?: string | null
+          client_company?: string | null
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          company_id: string
+          completed_session_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_notes?: string | null
+          meeting_objective: string
+          scheduled_date: string
+          scheduled_time: string
+          session_title: string
+          status?: string | null
+          time_zone?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+          zoom_link?: string | null
+        }
+        Update: {
+          calendar_id?: string | null
+          client_company?: string | null
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          company_id?: string
+          completed_session_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_notes?: string | null
+          meeting_objective?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          session_title?: string
+          status?: string | null
+          time_zone?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+          zoom_link?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_sessions_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "company_calendar_access"
+            referencedColumns: ["accessible_calendar_id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "user_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_completed_session_id_fkey"
+            columns: ["completed_session_id"]
+            isOneToOne: false
+            referencedRelation: "session_analytics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sesion_obtener_contactos: {
         Row: {
@@ -1113,6 +1611,273 @@ export type Database = {
           created_at?: string
           id?: string
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      session_analytics: {
+        Row: {
+          analisis_markdown: string | null
+          analysis_status: string
+          attendance_status: string | null
+          avg_connection_speed: number | null
+          connection_stability_score: number | null
+          created_at: string
+          id: string
+          internet_quality_end: number | null
+          internet_quality_start: number | null
+          metricas_json: Json | null
+          minutes_late: number | null
+          network_type: string | null
+          punctuality_score: number | null
+          recording_url: string | null
+          scheduled_session_id: string | null
+          session_duration_minutes: number | null
+          session_id: string
+          session_name: string | null
+          updated_at: string
+          url: string | null
+          user_id: string
+          vestimenta_correcta: boolean | null
+          webhook_sent_at: string | null
+        }
+        Insert: {
+          analisis_markdown?: string | null
+          analysis_status?: string
+          attendance_status?: string | null
+          avg_connection_speed?: number | null
+          connection_stability_score?: number | null
+          created_at?: string
+          id?: string
+          internet_quality_end?: number | null
+          internet_quality_start?: number | null
+          metricas_json?: Json | null
+          minutes_late?: number | null
+          network_type?: string | null
+          punctuality_score?: number | null
+          recording_url?: string | null
+          scheduled_session_id?: string | null
+          session_duration_minutes?: number | null
+          session_id: string
+          session_name?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id: string
+          vestimenta_correcta?: boolean | null
+          webhook_sent_at?: string | null
+        }
+        Update: {
+          analisis_markdown?: string | null
+          analysis_status?: string
+          attendance_status?: string | null
+          avg_connection_speed?: number | null
+          connection_stability_score?: number | null
+          created_at?: string
+          id?: string
+          internet_quality_end?: number | null
+          internet_quality_start?: number | null
+          metricas_json?: Json | null
+          minutes_late?: number | null
+          network_type?: string | null
+          punctuality_score?: number | null
+          recording_url?: string | null
+          scheduled_session_id?: string | null
+          session_duration_minutes?: number | null
+          session_id?: string
+          session_name?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+          vestimenta_correcta?: boolean | null
+          webhook_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_analytics_scheduled_session_id_fkey"
+            columns: ["scheduled_session_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_attendance: {
+        Row: {
+          attendance_status: string
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string
+          id: string
+          minutes_late: number | null
+          punctuality_score: number | null
+          scheduled_session_id: string
+          scheduled_start_time: string
+          session_duration_minutes: number | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          attendance_status?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          id?: string
+          minutes_late?: number | null
+          punctuality_score?: number | null
+          scheduled_session_id: string
+          scheduled_start_time: string
+          session_duration_minutes?: number | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          attendance_status?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          id?: string
+          minutes_late?: number | null
+          punctuality_score?: number | null
+          scheduled_session_id?: string
+          scheduled_start_time?: string
+          session_duration_minutes?: number | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_attendance_scheduled_session_id_fkey"
+            columns: ["scheduled_session_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_attendance_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_start_attempts: {
+        Row: {
+          attempt_timestamp: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          scheduled_session_id: string
+          status: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          attempt_timestamp?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          scheduled_session_id: string
+          status?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          attempt_timestamp?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          scheduled_session_id?: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_start_attempts_scheduled_session_id_fkey"
+            columns: ["scheduled_session_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_calendars: {
+        Row: {
+          can_delete: boolean | null
+          color: string
+          company_id: string | null
+          created_at: string | null
+          id: string
+          is_company_calendar: boolean | null
+          is_default: boolean | null
+          is_visible: boolean | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          can_delete?: boolean | null
+          color?: string
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_company_calendar?: boolean | null
+          is_default?: boolean | null
+          is_visible?: boolean | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          can_delete?: boolean | null
+          color?: string
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_company_calendar?: boolean | null
+          is_default?: boolean | null
+          is_visible?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_calendars_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          subscription_type: string
+          trial_end_date: string
+          trial_start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          subscription_type?: string
+          trial_end_date?: string
+          trial_start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          subscription_type?: string
+          trial_end_date?: string
+          trial_start_date?: string
           updated_at?: string
           user_id?: string
         }
@@ -1186,6 +1951,84 @@ export type Database = {
           },
         ]
       }
+      vendor_metrics: {
+        Row: {
+          absent_sessions: number | null
+          avg_delay_minutes: number | null
+          avg_punctuality_score: number | null
+          avg_satisfaction: number | null
+          company_id: string | null
+          conversion_rate: number | null
+          created_at: string
+          id: string
+          last_session_date: string | null
+          late_sessions: number | null
+          on_time_sessions: number | null
+          performance_score: number | null
+          total_revenue: number | null
+          total_sales: number | null
+          total_scheduled_sessions: number | null
+          total_sessions: number | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          absent_sessions?: number | null
+          avg_delay_minutes?: number | null
+          avg_punctuality_score?: number | null
+          avg_satisfaction?: number | null
+          company_id?: string | null
+          conversion_rate?: number | null
+          created_at?: string
+          id?: string
+          last_session_date?: string | null
+          late_sessions?: number | null
+          on_time_sessions?: number | null
+          performance_score?: number | null
+          total_revenue?: number | null
+          total_sales?: number | null
+          total_scheduled_sessions?: number | null
+          total_sessions?: number | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          absent_sessions?: number | null
+          avg_delay_minutes?: number | null
+          avg_punctuality_score?: number | null
+          avg_satisfaction?: number | null
+          company_id?: string | null
+          conversion_rate?: number | null
+          created_at?: string
+          id?: string
+          last_session_date?: string | null
+          late_sessions?: number | null
+          on_time_sessions?: number | null
+          performance_score?: number | null
+          total_revenue?: number | null
+          total_sales?: number | null
+          total_scheduled_sessions?: number | null
+          total_sessions?: number | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_metrics_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_generation_tracking: {
         Row: {
           created_at: string
@@ -1241,12 +2084,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      company_calendar_access: {
+        Row: {
+          accessible_calendar_id: string | null
+          accessing_user_id: string | null
+          calendar_name: string | null
+          company_id: string | null
+          is_company_calendar: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_calendars_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
+      calculate_vendor_metrics: {
+        Args: { p_vendor_id: string }
+        Returns: undefined
+      }
+      calculate_vendor_punctuality_metrics: {
+        Args: { p_vendor_id: string }
+        Returns: undefined
       }
       generate_analysis_session_id: {
         Args: {
@@ -1260,62 +2124,9 @@ export type Database = {
         }
         Returns: string
       }
-      generate_next_request_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      halfvec_avg: {
-        Args: { "": number[] }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      hnsw_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: unknown
-      }
+      generate_company_code: { Args: never; Returns: string }
+      generate_document_id: { Args: { p_user_id: string }; Returns: string }
+      generate_next_request_id: { Args: never; Returns: string }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
         Returns: {
@@ -1325,49 +2136,28 @@ export type Database = {
           similarity: number
         }[]
       }
+      match_user_documents: {
+        Args: {
+          filter?: Json
+          match_count?: number
+          query_embedding: string
+          user_filter: string
+        }
+        Returns: {
+          content: string
+          document_id: string
+          id: number
+          metadata: Json
+          similarity: number
+        }[]
+      }
       request_id_exists: {
         Args: { request_id_param: string }
         Returns: boolean
       }
-      sparsevec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      vector_avg: {
-        Args: { "": number[] }
-        Returns: string
-      }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
-      vector_norm: {
-        Args: { "": string }
-        Returns: number
-      }
-      vector_out: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: { "": string }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
     }
     Enums: {
-      processing_status: "completed" | "error" | "timeout"
+      processing_status: "completed" | "error" | "timeout" | "processing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1495,7 +2285,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      processing_status: ["completed", "error", "timeout"],
+      processing_status: ["completed", "error", "timeout", "processing"],
     },
   },
 } as const

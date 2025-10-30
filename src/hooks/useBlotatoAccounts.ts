@@ -68,10 +68,16 @@ export const useBlotatoAccounts = () => {
 
       const { data, error } = await supabase
         .from('blotato_accounts')
-        .upsert({
-          api_key_encrypted: apiKey, // En producción esto debería estar encriptado
-          user_id: user?.id
-        })
+        .upsert(
+          {
+            api_key_encrypted: apiKey, // En producción esto debería estar encriptado
+            user_id: user?.id
+          },
+          { 
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          }
+        )
         .select()
         .single();
 
@@ -121,7 +127,7 @@ export const useBlotatoAccounts = () => {
         })
         .eq('user_id', user?.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       
