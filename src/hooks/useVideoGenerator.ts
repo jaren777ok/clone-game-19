@@ -73,43 +73,26 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
   };
 
   // Check for existing generation on mount and migrate legacy data
+  // CHANGED: No auto-recover to prevent blocking the textarea
   useEffect(() => {
     // Clean up any legacy localStorage data
     migrateLegacyData();
     
+    // Don't auto-set isGenerating to true just because there's a previous generation
+    // This was blocking the textarea. Let the user explicitly recover or cancel.
     if (currentGeneration && currentGeneration.status === 'processing') {
-      console.log('🔍 [RECOVERY] Recuperando generación existente:', {
+      console.log('🔍 [RECOVERY] Generación previa detectada (no auto-recuperando):', {
         requestId: currentGeneration.request_id,
         startTime: currentGeneration.created_at,
         timeRemaining: timeRemaining
       });
       
+      // Only set the script, but don't start generating automatically
       setScript(currentGeneration.script);
       setCurrentRequestId(currentGeneration.request_id);
-      
-      if (timeRemaining > 0) {
-        setIsGenerating(true);
-        
-        // CRÍTICO: Convertir el created_at de la DB a timestamp y establecerlo
-        const dbStartTime = new Date(currentGeneration.created_at).getTime();
-        console.log('🔍 [RECOVERY] Estableciendo tiempo de inicio desde DB:', {
-          dbStartTime: dbStartTime,
-          dbStartTimeISO: new Date(dbStartTime).toISOString(),
-          timeElapsed: (Date.now() - dbStartTime) / 1000 / 60, // minutos
-          shouldShowButton: (Date.now() - dbStartTime) / 1000 >= 30 * 60
-        });
-        
-        // Inicializar el countdown con el tiempo original de la DB
-        startCountdown(
-          currentGeneration.request_id, 
-          currentGeneration.script, 
-          setVideoResult, 
-          setIsGenerating, 
-          dbStartTime
-        );
-      }
+      // NOTE: isGenerating stays false until user explicitly recovers
     }
-  }, [currentGeneration, timeRemaining]);
+  }, [currentGeneration]);
 
   // Handle video completion and clear config
   useEffect(() => {
