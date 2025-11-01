@@ -1,14 +1,23 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface RecoveryNotificationProps {
   onRecover: () => void;
   onCancel: () => void;
+  timeRemaining?: number;
 }
 
-const RecoveryNotification = ({ onRecover, onCancel }: RecoveryNotificationProps) => {
+const RecoveryNotification = ({ onRecover, onCancel, timeRemaining }: RecoveryNotificationProps) => {
+  // Auto-cancel if generation has expired
+  useEffect(() => {
+    if (timeRemaining !== undefined && timeRemaining <= 0) {
+      console.log('⚠️ Generación expirada detectada, auto-cancelando...');
+      onCancel();
+    }
+  }, [timeRemaining, onCancel]);
+
   return (
     <div className="max-w-4xl mx-auto mb-6">
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-6">

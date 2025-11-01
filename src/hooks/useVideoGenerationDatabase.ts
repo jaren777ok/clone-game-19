@@ -8,7 +8,8 @@ import {
   updateLastCheckTime,
   markVideoGenerationExpired,
   calculateRemainingTime,
-  cleanupExpiredGenerations
+  cleanupExpiredGenerations,
+  cleanupOldGenerations
 } from '@/lib/videoGenerationDatabase';
 import { checkVideoInDatabase } from '@/lib/databaseUtils';
 
@@ -53,13 +54,28 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
     try {
       setIsLoading(true);
       
-      // Get current processing video first
+      // First, cleanup any old generations (>41 minutes)
+      await cleanupOldGenerations(user);
+      
+      // Get current processing video after cleanup
       const generation = await getCurrentProcessingVideo(user);
-      setCurrentGeneration(generation);
-
+      
       if (generation && generation.status === 'processing') {
         // Calculate remaining time
         const remaining = calculateRemainingTime(generation.created_at);
+        
+        // AUTO-EXPIRE if already expired
+        if (remaining <= 0) {
+          console.log('⏰ Auto-expirando generación antigua:', generation.request_id);
+          await markVideoGenerationExpired(generation.request_id, user);
+          setCurrentGeneration(null);
+          setTimeRemaining(0);
+          setShowRecoveryOption(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        setCurrentGeneration(generation);
         setTimeRemaining(remaining);
         
         // Only show recovery option if there's significant time remaining
@@ -72,6 +88,7 @@ export const useVideoGenerationDatabase = (): UseVideoGenerationDatabaseReturn =
           setShowRecoveryOption(false);
         }
       } else {
+        setCurrentGeneration(null);
         setTimeRemaining(0);
         setShowRecoveryOption(false);
       }

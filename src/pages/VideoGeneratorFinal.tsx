@@ -219,6 +219,7 @@ const VideoGeneratorFinal = () => {
           <RecoveryNotification 
             onRecover={handlers.handleRecoverGeneration}
             onCancel={handlers.handleCancelRecovery}
+            timeRemaining={state.timeRemaining}
           />
         )}
 

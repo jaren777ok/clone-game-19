@@ -214,3 +214,30 @@ export const getExpiredGenerations = async (user: User | null): Promise<VideoGen
     return [];
   }
 };
+
+// Clean up old processing generations (more than 41 minutes old)
+export const cleanupOldGenerations = async (user: User | null): Promise<void> => {
+  if (!user) return;
+
+  try {
+    const cutoffTime = new Date(Date.now() - 41 * 60 * 1000).toISOString();
+    
+    const { error } = await supabase
+      .from('video_generation_tracking')
+      .update({ 
+        status: 'expired',
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id)
+      .eq('status', 'processing')
+      .lt('created_at', cutoffTime);
+
+    if (error) {
+      console.error('❌ Error limpiando generaciones antiguas:', error);
+    } else {
+      console.log('✅ Generaciones antiguas limpiadas automáticamente');
+    }
+  } catch (error) {
+    console.error('❌ Error limpiando generaciones antiguas:', error);
+  }
+};

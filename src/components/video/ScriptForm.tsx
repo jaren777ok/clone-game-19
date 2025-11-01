@@ -216,7 +216,7 @@ const ScriptForm = ({
             }
             className="min-h-[400px] text-base cyber-border focus:cyber-glow resize-none"
             maxLength={955}
-            disabled={isGenerating}
+            disabled={isGenerating && timeRemaining !== undefined && timeRemaining > 0}
           />
           <div className="flex justify-end items-center mt-2">
             <span className="text-sm text-muted-foreground">
