@@ -19,6 +19,7 @@ const VideoGeneratorFinal = () => {
   const { user } = useAuth();
   const { flowState: currentFlowState, goToStep } = useVideoCreationFlow();
   const [effectiveFlowState, setEffectiveFlowState] = useState<FlowState | null>(null);
+  const [isScriptInitialized, setIsScriptInitialized] = useState(false);
   const { state, handlers } = useVideoGenerator({ flowState: effectiveFlowState });
 
   // Determinar el estado efectivo del flujo
@@ -68,8 +69,11 @@ const VideoGeneratorFinal = () => {
     navigate('/crear-video');
   }, [location.state, currentFlowState, navigate]);
 
-  // Script handling: mejorado con limpieza automática y recuperación robusta
+  // Script handling: cargar UNA SOLA VEZ al inicializar
   useEffect(() => {
+    // Solo cargar script UNA VEZ - evitar loops infinitos
+    if (isScriptInitialized) return;
+    
     const initializeScript = async () => {
       try {
         let scriptToUse = '';
@@ -105,16 +109,19 @@ const VideoGeneratorFinal = () => {
           }
         }
         
-        // 3. Aplicar el script encontrado
-        if (scriptToUse && scriptToUse !== state.script) {
+        // 3. Aplicar el script encontrado SOLO UNA VEZ
+        if (scriptToUse) {
           handlers.setScript(scriptToUse);
-          console.log('✅ Script aplicado exitosamente');
-        } else if (!scriptToUse) {
+          setIsScriptInitialized(true); // Marcar como inicializado para evitar re-cargas
+          console.log('✅ Script aplicado exitosamente y marcado como inicializado');
+        } else {
           console.warn('⚠️ No se encontró script ni en estado ni en BD');
+          setIsScriptInitialized(true); // Marcar como inicializado incluso si no hay script
         }
         
       } catch (error) {
         console.error('❌ Error inicializando script:', error);
+        setIsScriptInitialized(true); // Marcar como inicializado para evitar loops en caso de error
       }
     };
 
@@ -122,7 +129,7 @@ const VideoGeneratorFinal = () => {
     if (effectiveFlowState && effectiveFlowState.step !== 'loading') {
       initializeScript();
     }
-  }, [effectiveFlowState, user, state.script, handlers]);
+  }, [effectiveFlowState, user, isScriptInitialized, handlers]);
   
   // Detectar refresh y limpiar configuración automáticamente
   useEffect(() => {

@@ -53,16 +53,7 @@ const ScriptForm = ({
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Pre-llenar el script desde la configuración guardada
-  useEffect(() => {
-    if (flowState?.generatedScript && !script) {
-      console.log('📝 Pre-llenando script desde configuración:', {
-        scriptLength: flowState.generatedScript.length,
-        scriptPreview: flowState.generatedScript.substring(0, 100) + '...'
-      });
-      setScript(flowState.generatedScript);
-    }
-  }, [flowState?.generatedScript, script, setScript]);
+  // Script initialization removed - now handled by VideoGeneratorFinal only once
 
   const formatTimeRemaining = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
