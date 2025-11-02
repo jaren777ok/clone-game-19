@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Send, Clock, Zap, X, AlertCircle, Lock, Edit2, Save } from 'lucide-react';
+import React, { useState } from 'react';
+import { Send, Clock, Zap, X, AlertCircle, Lock, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -48,7 +48,6 @@ const ScriptForm = ({
   onGenerateWithUrls
 }: ScriptFormProps) => {
   const [showManualModal, setShowManualModal] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [isSavingScript, setIsSavingScript] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -158,15 +157,6 @@ const ScriptForm = ({
     }
   };
 
-  // Activar modo edición
-  const handleEnableEdit = () => {
-    setIsEditMode(true);
-    toast({
-      title: "Modo de edición activado",
-      description: "Ahora puedes editar el guión libremente"
-    });
-  };
-
   // Guardar el script editado en la base de datos
   const handleSaveScript = async () => {
     if (!user) {
@@ -194,7 +184,6 @@ const ScriptForm = ({
         title: "Guión guardado",
         description: "Tus cambios han sido guardados exitosamente"
       });
-      setIsEditMode(false);
     } catch (error) {
       console.error('Error guardando script:', error);
       toast({
@@ -254,47 +243,18 @@ const ScriptForm = ({
               Guión a Usar
             </label>
             
-            {/* Botones de edición */}
-            <div className="flex items-center gap-2">
-              {!isEditMode && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEnableEdit}
-                  className="flex items-center gap-2"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Editar
-                </Button>
-              )}
-              
-              {isEditMode && (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSaveScript}
-                    disabled={isSavingScript}
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    {isSavingScript ? 'Guardando...' : 'Guardar'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditMode(false)}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Cancelar
-                  </Button>
-                </>
-              )}
-            </div>
+            {/* Botón de guardar */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSaveScript}
+              disabled={isSavingScript || isGenerating}
+              className="flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {isSavingScript ? 'Guardando...' : 'Guardar'}
+            </Button>
           </div>
           <Textarea
             id="script"
@@ -307,7 +267,7 @@ const ScriptForm = ({
             }
             className="min-h-[400px] text-base cyber-border focus:cyber-glow resize-none"
             maxLength={955}
-            disabled={!isEditMode && (isGenerating && timeRemaining !== undefined && timeRemaining > 0)}
+            disabled={isGenerating && timeRemaining !== undefined && timeRemaining > 0}
           />
           <div className="flex justify-end items-center mt-2">
             <span className="text-sm text-muted-foreground">
