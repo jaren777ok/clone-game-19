@@ -1,12 +1,15 @@
-import { Smartphone, LogOut, User, Bookmark } from "lucide-react";
+import { useState } from "react";
+import { Smartphone, LogOut, User, Bookmark, Key } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/theme-toggle";
+import AIApiKeysModal from "@/components/settings/AIApiKeysModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [showApiKeysModal, setShowApiKeysModal] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,8 +47,8 @@ const Dashboard = () => {
       {/* Dark overlay for better readability */}
       <div className="absolute inset-0 bg-black/30"></div>
 
-      {/* Saved Videos Button - Top Left Corner */}
-      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
+      {/* Saved Videos & API Keys Buttons - Top Left Corner */}
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex items-center gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -55,7 +58,22 @@ const Dashboard = () => {
           <Bookmark className="w-4 h-4 sm:mr-2" />
           <span className="hidden sm:inline">Videos Guardados</span>
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowApiKeysModal(true)}
+          className="cyber-border hover:cyber-glow bg-background/80 backdrop-blur-sm px-2 sm:px-4"
+        >
+          <Key className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Conectar API</span>
+        </Button>
       </div>
+      
+      {/* AI API Keys Modal */}
+      <AIApiKeysModal 
+        open={showApiKeysModal} 
+        onOpenChange={setShowApiKeysModal} 
+      />
 
       {/* Header with user info, theme toggle and logout */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 sm:space-x-4">

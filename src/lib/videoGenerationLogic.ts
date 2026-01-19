@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { FlowState } from '@/types/videoFlow';
 import { saveGenerationState } from '@/lib/videoGeneration';
 import { sendToWebhook, sendToEstiloNoticiaWebhook, sendToEstiloEducativoWebhook, sendToEducativo2Webhook, sendToManualWebhook, sendToManualWebhook2, sendToMultiAvatarWebhook } from '@/lib/webhookUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 export const validateFlowState = (flowState?: FlowState): boolean => {
   if (!flowState) return false;
@@ -96,6 +97,31 @@ export const initiateVideoGeneration = async (
     console.error('❌ Clave API desencriptada está vacía');
     throw new Error('Clave API inválida después de desencriptar');
   }
+
+  // Obtener claves de OpenAI y Gemini del usuario
+  let openaiApiKey = '';
+  let geminiApiKey = '';
+
+  try {
+    const { data: aiKeys, error: aiKeysError } = await supabase
+      .from('user_ai_api_keys')
+      .select('openai_api_key, gemini_api_key')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    if (aiKeysError) {
+      console.warn('⚠️ Error obteniendo claves AI del usuario:', aiKeysError);
+    } else if (aiKeys) {
+      openaiApiKey = aiKeys.openai_api_key || '';
+      geminiApiKey = aiKeys.gemini_api_key || '';
+      console.log('🔑 Claves AI del usuario obtenidas:', {
+        hasOpenAI: !!openaiApiKey,
+        hasGemini: !!geminiApiKey
+      });
+    }
+  } catch (error) {
+    console.warn('⚠️ No se pudieron obtener las claves AI del usuario:', error);
+  }
   
   console.log('🎬 Iniciando generación de video (usando requestId del tracking):', {
     requestId: requestId,
@@ -110,6 +136,8 @@ export const initiateVideoGeneration = async (
     presenterName: flowState.presenterCustomization?.nombrePresentador,
     cardCustomization: flowState.cardCustomization,
     apiKeyDecrypted: true,
+    hasOpenAIKey: !!openaiApiKey,
+    hasGeminiKey: !!geminiApiKey,
     // 🔍 DEBUG: Verificar subtítulos en el log principal
     hasSubtitleCustomization: !!flowState.subtitleCustomization
   });
@@ -143,7 +171,10 @@ export const initiateVideoGeneration = async (
       fill: flowState.subtitleCustomization.fill || ""
     } : null,
     // Campo split para todos los webhooks
-    split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
+    split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line",
+    // Claves API de OpenAI y Gemini del usuario
+    openai_api_key: openaiApiKey,
+    gemini_api_key: geminiApiKey
   };
 
   // 🔍 DEBUG: Verificar payload completo antes de enviar
@@ -264,7 +295,10 @@ export const initiateVideoGeneration = async (
           fill: flowState.subtitleCustomization.fill || ""
         } : null,
         // Campo split para estilo manual
-        split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
+        split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line",
+        // Claves API de OpenAI y Gemini del usuario
+        openai_api_key: openaiApiKey,
+        gemini_api_key: geminiApiKey
       };
 
       // 🔍 DEBUG: Verificar payload manual específicamente
@@ -326,7 +360,10 @@ export const initiateVideoGeneration = async (
           fill: flowState.subtitleCustomization.fill || ""
         } : null,
         // Campo split para estilo manual 2
-        split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line"
+        split: flowState.subtitleCustomization?.subtitleEffect === 'highlight' ? "word" : "line",
+        // Claves API de OpenAI y Gemini del usuario
+        openai_api_key: openaiApiKey,
+        gemini_api_key: geminiApiKey
       };
       
       console.log('📁 Enviando a webhook Estilo Manual 2 con requestId sincronizado:', {
