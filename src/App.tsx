@@ -92,15 +92,15 @@ const App = () => (
       enableSystem={false}
       disableTransitionOnChange={false}
     >
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <SonnerToaster />
-          <BrowserRouter>
+      <BrowserRouter>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <SonnerToaster />
             <AppRoutes />
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </BrowserRouter>
     </ThemeProvider>
   </QueryClientProvider>
 );
