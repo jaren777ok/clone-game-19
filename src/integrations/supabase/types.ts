@@ -286,6 +286,7 @@ export type Database = {
           created_at: string
           dress_code_image_url: string | null
           id: string
+          timezone: string | null
           updated_at: string
           user_id: string
         }
@@ -295,6 +296,7 @@ export type Database = {
           created_at?: string
           dress_code_image_url?: string | null
           id?: string
+          timezone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -304,10 +306,52 @@ export type Database = {
           created_at?: string
           dress_code_image_url?: string | null
           id?: string
+          timezone?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      company_ghl_calendars: {
+        Row: {
+          calendar_name: string
+          color: string | null
+          company_id: string
+          created_at: string | null
+          ghl_calendar_id: string
+          id: string
+          is_visible: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          calendar_name: string
+          color?: string | null
+          company_id: string
+          created_at?: string | null
+          ghl_calendar_id: string
+          id?: string
+          is_visible?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          calendar_name?: string
+          color?: string | null
+          company_id?: string
+          created_at?: string | null
+          ghl_calendar_id?: string
+          id?: string
+          is_visible?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_ghl_calendars_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_metrics: {
         Row: {
@@ -358,6 +402,7 @@ export type Database = {
           conversacion_id: string
           created_at: string
           id: string
+          ID_CONTACTO_GO: string | null
           nombre_contacto: string
           sesion_obtener_id: string | null
           telefono: string
@@ -368,6 +413,7 @@ export type Database = {
           conversacion_id: string
           created_at?: string
           id?: string
+          ID_CONTACTO_GO?: string | null
           nombre_contacto: string
           sesion_obtener_id?: string | null
           telefono: string
@@ -378,6 +424,7 @@ export type Database = {
           conversacion_id?: string
           created_at?: string
           id?: string
+          ID_CONTACTO_GO?: string | null
           nombre_contacto?: string
           sesion_obtener_id?: string | null
           telefono?: string
@@ -550,6 +597,74 @@ export type Database = {
         }
         Relationships: []
       }
+      ghl_calendars_sync: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          ghl_calendar_id: string
+          ghl_calendar_name: string
+          id: string
+          last_sync_at: string | null
+          sync_status: string | null
+          updated_at: string | null
+          user_id: string
+          zoom_calendar_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          ghl_calendar_id: string
+          ghl_calendar_name: string
+          id?: string
+          last_sync_at?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id: string
+          zoom_calendar_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          ghl_calendar_id?: string
+          ghl_calendar_name?: string
+          id?: string
+          last_sync_at?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          zoom_calendar_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghl_calendars_sync_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ghl_calendars_sync_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ghl_calendars_sync_zoom_calendar_id_fkey"
+            columns: ["zoom_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "company_calendar_access"
+            referencedColumns: ["accessible_calendar_id"]
+          },
+          {
+            foreignKeyName: "ghl_calendars_sync_zoom_calendar_id_fkey"
+            columns: ["zoom_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "user_calendars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ghl_credentials: {
         Row: {
           account_id: string
@@ -576,6 +691,104 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ghl_sessions_sync: {
+        Row: {
+          created_at: string | null
+          ghl_calendar_id: string
+          ghl_event_id: string
+          id: string
+          last_synced_at: string | null
+          scheduled_session_id: string | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ghl_calendar_id: string
+          ghl_event_id: string
+          id?: string
+          last_synced_at?: string | null
+          scheduled_session_id?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ghl_calendar_id?: string
+          ghl_event_id?: string
+          id?: string
+          last_synced_at?: string | null
+          scheduled_session_id?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghl_sessions_sync_scheduled_session_id_fkey"
+            columns: ["scheduled_session_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ghl_sync_log: {
+        Row: {
+          calendar_id: string | null
+          company_id: string | null
+          created_at: string | null
+          created_count: number | null
+          error_message: string | null
+          id: string
+          sync_status: string | null
+          sync_type: string
+          synced_count: number | null
+          updated_count: number | null
+          user_id: string
+        }
+        Insert: {
+          calendar_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_count?: number | null
+          error_message?: string | null
+          id?: string
+          sync_status?: string | null
+          sync_type: string
+          synced_count?: number | null
+          updated_count?: number | null
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          created_count?: number | null
+          error_message?: string | null
+          id?: string
+          sync_status?: string | null
+          sync_type?: string
+          synced_count?: number | null
+          updated_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghl_sync_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ghl_sync_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gohighlevel_config: {
         Row: {
@@ -1369,6 +1582,8 @@ export type Database = {
           progress: number
           project_title: string
           request_id: string
+          result_html: string | null
+          result_html_ppt: string | null
           result_url: string | null
           started_at: string
           status: Database["public"]["Enums"]["processing_status"]
@@ -1384,6 +1599,8 @@ export type Database = {
           progress?: number
           project_title: string
           request_id: string
+          result_html?: string | null
+          result_html_ppt?: string | null
           result_url?: string | null
           started_at?: string
           status: Database["public"]["Enums"]["processing_status"]
@@ -1399,6 +1616,8 @@ export type Database = {
           progress?: number
           project_title?: string
           request_id?: string
+          result_html?: string | null
+          result_html_ppt?: string | null
           result_url?: string | null
           started_at?: string
           status?: Database["public"]["Enums"]["processing_status"]
@@ -1416,6 +1635,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           full_name: string | null
+          ghl_user_id: string | null
           id: string
           profile_photo_url: string | null
           timezone: string | null
@@ -1428,6 +1648,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           full_name?: string | null
+          ghl_user_id?: string | null
           id: string
           profile_photo_url?: string | null
           timezone?: string | null
@@ -1440,6 +1661,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           full_name?: string | null
+          ghl_user_id?: string | null
           id?: string
           profile_photo_url?: string | null
           timezone?: string | null
@@ -1484,11 +1706,13 @@ export type Database = {
           client_email: string | null
           client_name: string
           client_phone: string | null
+          company_ghl_calendar_id: string | null
           company_id: string
           completed_session_id: string | null
           created_at: string | null
           created_by: string | null
           duration_minutes: number | null
+          ghl_event_id: string | null
           id: string
           meeting_notes: string | null
           meeting_objective: string
@@ -1499,6 +1723,7 @@ export type Database = {
           time_zone: string | null
           updated_at: string | null
           vendor_id: string | null
+          vendor_name: string | null
           zoom_link: string | null
         }
         Insert: {
@@ -1507,14 +1732,16 @@ export type Database = {
           client_email?: string | null
           client_name: string
           client_phone?: string | null
+          company_ghl_calendar_id?: string | null
           company_id: string
           completed_session_id?: string | null
           created_at?: string | null
           created_by?: string | null
           duration_minutes?: number | null
+          ghl_event_id?: string | null
           id?: string
           meeting_notes?: string | null
-          meeting_objective: string
+          meeting_objective?: string
           scheduled_date: string
           scheduled_time: string
           session_title: string
@@ -1522,6 +1749,7 @@ export type Database = {
           time_zone?: string | null
           updated_at?: string | null
           vendor_id?: string | null
+          vendor_name?: string | null
           zoom_link?: string | null
         }
         Update: {
@@ -1530,11 +1758,13 @@ export type Database = {
           client_email?: string | null
           client_name?: string
           client_phone?: string | null
+          company_ghl_calendar_id?: string | null
           company_id?: string
           completed_session_id?: string | null
           created_at?: string | null
           created_by?: string | null
           duration_minutes?: number | null
+          ghl_event_id?: string | null
           id?: string
           meeting_notes?: string | null
           meeting_objective?: string
@@ -1545,6 +1775,7 @@ export type Database = {
           time_zone?: string | null
           updated_at?: string | null
           vendor_id?: string | null
+          vendor_name?: string | null
           zoom_link?: string | null
         }
         Relationships: [
@@ -1560,6 +1791,13 @@ export type Database = {
             columns: ["calendar_id"]
             isOneToOne: false
             referencedRelation: "user_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_company_ghl_calendar_id_fkey"
+            columns: ["company_ghl_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "company_ghl_calendars"
             referencedColumns: ["id"]
           },
           {
@@ -1809,9 +2047,12 @@ export type Database = {
           color: string
           company_id: string | null
           created_at: string | null
+          ghl_calendar_id: string | null
+          ghl_source_location_id: string | null
           id: string
           is_company_calendar: boolean | null
           is_default: boolean | null
+          is_ghl_calendar: boolean | null
           is_visible: boolean | null
           name: string
           updated_at: string | null
@@ -1822,9 +2063,12 @@ export type Database = {
           color?: string
           company_id?: string | null
           created_at?: string | null
+          ghl_calendar_id?: string | null
+          ghl_source_location_id?: string | null
           id?: string
           is_company_calendar?: boolean | null
           is_default?: boolean | null
+          is_ghl_calendar?: boolean | null
           is_visible?: boolean | null
           name: string
           updated_at?: string | null
@@ -1835,9 +2079,12 @@ export type Database = {
           color?: string
           company_id?: string | null
           created_at?: string | null
+          ghl_calendar_id?: string | null
+          ghl_source_location_id?: string | null
           id?: string
           is_company_calendar?: boolean | null
           is_default?: boolean | null
+          is_ghl_calendar?: boolean | null
           is_visible?: boolean | null
           name?: string
           updated_at?: string | null
@@ -1947,6 +2194,54 @@ export type Database = {
             columns: ["api_key_id"]
             isOneToOne: false
             referencedRelation: "heygen_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_calendar_assignments: {
+        Row: {
+          company_ghl_calendar_id: string
+          created_at: string | null
+          ghl_user_id: string
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+          vendor_display_name: string
+          vendor_id: string | null
+        }
+        Insert: {
+          company_ghl_calendar_id: string
+          created_at?: string | null
+          ghl_user_id: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          vendor_display_name: string
+          vendor_id?: string | null
+        }
+        Update: {
+          company_ghl_calendar_id?: string
+          created_at?: string | null
+          ghl_user_id?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          vendor_display_name?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_calendar_assignments_company_ghl_calendar_id_fkey"
+            columns: ["company_ghl_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "company_ghl_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_calendar_assignments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
