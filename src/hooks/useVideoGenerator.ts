@@ -10,6 +10,7 @@ import { COUNTDOWN_TIME } from '@/lib/countdownUtils';
 import { migrateLegacyData } from '@/lib/migrationUtils';
 import { sendDirectToManualWebhook, sendDirectToManualWebhookWithUrls, sendDirectToManualWebhook2, sendDirectToManualWebhook2WithUrls } from '@/lib/webhookUtils';
 import { clearVideoConfig } from '@/lib/videoConfigDatabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseVideoGeneratorProps {
   flowState?: FlowState;
@@ -297,6 +298,26 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       // Decrypt API key
       const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
       
+      // Obtener claves de OpenAI y Gemini del usuario
+      let openaiApiKey = '';
+      let geminiApiKey = '';
+
+      try {
+        const { data: aiKeys } = await supabase
+          .from('user_ai_api_keys')
+          .select('openai_api_key, gemini_api_key')
+          .eq('user_id', user?.id)
+          .maybeSingle();
+        
+        if (aiKeys) {
+          openaiApiKey = aiKeys.openai_api_key || '';
+          geminiApiKey = aiKeys.gemini_api_key || '';
+        }
+        console.log('🔑 Claves AI obtenidas para handleGenerateVideoWithFiles:', { hasOpenAI: !!openaiApiKey, hasGemini: !!geminiApiKey });
+      } catch (error) {
+        console.warn('⚠️ No se pudieron obtener las claves AI:', error);
+      }
+      
       // Build payload for webhook with default dimensions for manual style
       const payload = {
         script: script.trim(),
@@ -310,6 +331,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         Estilo: flowState!.selectedStyle?.id,
         width: apiVersionCustomization?.width || 1280,
         height: apiVersionCustomization?.height || 720,
+        // Claves API de OpenAI y Gemini del usuario
+        openai_api_key: openaiApiKey,
+        gemini_api_key: geminiApiKey,
         // 🔍 CRÍTICO: Incluir subtitleCustomization completo
         subtitleCustomization: flowState!.subtitleCustomization ? {
           fontFamily: flowState!.subtitleCustomization.fontFamily || "",
@@ -435,6 +459,26 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
       // Decrypt API key
       const decryptedApiKey = atob(flowState!.selectedApiKey!.api_key_encrypted);
       
+      // Obtener claves de OpenAI y Gemini del usuario
+      let openaiApiKey = '';
+      let geminiApiKey = '';
+
+      try {
+        const { data: aiKeys } = await supabase
+          .from('user_ai_api_keys')
+          .select('openai_api_key, gemini_api_key')
+          .eq('user_id', user?.id)
+          .maybeSingle();
+        
+        if (aiKeys) {
+          openaiApiKey = aiKeys.openai_api_key || '';
+          geminiApiKey = aiKeys.gemini_api_key || '';
+        }
+        console.log('🔑 Claves AI obtenidas para handleGenerateVideoWithUrls:', { hasOpenAI: !!openaiApiKey, hasGemini: !!geminiApiKey });
+      } catch (error) {
+        console.warn('⚠️ No se pudieron obtener las claves AI:', error);
+      }
+      
       // Build payload for webhook with default dimensions for manual style
       const payload = {
         script: script.trim(),
@@ -448,6 +492,9 @@ export const useVideoGenerator = (props?: UseVideoGeneratorProps) => {
         Estilo: flowState!.selectedStyle?.id,
         width: apiVersionCustomization?.width || 1280,
         height: apiVersionCustomization?.height || 720,
+        // Claves API de OpenAI y Gemini del usuario
+        openai_api_key: openaiApiKey,
+        gemini_api_key: geminiApiKey,
         // 🔍 CRÍTICO: Incluir subtitleCustomization completo
         subtitleCustomization: flowState!.subtitleCustomization ? {
           fontFamily: flowState!.subtitleCustomization.fontFamily || "",
