@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Sparkles, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (customization: CardCustomization) => void;
+  generatedScript: string;
 }
 
 // Función utilitaria para transformar comillas dobles a simples
@@ -23,10 +24,43 @@ const transformQuotes = (value: string): string => {
   return value.replace(/"/g, "'");
 };
 
-const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) => {
+const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, generatedScript }) => {
   const [date, setDate] = useState<Date>(new Date());
   const [titulo, setTitulo] = useState('');
   const [subtitulo, setSubtitulo] = useState('');
+  const [loadingTitulo, setLoadingTitulo] = useState(false);
+  const [loadingSubtitulo, setLoadingSubtitulo] = useState(false);
+
+  const handleCompleteWithAI = async (campo: 'titulo' | 'subtitulo') => {
+    const setLoading = campo === 'titulo' ? setLoadingTitulo : setLoadingSubtitulo;
+    const setValue = campo === 'titulo' ? setTitulo : setSubtitulo;
+    const maxLength = campo === 'titulo' ? 62 : 45;
+    
+    setLoading(true);
+    
+    try {
+      const response = await fetch('https://cris.cloude.es/webhook/generador-de-texto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guion: generatedScript,
+          campo: campo
+        })
+      });
+      
+      const data = await response.json();
+      
+      // Respuesta esperada: [{ "exito": "texto" }]
+      if (data && data[0] && data[0].exito) {
+        const texto = transformQuotes(data[0].exito.slice(0, maxLength));
+        setValue(texto);
+      }
+    } catch (error) {
+      console.error('Error al completar con IA:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleConfirm = () => {
     const customization: CardCustomization = {
@@ -100,6 +134,26 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
               className="cyber-border focus:cyber-glow h-12"
               maxLength={62}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCompleteWithAI('titulo')}
+              disabled={loadingTitulo || !generatedScript}
+              className="w-full mt-1 text-primary hover:text-primary/80 hover:bg-primary/10 flex items-center justify-center gap-2"
+            >
+              {loadingTitulo ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Completar con IA
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Campo Subtítulo */}
@@ -123,6 +177,26 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm }) =>
               className="cyber-border focus:cyber-glow h-12"
               maxLength={45}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCompleteWithAI('subtitulo')}
+              disabled={loadingSubtitulo || !generatedScript}
+              className="w-full mt-1 text-primary hover:text-primary/80 hover:bg-primary/10 flex items-center justify-center gap-2"
+            >
+              {loadingSubtitulo ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Completar con IA
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Botones */}
