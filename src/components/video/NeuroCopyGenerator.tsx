@@ -1,49 +1,183 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Sparkles, Send, Bot, Zap, Link, Rocket, MessageCircle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Sparkles, RefreshCw, Check } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
-import { generateScript } from '@/lib/neurocopyUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   onBack: () => void;
   onUseScript: (script: string) => void;
 }
 
+interface Message {
+  id: string;
+  content: string;
+  role: 'user' | 'assistant';
+  timestamp: Date;
+}
+
+// Feature component for the left panel
+const Feature = ({ icon: Icon, text }: { icon: React.ElementType; text: string }) => (
+  <div className="flex items-center gap-3 text-muted-foreground">
+    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+      <Icon className="w-4 h-4 text-primary" />
+    </div>
+    <span className="text-sm">{text}</span>
+  </div>
+);
+
+// Message bubble component
+const MessageBubble = ({ message }: { message: Message }) => {
+  const isUser = message.role === 'user';
+  
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {!isUser && (
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mr-3 flex-shrink-0">
+          <Bot className="w-4 h-4 text-white" />
+        </div>
+      )}
+      <div className={`max-w-[70%] p-4 rounded-2xl ${
+        isUser
+          ? 'bg-primary/10 cyber-border'
+          : 'bg-card/50 border border-border/30'
+      }`}>
+        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+      </div>
+    </div>
+  );
+};
+
+// Typing indicator component
+const TypingIndicator = () => (
+  <div className="flex items-center gap-3">
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+      <Bot className="w-4 h-4 text-white" />
+    </div>
+    <div className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-card/50 border border-border/30">
+      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+    </div>
+  </div>
+);
+
 const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
-  const [instructions, setInstructions] = useState('');
-  const [generatedScript, setGeneratedScript] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      content: 'Hola, soy Neurocopy GPT. Dime qué guión necesitas o pega un enlace para empezar.',
+      role: 'assistant',
+      timestamp: new Date()
+    }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastGeneratedScript, setLastGeneratedScript] = useState<string | null>(null);
+  const [aiApiKeys, setAiApiKeys] = useState({ openai_api_key: '', gemini_api_key: '' });
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { sessionId } = useSession();
 
-  const handleGenerateScript = async () => {
-    if (!instructions.trim()) {
-      toast({
-        title: "Instrucciones requeridas",
-        description: "Por favor, ingresa instrucciones para generar tu guión.",
-        variant: "destructive"
-      });
-      return;
-    }
+  // Load user's AI API keys
+  useEffect(() => {
+    const loadAiApiKeys = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('user_ai_api_keys')
+        .select('openai_api_key, gemini_api_key')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setAiApiKeys({
+          openai_api_key: data.openai_api_key || '',
+          gemini_api_key: data.gemini_api_key || ''
+        });
+      }
+    };
+    
+    loadAiApiKeys();
+  }, [user?.id]);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isGenerating]);
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isGenerating) return;
+    
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      content: inputMessage,
+      role: 'user',
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputMessage;
+    setInputMessage('');
     setIsGenerating(true);
     
     try {
-      console.log('Generando script con SessionID:', sessionId);
-      const script = await generateScript(instructions, user?.id);
-      setGeneratedScript(script);
+      console.log('Enviando mensaje a NeuroCopy GPT con SessionID:', sessionId);
+      
+      const response = await fetch('https://cris.cloude.es/webhook/guion_base', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructions: currentInput,
+          Userid: user?.id,
+          sessionid: sessionId,
+          openai_api_key: aiApiKeys.openai_api_key,
+          gemini_api_key: aiApiKeys.gemini_api_key
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Respuesta de NeuroCopy GPT:', data);
+      
+      const script = data?.[0]?.guion_IA || 'No se pudo generar el guión. Por favor, intenta de nuevo.';
+      
+      const aiMessage: Message = {
+        id: crypto.randomUUID(),
+        content: script,
+        role: 'assistant',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      setLastGeneratedScript(script);
       
       toast({
         title: "¡Guión generado!",
         description: "Tu guión ha sido creado exitosamente.",
       });
+      
     } catch (error) {
       console.error('Error:', error);
+      
+      const errorMessage: Message = {
+        id: crypto.randomUUID(),
+        content: 'Lo siento, hubo un error al generar el guión. Por favor, intenta de nuevo.',
+        role: 'assistant',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
       toast({
         title: "Error al generar guión",
         description: "No se pudo generar el guión. Por favor, intenta de nuevo.",
@@ -54,125 +188,119 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
     }
   };
 
-  const handleUseThisScript = () => {
-    if (generatedScript) {
-      onUseScript(generatedScript);
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
-      
-      <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="cyber-border hover:cyber-glow"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a estilos
-          </Button>
+    <div className="min-h-screen bg-background flex">
+      {/* Panel Izquierdo - Branding (30%) */}
+      <div className="w-[30%] min-w-[280px] max-w-[400px] border-r border-border/30 p-8 flex flex-col relative bg-card/20">
+        {/* Botón Volver */}
+        <Button 
+          variant="ghost" 
+          onClick={onBack} 
+          className="absolute top-4 left-4 hover:bg-primary/10"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" /> 
+          Volver
+        </Button>
+        
+        {/* Logo y Título */}
+        <div className="flex flex-col items-center mt-20">
+          <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mb-6">
+            <Sparkles className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-center">
+            NeuroCopy <span className="text-gradient-safe">GPT</span>
+          </h1>
+          <p className="text-muted-foreground text-center mt-3 text-sm">
+            Inteligencia artificial híbrida para copywriting avanzado
+          </p>
+          <p className="text-xs text-muted-foreground/70 text-center mt-4 px-4">
+            💡 Describe tu idea, usa videos de la competencia y ¡hazlo aún más viral!
+          </p>
+        </div>
+        
+        {/* Separador con gradiente */}
+        <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-8" />
+        
+        {/* Features */}
+        <div className="space-y-4 flex-1">
+          <Feature icon={Zap} text="Generación de guiones creativos" />
+          <Feature icon={Link} text="Análisis de contenido web" />
+          <Feature icon={Rocket} text="Optimización para viralidad" />
+          <Feature icon={MessageCircle} text="Agente conversacional inteligente" />
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gradient-safe leading-normal py-4 animate-glow-text">
-              NeuroCopy GPT
-            </h1>
-            <p className="text-muted-foreground text-lg mb-2">
-              Inteligencia artificial híbrida para copywriting avanzado
-            </p>
-            <p className="text-sm text-muted-foreground mb-1">
-              Describe lo que necesitas para tu video e ingresa enlaces de referencia si los tienes
-            </p>
-            <p className="text-xs text-muted-foreground/80">
-              💡 Potencia tu copywriting: Usa videos de la competencia y hazlo aún más viral!
-            </p>
+        {/* Decorative elements */}
+        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none" />
+      </div>
+      
+      {/* Panel Derecho - Chat (70%) */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header del Chat */}
+        <div className="border-b border-border/30 p-4 flex items-center justify-between bg-card/10">
+          <h2 className="text-lg font-semibold">Conversación con IA</h2>
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <Bot className="w-4 h-4 text-primary" />
           </div>
-
-          <Card className="cyber-border mb-6">
-            <CardContent className="p-8">
-              <div className="space-y-6">
-                <div>
-                  <label htmlFor="instructions" className="block text-sm font-medium mb-3">
-                    Instrucciones para tu guión
-                  </label>
-                  <textarea
-                    id="instructions"
-                    value={instructions}
-                    onChange={(e) => setInstructions(e.target.value)}
-                    placeholder="Describe tu idea de contenido e Incluye enlaces de videos de Instagram, TikTok o Noticias para hacer tu guion"
-                    className="w-full h-32 p-4 border rounded-lg bg-background/50 backdrop-blur-sm cyber-border focus:cyber-glow resize-none"
-                    disabled={isGenerating}
-                  />
-                </div>
-                
-                <Button
-                  onClick={handleGenerateScript}
-                  disabled={isGenerating || !instructions.trim()}
-                  className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-lg font-semibold"
-                >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                      Generando guión...
-                    </>
-                  ) : generatedScript ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 mr-2" />
-                      Generar Otro Guión
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Generar Guión con IA
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {generatedScript && (
-            <div className="space-y-6">
-              <Card className="cyber-border cyber-glow-intense">
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center mr-3">
-                      <Sparkles className="w-4 h-4 text-white" />
-                    </div>
-                    <h3 className="text-xl font-semibold">Tu guión generado</h3>
-                  </div>
-                  
-                  <div className="bg-muted/20 rounded-lg p-6 border cyber-border">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                      {generatedScript}
-                    </pre>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Button
-                onClick={handleUseThisScript}
-                className="w-full h-14 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-xl font-semibold"
-              >
-                <Check className="w-6 h-6 mr-3" />
-                Usar este Guión
-              </Button>
-            </div>
-          )}
+        </div>
+        
+        {/* Área de Mensajes */}
+        <ScrollArea className="flex-1 p-6">
+          <div className="space-y-6 pb-4">
+            {messages.map(message => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+            
+            {isGenerating && <TypingIndicator />}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+        
+        {/* Botón Usar Guión (visible cuando hay script) */}
+        {lastGeneratedScript && (
+          <div className="border-t border-border/30 p-4 bg-card/10">
+            <Button
+              onClick={() => onUseScript(lastGeneratedScript)}
+              className="w-full h-14 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-lg font-semibold transition-transform duration-200 hover:scale-[1.02]"
+            >
+              <Check className="w-6 h-6 mr-3" />
+              Usar este Guión
+            </Button>
+          </div>
+        )}
+        
+        {/* Input Bar */}
+        <div className="border-t border-border/30 p-4 bg-card/20">
+          <div className="flex items-center gap-3">
+            <input
+              value={inputMessage}
+              onChange={e => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Escribe tu pregunta, idea o pega un enlace aquí..."
+              className="flex-1 h-12 px-4 rounded-xl bg-background cyber-border focus:cyber-glow outline-none transition-all duration-200 text-sm"
+              disabled={isGenerating}
+            />
+            <Button
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || isGenerating}
+              className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-transform duration-200 hover:scale-110 disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <Send className="w-5 h-5 text-white" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
+      {/* Background decorations */}
+      <div className="fixed top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed bottom-0 left-[30%] w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl pointer-events-none" />
     </div>
   );
 };
