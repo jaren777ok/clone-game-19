@@ -1,261 +1,340 @@
 
-## Plan: Previews de Enlaces en Chat de NeuroCopy GPT
+## Plan: Rediseño de "Elige el Estilo de Edición" con Layout de Dos Paneles y Carrusel
 
 ### Objetivo
-Cuando el usuario pega un enlace de TikTok, Instagram o cualquier página web en el chat, mostrar una tarjeta de preview visual junto con el texto del mensaje. La tarjeta debe ser clickeable y abrir el enlace en una nueva pestaña.
+Transformar la página de selección de estilos de una grilla de 3 columnas a un layout de dos paneles con:
+- Panel izquierdo (30%): Información del paso e información dinámica del estilo activo
+- Panel derecho (70%): Carrusel horizontal con videos verticales y navegación
 
 ---
 
-### Diseño Visual Propuesto
+### Arquitectura Visual
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│ Mensaje del Usuario con Enlaces                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  "dame un guión de este video"                                  │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ 🎵 TikTok                                         ↗️    │   │
-│  │ tiktok.com/@2pierofx0                                   │   │
-│  │ /video/7583194841744477460                              │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ 📸 Instagram                                      ↗️    │   │
-│  │ instagram.com/reel/DTYup44DGc2                          │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ 🌐 Web                                            ↗️    │   │
-│  │ cnnespanol.cnn.com                                      │   │
-│  │ /mundo/analisis-trump-siembra-division...               │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ [← Cambiar avatar]                    Header Global              [Usuario] │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────┐  ┌─────────────────────────────────────────────────┐ │
+│  │   [🎬 ICONO]     │  │                                                 │ │
+│  │                  │  │    [Video]     [VIDEO ACTIVO]     [Video]       │ │
+│  │  Elige el       │  │     pequeño       GRANDE          pequeño       │ │
+│  │  Estilo de      │  │      (50%)         (100%)          (50%)        │ │
+│  │  Edición        │  │                                                  │ │
+│  │                  │  │         ←────────────────────→                  │ │
+│  │  ────────────   │  │                                                  │ │
+│  │                  │  │              ● ● ● ● ● ● ●                     │ │
+│  │  [Estilo        │  │                                                  │ │
+│  │   Noticiero]    │  └─────────────────────────────────────────────────┘ │
+│  │                  │                                                      │
+│  │  Requisitos:     │                                                      │
+│  │  ✓ Fondo Verde   │                                                      │
+│  │  ✓ Avatar Horiz. │                                                      │
+│  │  [Descargar]     │                                                      │
+│  │                  │                                                      │
+│  │  [Elegir Riendo] │                                                      │
+│  │  [Elegir Estilo] │                                                      │
+│  └──────────────────┘                                                      │
+│                                                                             │
+│  ═══════════════════ VIDEO DE FONDO ANIMADO ═══════════════════════════   │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Arquitectura de la Solución
-
-```text
-Mensaje del usuario
-        ↓
-┌─────────────────────────┐
-│ extractLinksFromText()  │ ← Función que detecta URLs con regex
-└─────────────────────────┘
-        ↓
-┌─────────────────────────┐
-│ identifyLinkType()      │ ← Identifica si es TikTok, Instagram o Web
-└─────────────────────────┘
-        ↓
-┌─────────────────────────┐
-│ LinkPreviewCard         │ ← Componente visual para cada enlace
-└─────────────────────────┘
-        ↓
-┌─────────────────────────┐
-│ MessageBubble           │ ← Renderiza texto + previews
-└─────────────────────────┘
-```
-
----
-
-### Cambios en Archivos
-
-#### 1. Crear nuevo componente `LinkPreviewCard.tsx`
-
-**Ubicación:** `src/components/video/LinkPreviewCard.tsx`
-
-**Funcionalidad:**
-- Recibe una URL como prop
-- Detecta el tipo de enlace (TikTok, Instagram, Web genérico)
-- Muestra un icono apropiado según el tipo
-- Extrae información legible de la URL (usuario, ID del video, dominio)
-- Es clickeable y abre la URL en nueva pestaña
-
-**Estructura del componente:**
-
-```tsx
-interface LinkPreviewCardProps {
-  url: string;
-}
-
-// Tipos de enlaces soportados
-type LinkType = 'tiktok' | 'instagram' | 'youtube' | 'web';
-
-// Función para detectar tipo de enlace
-const identifyLinkType = (url: string): LinkType => {
-  if (url.includes('tiktok.com')) return 'tiktok';
-  if (url.includes('instagram.com')) return 'instagram';
-  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-  return 'web';
-};
-
-// Función para extraer información de la URL
-const extractLinkInfo = (url: string, type: LinkType) => {
-  // Extraer dominio, usuario, path, etc.
-};
-```
-
-**Diseño visual del componente:**
-- Fondo con gradiente sutil y borde cyber
-- Icono a la izquierda según plataforma (TikTok: nota musical, Instagram: cámara, Web: globo)
-- Información de la URL truncada elegantemente
-- Icono de "abrir en nueva pestaña" a la derecha
-- Hover con efecto cyber-glow
-- Colores de marca para cada plataforma
-
----
-
-#### 2. Crear utilidad `linkUtils.ts`
-
-**Ubicación:** `src/lib/linkUtils.ts`
-
-**Funciones:**
-
-```tsx
-// Regex para detectar URLs en texto
-const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
-
-// Extraer todas las URLs de un texto
-export const extractLinksFromText = (text: string): string[] => {
-  const matches = text.match(URL_REGEX);
-  return matches || [];
-};
-
-// Remover URLs del texto para mostrar solo el mensaje
-export const removeLinksFromText = (text: string): string => {
-  return text.replace(URL_REGEX, '').trim();
-};
-
-// Identificar tipo de plataforma
-export const identifyPlatform = (url: string): 'tiktok' | 'instagram' | 'youtube' | 'twitter' | 'web' => {
-  if (url.includes('tiktok.com')) return 'tiktok';
-  if (url.includes('instagram.com')) return 'instagram';
-  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-  if (url.includes('twitter.com') || url.includes('x.com')) return 'twitter';
-  return 'web';
-};
-
-// Formatear URL para display
-export const formatUrlForDisplay = (url: string) => {
-  try {
-    const urlObj = new URL(url);
-    return {
-      domain: urlObj.hostname.replace('www.', ''),
-      path: urlObj.pathname.length > 30 
-        ? urlObj.pathname.substring(0, 30) + '...' 
-        : urlObj.pathname
-    };
-  } catch {
-    return { domain: url, path: '' };
-  }
-};
-```
-
----
-
-#### 3. Modificar `MessageBubble` en `NeuroCopyGenerator.tsx`
-
-**Cambios:**
-
-1. Importar el nuevo componente y utilidades
-2. Antes de renderizar el contenido, extraer enlaces
-3. Separar texto de enlaces
-4. Renderizar texto primero, luego las tarjetas de preview
-
-```tsx
-const MessageBubble = ({ message, displayedContent, isTyping }) => {
-  const isUser = message.role === 'user';
-  const content = displayedContent !== undefined ? displayedContent : message.content;
-  
-  // Solo procesar enlaces en mensajes de usuario
-  const links = isUser ? extractLinksFromText(content) : [];
-  const textWithoutLinks = isUser ? removeLinksFromText(content) : content;
-  
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {/* Avatar de IA */}
-      {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent ...">
-          <Bot className="w-4 h-4 text-white" />
-        </div>
-      )}
-      
-      <div className="max-w-[70%] space-y-3">
-        {/* Texto del mensaje (sin enlaces) */}
-        {textWithoutLinks && (
-          <div className={`p-4 rounded-2xl ${isUser ? 'bg-primary/10 cyber-border' : 'bg-card/50'}`}>
-            <p className="text-sm whitespace-pre-wrap">{textWithoutLinks}</p>
-          </div>
-        )}
-        
-        {/* Tarjetas de preview para cada enlace */}
-        {links.map((link, index) => (
-          <LinkPreviewCard key={index} url={link} />
-        ))}
-      </div>
-    </div>
-  );
-};
-```
-
----
-
-### Diseño Visual de LinkPreviewCard
-
-**Colores por plataforma:**
-- TikTok: Borde con gradiente negro/rosa (#000000 a #ff0050)
-- Instagram: Borde con gradiente púrpura/naranja (#833AB4 a #F77737)
-- YouTube: Borde rojo (#FF0000)
-- Web genérica: Borde del tema (cyber-border)
-
-**Iconos por plataforma (usando Lucide):**
-- TikTok: `Music` o crear icono SVG personalizado
-- Instagram: `Camera` o `Instagram` (si existe)
-- YouTube: `Youtube` (Lucide lo tiene)
-- Web: `Globe`
-
-**Estructura visual:**
-
-```text
-┌──────────────────────────────────────────────────────┐
-│ [🎵]  TikTok                              [↗️]       │
-│       tiktok.com/@usuario                            │
-│       /video/1234567890...                           │
-└──────────────────────────────────────────────────────┘
-```
-
----
-
-### Resumen de Archivos a Crear/Modificar
+### Archivos a Crear/Modificar
 
 | Archivo | Acción | Descripción |
 |---------|--------|-------------|
-| `src/lib/linkUtils.ts` | CREAR | Funciones de detección y formateo de URLs |
-| `src/components/video/LinkPreviewCard.tsx` | CREAR | Componente de tarjeta de preview |
-| `src/components/video/NeuroCopyGenerator.tsx` | MODIFICAR | Integrar detección de enlaces y previews en MessageBubble |
+| `src/components/video/StyleSelector.tsx` | MODIFICAR | Restructurar para layout de dos paneles |
+| `src/components/video/StyleLeftPanel.tsx` | CREAR | Panel izquierdo con info estática y dinámica |
+| `src/components/video/StyleCarousel.tsx` | CREAR | Carrusel de videos con Embla |
+| `src/components/video/StyleGrid.tsx` | ELIMINAR | Ya no será necesario (reemplazado por carrusel) |
+| `src/components/video/StyleSelectorHeader.tsx` | MODIFICAR | Simplificar, solo botón de navegación |
+| `src/types/videoFlow.ts` | MODIFICAR | Agregar descripciones a VideoStyle |
 
 ---
 
-### Comportamiento Esperado
+### PARTE 1: Actualizar tipo VideoStyle
 
-1. **Usuario escribe:** "dame un guión de este video https://www.tiktok.com/@2pierofx0/video/7583..."
+Agregar campos adicionales para la información dinámica:
 
-2. **Se muestra:**
-   - Burbuja con texto: "dame un guión de este video"
-   - Debajo: Tarjeta de TikTok con icono, dominio truncado y botón para abrir
-
-3. **Al hacer clic en la tarjeta:** Abre el enlace en nueva pestaña
-
-4. **Múltiples enlaces:** Se muestran múltiples tarjetas apiladas verticalmente
+```typescript
+export interface VideoStyle {
+  id: string;
+  name: string;
+  video_url: string;
+  description?: string;  // NUEVO: descripción corta del estilo
+  requirements: {        // NUEVO: requisitos estructurados
+    items: string[];
+    downloadUrl?: string;
+    downloadLabel?: string;
+  };
+}
+```
 
 ---
 
-### Notas Técnicas
+### PARTE 2: Crear StyleLeftPanel.tsx
 
-- Los previews se muestran **solo en mensajes del usuario** (no en respuestas de IA)
-- La funcionalidad es **puramente estética/frontend** - no requiere llamadas a APIs
-- Se mantiene toda la funcionalidad existente de envío a webhook
-- El efecto typewriter **no aplica** a las tarjetas de preview (aparecen inmediatamente)
+Nuevo componente para el panel izquierdo con:
+
+**Sección Estática:**
+- Icono de claqueta/cámara con degradado rosa-magenta y animación flotante
+- Título: "Elige el Estilo de Edición" con gradiente
+- Subtítulo: "Selecciona el estilo que mejor se adapte..."
+
+**Sección Dinámica (cambia con el slide activo):**
+- Nombre del estilo actual con efecto de resplandor
+- Lista de requisitos con iconos (check verde o advertencia)
+- Enlace de descarga si aplica
+- Botón "Elegir [Nombre del Estilo]" con degradado
+
+```tsx
+interface StyleLeftPanelProps {
+  activeStyle: VideoStyle | null;
+  onSelectStyle: (style: VideoStyle) => void;
+  onBack: () => void;
+}
+```
+
+**Animaciones:**
+- Transición suave al cambiar de estilo (fade-in del nombre y requisitos)
+- El botón cambia de texto dinámicamente: "Elegir Estilo Noticia", "Elegir Estilo Noticiero", etc.
+
+---
+
+### PARTE 3: Crear StyleCarousel.tsx
+
+Nuevo componente usando Embla Carousel:
+
+**Características del carrusel:**
+- Video central: 100% tamaño, borde brillante con degradado rosa-magenta
+- Videos laterales: 60% tamaño, oscurecidos (opacity-50), parcialmente visibles
+- Reproducción automática del video central
+- Pausa automática al salir del centro
+
+**Props:**
+```tsx
+interface StyleCarouselProps {
+  styles: VideoStyle[];
+  activeIndex: number;
+  onActiveIndexChange: (index: number) => void;
+  onPlayVideo: (styleId: string) => void;
+  playingVideo: string | null;
+}
+```
+
+**Navegación:**
+- Flechas grandes estilizadas a los lados (degradado rosa-magenta)
+- Indicadores de página (dots) en la parte inferior
+- Soporte para teclado (izquierda/derecha)
+
+**Comportamiento del video:**
+- El video central se reproduce automáticamente en loop cuando está visible
+- Al navegar, el video anterior se pausa y el nuevo se reproduce
+- Play/pause manual con click en el video
+
+---
+
+### PARTE 4: Modificar StyleSelector.tsx
+
+**Nuevo layout principal:**
+
+```tsx
+<div className="min-h-screen relative overflow-hidden">
+  {/* Video de fondo animado */}
+  <video 
+    src="https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=..."
+    className="absolute inset-0 w-full h-full object-cover opacity-30"
+    autoPlay 
+    muted 
+    loop 
+    playsInline
+  />
+  
+  {/* Overlay oscuro para legibilidad */}
+  <div className="absolute inset-0 bg-background/80" />
+  
+  {/* Contenido principal */}
+  <div className="relative z-10 min-h-screen flex">
+    {/* Panel Izquierdo (30%) */}
+    <StyleLeftPanel 
+      activeStyle={videoStyles[activeIndex]}
+      onSelectStyle={handleSelectStyle}
+      onBack={onBack}
+    />
+    
+    {/* Panel Derecho (70%) */}
+    <div className="flex-1 flex flex-col justify-center px-8">
+      <StyleCarousel
+        styles={videoStyles}
+        activeIndex={activeIndex}
+        onActiveIndexChange={setActiveIndex}
+        playingVideo={playingVideo}
+        onPlayVideo={handlePlayVideo}
+      />
+    </div>
+  </div>
+</div>
+```
+
+**Nuevo estado para el índice activo:**
+```typescript
+const [activeIndex, setActiveIndex] = useState(0);
+
+// El estilo activo es el que está en el centro del carrusel
+const activeStyle = videoStyles[activeIndex];
+```
+
+---
+
+### PARTE 5: Estructura del Carrusel con Embla
+
+Configuración de Embla para mostrar múltiples slides:
+
+```tsx
+const [emblaRef, emblaApi] = useEmblaCarousel({
+  align: 'center',
+  loop: true,
+  containScroll: 'trimSnaps',
+  slidesToScroll: 1,
+});
+
+// Detectar slide activo
+useEffect(() => {
+  if (!emblaApi) return;
+  
+  const onSelect = () => {
+    const index = emblaApi.selectedScrollSnap();
+    onActiveIndexChange(index);
+  };
+  
+  emblaApi.on('select', onSelect);
+  return () => { emblaApi.off('select', onSelect); };
+}, [emblaApi]);
+```
+
+**Estilos para los slides:**
+```tsx
+// Slide central (activo)
+<div className={`
+  transition-all duration-500 ease-out
+  ${isActive 
+    ? 'scale-100 opacity-100 z-10' 
+    : 'scale-75 opacity-50 z-0 blur-[1px]'
+  }
+`}>
+  <div className={`
+    ${isActive 
+      ? 'border-4 border-transparent bg-gradient-to-r from-primary to-accent p-[2px] rounded-2xl shadow-2xl shadow-primary/30' 
+      : 'border border-border/30 rounded-2xl'
+    }
+  `}>
+    <video ... />
+  </div>
+</div>
+```
+
+---
+
+### PARTE 6: Datos de Estilos con Requisitos
+
+Actualizar el array de estilos con información completa:
+
+```typescript
+const videoStyles: VideoStyle[] = [
+  {
+    id: 'style-1',
+    name: 'Estilo Noticia',
+    description: 'Estilo de noticias con presentador y titulares',
+    video_url: '...',
+    requirements: {
+      items: [
+        'Se requiere Fondo Verde',
+        'Se requiere Avatar Horizontal'
+      ],
+      downloadUrl: 'https://drive.google.com/...',
+      downloadLabel: 'Descargar Fondo'
+    }
+  },
+  // ... resto de estilos
+];
+```
+
+---
+
+### PARTE 7: Indicadores de Página (Dots)
+
+Componente para los puntos de navegación:
+
+```tsx
+const CarouselDots = ({ total, active, onSelect }) => (
+  <div className="flex items-center justify-center gap-2 mt-8">
+    {Array.from({ length: total }).map((_, i) => (
+      <button
+        key={i}
+        onClick={() => onSelect(i)}
+        className={`
+          w-2.5 h-2.5 rounded-full transition-all duration-300
+          ${i === active 
+            ? 'w-8 bg-gradient-to-r from-primary to-accent' 
+            : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+          }
+        `}
+      />
+    ))}
+  </div>
+);
+```
+
+---
+
+### Detalles Técnicos Adicionales
+
+**Video de Fondo:**
+```tsx
+<video
+  src="https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=..."
+  className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+  autoPlay
+  muted
+  loop
+  playsInline
+/>
+```
+
+**Responsive:**
+- En móvil, el layout cambia a una columna
+- Panel izquierdo se convierte en un header compacto
+- Carrusel ocupa todo el ancho con un solo video visible
+
+**Transiciones:**
+- Fade suave al cambiar información del panel izquierdo (300ms)
+- Scale y opacity para videos en el carrusel (500ms)
+- Borde glow animado en video activo
+
+---
+
+### Resumen Visual
+
+El nuevo diseño tendrá:
+1. **Fondo animado** con video de partículas/red neuronal
+2. **Panel izquierdo fijo** que muestra información del estilo activo dinámicamente
+3. **Carrusel central** con video grande en el centro y videos más pequeños a los lados
+4. **Navegación fluida** con flechas y dots
+5. **Reproducción automática** del video activo
+6. **Botón contextual** que cambia según el estilo visible
+
+---
+
+### Archivos Finales
+
+| Archivo | Acción |
+|---------|--------|
+| `src/components/video/StyleSelector.tsx` | MODIFICAR - Layout principal con video de fondo |
+| `src/components/video/StyleLeftPanel.tsx` | CREAR - Panel izquierdo con info dinámica |
+| `src/components/video/StyleCarousel.tsx` | CREAR - Carrusel con Embla |
+| `src/components/video/StyleGrid.tsx` | MANTENER (backup) - No eliminar por ahora |
+| `src/components/video/StyleSelectorHeader.tsx` | MODIFICAR - Simplificar |
+| `src/types/videoFlow.ts` | MODIFICAR - Agregar campos a VideoStyle |
