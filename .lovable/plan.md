@@ -1,116 +1,178 @@
 
-
-## Plan: Rediseño de NeuroCopyGenerator con Layout de Dos Paneles estilo ChatGPT
+## Plan: Mejoras de UX en NeuroCopyGenerator y API Keys en CustomizeCardsModal
 
 ### Objetivo
-Transformar el componente `NeuroCopyGenerator` de un formulario simple a una interfaz de chat tipo ChatGPT con dos paneles: branding (30%) y área de conversación (70%).
+Implementar mejoras visuales y de experiencia de usuario en el componente NeuroCopy GPT y agregar la funcionalidad de enviar claves API a la webhook del modal de personalización de tarjetas.
 
 ---
 
-### Diseño Visual Propuesto
+### PARTE 1: Mejoras en NeuroCopyGenerator.tsx
 
-```text
-┌──────────────────────────────────┬────────────────────────────────────────────────────────┐
-│         PANEL IZQUIERDO          │                  PANEL DERECHO                          │
-│            (30%)                 │                    (70%)                                │
-├──────────────────────────────────┼────────────────────────────────────────────────────────┤
-│                                  │  ┌─ Header ──────────────────────────────────────────┐ │
-│      [✨ Logo con glow]          │  │  Conversación con IA                    [🤖]     │ │
-│                                  │  └───────────────────────────────────────────────────┘ │
-│      NeuroCopy GPT               │                                                         │
-│                                  │  ┌─ Área de Mensajes ────────────────────────────────┐ │
-│  Inteligencia artificial         │  │                                                    │ │
-│  híbrida para copywriting        │  │  [Avatar] Hola, soy Neurocopy GPT.                │ │
-│  avanzado                        │  │          Dime qué guión necesitas o pega          │ │
-│                                  │  │          un enlace para empezar.                  │ │
-│  Describe la copywriting...      │  │                                                    │ │
-│  ¡hazlo aún más viral!           │  │              ┌────────────────────────────┐       │ │
-│                                  │  │              │ ¡Quiero un guión para...   │       │ │
-│  ───────────────────             │  │              └────────────────────────────┘       │ │
-│                                  │  │                                                    │ │
-│  🎬 Generación de contenido web  │  │  [Avatar] *TÍTULO: NEURO-ECHOES                   │ │
-│  🔗 Análisis de contenido web    │  │          PERSONAJES: DETECTIVE KAI...             │ │
-│  🚀 Optimización para viralidad  │  │          SINOPSIS: En un futuro...                │ │
-│  💬 Agente conversacional        │  │                                                    │ │
-│                                  │  └────────────────────────────────────────────────────┘ │
-│                                  │                                                         │
-│                                  │  ┌─ Input Bar ───────────────────────────────────────┐ │
-│                                  │  │ [Escribe tu pregunta, idea o pega enlac...] [▶]  │ │
-│                                  │  └───────────────────────────────────────────────────┘ │
-│                                  │                                                         │
-│                                  │  ┌─ Botón Final ─────────────────────────────────────┐ │
-│                                  │  │        [✓ Usar este Guión]                        │ │
-│                                  │  └───────────────────────────────────────────────────┘ │
-└──────────────────────────────────┴────────────────────────────────────────────────────────┘
-```
+#### 1.1 Animación Flotante del Icono
 
----
+Agregar un keyframe de animación suave de flotación en `tailwind.config.ts`:
 
-### Arquitectura de la Conversación
-
-La interfaz mantendrá un historial de mensajes local (sin guardar en Supabase como el chat de NeurocopyChat), pero seguirá el mismo patrón de comunicación con la webhook.
-
-```text
-Usuario envía mensaje
-         ↓
-┌─────────────────────────────┐
-│ POST a webhook con:         │
-│ - message                   │
-│ - sessionid                 │
-│ - userId                    │
-│ - openai_api_key (NUEVO)    │
-│ - gemini_api_key (NUEVO)    │
-└─────────────────────────────┘
-         ↓
-Webhook responde con guión
-         ↓
-Se muestra en el chat
-         ↓
-Botón "Usar este Guión" activo
-```
-
----
-
-### Cambios en Archivos
-
-#### 1. `src/components/video/NeuroCopyGenerator.tsx` (REESCRIBIR)
-
-**Nuevos imports:**
-```tsx
-import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Sparkles, Send, Bot, Zap, Link, Rocket, MessageCircle, Loader2, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { useSession } from '@/hooks/useSession';
-import { supabase } from '@/integrations/supabase/client';
-```
-
-**Nuevos estados:**
-```tsx
-interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-  timestamp: Date;
+```typescript
+// Nuevo keyframe
+'float': {
+  '0%, 100%': { transform: 'translateY(0px)' },
+  '50%': { transform: 'translateY(-10px)' }
 }
 
-const [messages, setMessages] = useState<Message[]>([
-  {
-    id: 'welcome',
-    content: 'Hola, soy Neurocopy GPT. Dime qué guión necesitas o pega un enlace para empezar.',
-    role: 'assistant',
-    timestamp: new Date()
-  }
-]);
-const [inputMessage, setInputMessage] = useState('');
-const [isGenerating, setIsGenerating] = useState(false);
-const [lastGeneratedScript, setLastGeneratedScript] = useState<string | null>(null);
-const [aiApiKeys, setAiApiKeys] = useState({ openai_api_key: '', gemini_api_key: '' });
+// Nueva animation
+'float': 'float 3s ease-in-out infinite'
 ```
 
-**Cargar API Keys del usuario:**
+Aplicar la clase `animate-float` al contenedor del icono en el panel izquierdo.
+
+---
+
+#### 1.2 Título "NeuroCopy GPT" en una sola línea
+
+Cambiar de:
 ```tsx
+<h1 className="text-3xl font-bold text-center">
+  NeuroCopy <span className="text-gradient-safe">GPT</span>
+</h1>
+```
+
+A:
+```tsx
+<h1 className="text-2xl font-bold text-center whitespace-nowrap">
+  NeuroCopy <span className="text-gradient-safe">GPT</span>
+</h1>
+```
+
+Reducir ligeramente el tamaño y agregar `whitespace-nowrap` para evitar el salto de línea.
+
+---
+
+#### 1.3 Efecto Typewriter para Mensajes
+
+**Nuevo estado y lógica:**
+
+```typescript
+const [typingMessageId, setTypingMessageId] = useState<string | null>('welcome');
+const [displayedContent, setDisplayedContent] = useState<{ [key: string]: string }>({});
+```
+
+**Función de efecto typewriter:**
+
+```typescript
+const typeMessage = (messageId: string, fullContent: string, speed: number = 20) => {
+  setTypingMessageId(messageId);
+  let index = 0;
+  
+  const interval = setInterval(() => {
+    if (index <= fullContent.length) {
+      setDisplayedContent(prev => ({
+        ...prev,
+        [messageId]: fullContent.slice(0, index)
+      }));
+      index++;
+    } else {
+      clearInterval(interval);
+      setTypingMessageId(null);
+    }
+  }, speed);
+  
+  return () => clearInterval(interval);
+};
+```
+
+**Mensaje de bienvenida con typewriter:**
+
+Al montar el componente, iniciar el efecto typewriter para el mensaje de bienvenida:
+
+```typescript
+useEffect(() => {
+  const welcomeMessage = 'Hola, soy Neurocopy GPT. Dime qué guión necesitas o pega un enlace para empezar.';
+  typeMessage('welcome', welcomeMessage, 30);
+}, []);
+```
+
+**Respuestas de la IA con typewriter:**
+
+Cuando se recibe una respuesta de la webhook, en lugar de agregar el mensaje completo directamente, iniciar el typewriter:
+
+```typescript
+// Después de recibir la respuesta:
+const aiMessageId = crypto.randomUUID();
+const aiMessage: Message = {
+  id: aiMessageId,
+  content: script, // Contenido completo guardado
+  role: 'assistant',
+  timestamp: new Date()
+};
+
+setMessages(prev => [...prev, aiMessage]);
+typeMessage(aiMessageId, script, 15); // Velocidad más rápida para textos largos
+setLastGeneratedScript(script);
+```
+
+**Actualizar MessageBubble para usar contenido progresivo:**
+
+```tsx
+const MessageBubble = ({ 
+  message, 
+  displayedContent, 
+  isTyping 
+}: { 
+  message: Message; 
+  displayedContent?: string;
+  isTyping?: boolean;
+}) => {
+  const isUser = message.role === 'user';
+  const content = displayedContent !== undefined ? displayedContent : message.content;
+  
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {!isUser && (
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mr-3 flex-shrink-0">
+          <Bot className="w-4 h-4 text-white" />
+        </div>
+      )}
+      <div className={`max-w-[70%] p-4 rounded-2xl ${
+        isUser
+          ? 'bg-primary/10 cyber-border'
+          : 'bg-card/50 border border-border/30'
+      }`}>
+        <p className="text-sm whitespace-pre-wrap leading-relaxed">
+          {content}
+          {isTyping && <span className="animate-pulse">|</span>}
+        </p>
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+### PARTE 2: API Keys en CustomizeCardsModal
+
+#### 2.1 Pasar API Keys al Modal
+
+**Modificar flujo de datos:**
+
+```text
+VideoCreationFlow.tsx
+        ↓ (aiApiKeys)
+StyleSelector.tsx
+        ↓ (aiApiKeys)
+CustomizeCardsModal.tsx
+        ↓ (enviar en webhook)
+```
+
+**VideoCreationFlow.tsx:**
+
+Cargar las API keys del usuario y pasarlas a StyleSelector:
+
+```typescript
+// Agregar estado para AI API keys
+const [aiApiKeys, setAiApiKeys] = useState({ openai_api_key: '', gemini_api_key: '' });
+
+// useEffect para cargar las keys
 useEffect(() => {
   const loadAiApiKeys = async () => {
     if (!user?.id) return;
@@ -131,254 +193,94 @@ useEffect(() => {
   
   loadAiApiKeys();
 }, [user?.id]);
+
+// Pasar a StyleSelector
+<StyleSelector
+  onSelectStyle={selectStyle}
+  onBack={handleBack}
+  generatedScript={flowState.generatedScript || ''}
+  aiApiKeys={aiApiKeys}  // NUEVO
+/>
 ```
 
-**Función de envío de mensaje:**
-```tsx
-const sendMessage = async () => {
-  if (!inputMessage.trim() || isGenerating) return;
-  
-  // Agregar mensaje del usuario
-  const userMessage: Message = {
-    id: crypto.randomUUID(),
-    content: inputMessage,
-    role: 'user',
-    timestamp: new Date()
-  };
-  
-  setMessages(prev => [...prev, userMessage]);
-  setInputMessage('');
-  setIsGenerating(true);
+**StyleSelector.tsx:**
+
+Recibir y pasar las API keys:
+
+```typescript
+interface Props {
+  onSelectStyle: (...) => void;
+  onBack: () => void;
+  generatedScript: string;
+  aiApiKeys: { openai_api_key: string; gemini_api_key: string };  // NUEVO
+}
+
+// En el JSX
+<CustomizeCardsModal
+  isOpen={showCustomizeModal}
+  onClose={handleCustomizeCancel}
+  onConfirm={handleCustomizeConfirm}
+  generatedScript={generatedScript}
+  aiApiKeys={aiApiKeys}  // NUEVO
+/>
+```
+
+**CustomizeCardsModal.tsx:**
+
+Recibir las API keys y enviarlas en la webhook:
+
+```typescript
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (customization: CardCustomization) => void;
+  generatedScript: string;
+  aiApiKeys: { openai_api_key: string; gemini_api_key: string };  // NUEVO
+}
+
+const handleCompleteWithAI = async () => {
+  setLoadingAI(true);
   
   try {
-    const response = await fetch('https://cris.cloude.es/webhook/guion_base', {
+    const response = await fetch('https://cris.cloude.es/webhook/generador-de-texto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        instructions: inputMessage,
-        Userid: user?.id,
-        sessionid: sessionId,
-        openai_api_key: aiApiKeys.openai_api_key,
-        gemini_api_key: aiApiKeys.gemini_api_key
+        guion: generatedScript,
+        openai_api_key: aiApiKeys.openai_api_key,   // NUEVO
+        gemini_api_key: aiApiKeys.gemini_api_key    // NUEVO
       })
     });
     
-    const data = await response.json();
-    const script = data?.[0]?.guion_IA || 'No se pudo generar el guión.';
-    
-    const aiMessage: Message = {
-      id: crypto.randomUUID(),
-      content: script,
-      role: 'assistant',
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, aiMessage]);
-    setLastGeneratedScript(script);
-    
-  } catch (error) {
-    // Manejo de error
-  } finally {
-    setIsGenerating(false);
+    // ... resto del código
   }
 };
 ```
 
-**Estructura JSX del componente:**
+---
 
-```tsx
-return (
-  <div className="min-h-screen bg-background flex">
-    {/* Panel Izquierdo - Branding (30%) */}
-    <div className="w-[30%] border-r border-border/30 p-8 flex flex-col relative">
-      {/* Botón Volver */}
-      <Button variant="ghost" onClick={onBack} className="absolute top-4 left-4">
-        <ArrowLeft className="w-4 h-4 mr-2" /> Volver
-      </Button>
-      
-      {/* Logo y Título */}
-      <div className="flex flex-col items-center mt-16">
-        <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mb-6">
-          <Sparkles className="w-10 h-10 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold">
-          NeuroCopy <span className="text-gradient-safe">GPT</span>
-        </h1>
-        <p className="text-muted-foreground text-center mt-2">
-          Inteligencia artificial híbrida para copywriting avanzado
-        </p>
-        <p className="text-xs text-muted-foreground/70 text-center mt-3">
-          Describe la copywriting, usa videos de la competencia y ¡hazlo aún más viral!
-        </p>
-      </div>
-      
-      {/* Separador */}
-      <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-8" />
-      
-      {/* Features */}
-      <div className="space-y-4">
-        <Feature icon={Zap} text="Generación de contenido web" />
-        <Feature icon={Link} text="Análisis de contenido web" />
-        <Feature icon={Rocket} text="Optimización para viralidad" />
-        <Feature icon={MessageCircle} text="Agente conversacional inteligente" />
-      </div>
-    </div>
-    
-    {/* Panel Derecho - Chat (70%) */}
-    <div className="flex-1 flex flex-col">
-      {/* Header del Chat */}
-      <div className="border-b border-border/30 p-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Conversación con IA</h2>
-        <Bot className="w-5 h-5 text-muted-foreground" />
-      </div>
-      
-      {/* Área de Mensajes */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.map(message => (
-          <MessageBubble key={message.id} message={message} />
-        ))}
-        
-        {isGenerating && <TypingIndicator />}
-        
-        <div ref={messagesEndRef} />
-      </div>
-      
-      {/* Input Bar */}
-      <div className="border-t border-border/30 p-4">
-        <div className="flex items-center gap-3">
-          <input
-            value={inputMessage}
-            onChange={e => setInputMessage(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && sendMessage()}
-            placeholder="Escribe tu pregunta, idea o pega un enlace aquí..."
-            className="flex-1 h-12 px-4 rounded-lg bg-card cyber-border focus:cyber-glow"
-            disabled={isGenerating}
-          />
-          <Button
-            onClick={sendMessage}
-            disabled={!inputMessage.trim() || isGenerating}
-            className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-accent"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
-      
-      {/* Botón Usar Guión (visible cuando hay script) */}
-      {lastGeneratedScript && (
-        <div className="border-t border-border/30 p-4">
-          <Button
-            onClick={() => onUseScript(lastGeneratedScript)}
-            className="w-full h-14 bg-gradient-to-r from-primary to-accent cyber-glow text-lg"
-          >
-            <Check className="w-6 h-6 mr-3" />
-            Usar este Guión
-          </Button>
-        </div>
-      )}
-    </div>
-  </div>
-);
-```
+### Resumen de Archivos a Modificar
+
+| Archivo | Cambios |
+|---------|---------|
+| `tailwind.config.ts` | Agregar keyframe y animation `float` |
+| `src/components/video/NeuroCopyGenerator.tsx` | Animación flotante, título en una línea, efecto typewriter |
+| `src/pages/VideoCreationFlow.tsx` | Cargar y pasar AI API keys a StyleSelector |
+| `src/components/video/StyleSelector.tsx` | Recibir y pasar AI API keys a CustomizeCardsModal |
+| `src/components/video/CustomizeCardsModal.tsx` | Recibir AI API keys y enviarlas en la webhook |
 
 ---
 
-### Componentes Internos Auxiliares
+### Resultado Visual Esperado
 
-**Feature (para el panel izquierdo):**
-```tsx
-const Feature = ({ icon: Icon, text }: { icon: any; text: string }) => (
-  <div className="flex items-center gap-3 text-muted-foreground">
-    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-      <Icon className="w-4 h-4 text-primary" />
-    </div>
-    <span className="text-sm">{text}</span>
-  </div>
-);
-```
+**Panel Izquierdo de NeuroCopyGenerator:**
+- Icono con glow flotando suavemente arriba y abajo
+- "NeuroCopy GPT" en una sola línea
 
-**MessageBubble (para los mensajes):**
-```tsx
-const MessageBubble = ({ message }: { message: Message }) => {
-  const isUser = message.role === 'user';
-  
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mr-3 flex-shrink-0">
-          <Bot className="w-4 h-4 text-white" />
-        </div>
-      )}
-      <div className={`max-w-[70%] p-4 rounded-2xl ${
-        isUser
-          ? 'bg-primary/10 cyber-border'
-          : 'bg-card/50'
-      }`}>
-        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-      </div>
-    </div>
-  );
-};
-```
+**Chat:**
+- Mensaje de bienvenida aparece letra por letra con cursor parpadeante
+- Respuestas de la IA aparecen progresivamente letra por letra
+- Fluidez visual mejorada
 
-**TypingIndicator (animación "escribiendo..."):**
-```tsx
-const TypingIndicator = () => (
-  <div className="flex items-center gap-3">
-    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-      <Bot className="w-4 h-4 text-white" />
-    </div>
-    <div className="flex items-center gap-1 text-primary">
-      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-      <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-    </div>
-  </div>
-);
-```
-
----
-
-### Resumen de Cambios
-
-| Archivo | Acción |
-|---------|--------|
-| `src/components/video/NeuroCopyGenerator.tsx` | Reescribir completamente con layout de 2 paneles |
-| `src/lib/neurocopyUtils.ts` | Mantener sin cambios (seguimos usando la misma webhook) |
-
----
-
-### Datos Enviados a la Webhook
-
-El payload actualizado incluirá:
-
-```json
-{
-  "instructions": "mensaje del usuario",
-  "Userid": "uuid-del-usuario",
-  "sessionid": "app_session_uuid_timestamp",
-  "openai_api_key": "sk-...",
-  "gemini_api_key": "AIza..."
-}
-```
-
----
-
-### Funcionalidades Mantenidas
-
-1. **Session ID**: Se mantiene el `useSession()` hook para tracking de conversación
-2. **User ID**: Se sigue enviando para identificación
-3. **Webhook**: Misma URL `https://cris.cloude.es/webhook/guion_base`
-4. **Botón "Usar este Guión"**: Aparece cuando hay un script generado
-5. **Navegación**: El botón "Volver a estilos" sigue funcionando
-
----
-
-### Beneficios del Nuevo Diseño
-
-1. Interfaz más profesional y moderna estilo ChatGPT
-2. Historial de conversación visible durante la sesión
-3. Branding prominente que refuerza la identidad del producto
-4. Separación visual clara entre información y acción
-5. Experiencia de usuario más intuitiva para conversación con IA
-
+**Modal de Personalización:**
+- Botón "Completar con IA" envía las claves API junto con el guión
