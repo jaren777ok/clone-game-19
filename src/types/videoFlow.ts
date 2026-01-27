@@ -18,10 +18,18 @@ export interface Voice {
   preview_audio_url: string;
 }
 
+export interface VideoStyleRequirement {
+  items: string[];
+  downloadUrl?: string;
+  downloadLabel?: string;
+}
+
 export interface VideoStyle {
   id: string;
   name: string;
   video_url: string;
+  description?: string;
+  requirements?: VideoStyleRequirement;
 }
 
 export interface CardCustomization {
