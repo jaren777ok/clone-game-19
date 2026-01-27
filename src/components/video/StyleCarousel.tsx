@@ -1,8 +1,13 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import useEmblaCarousel from 'embla-carousel-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { VideoStyle } from '@/types/videoFlow';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from '@/components/ui/carousel';
 
 interface Props {
   styles: VideoStyle[];
@@ -19,30 +24,25 @@ const StyleCarousel: React.FC<Props> = ({
   playingVideo,
   onTogglePlay,
 }) => {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: 'center',
-    loop: true,
-    containScroll: false,
-    skipSnaps: false,
-  });
-
+  const [api, setApi] = useState<CarouselApi>();
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
   // Handle slide selection
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    const index = emblaApi.selectedScrollSnap();
-    onActiveIndexChange(index);
-  }, [emblaApi, onActiveIndexChange]);
-
   useEffect(() => {
-    if (!emblaApi) return;
-    emblaApi.on('select', onSelect);
-    onSelect();
-    return () => {
-      emblaApi.off('select', onSelect);
+    if (!api) return;
+
+    const onSelect = () => {
+      const index = api.selectedScrollSnap();
+      onActiveIndexChange(index);
     };
-  }, [emblaApi, onSelect]);
+
+    api.on('select', onSelect);
+    onSelect();
+
+    return () => {
+      api.off('select', onSelect);
+    };
+  }, [api, onActiveIndexChange]);
 
   // Auto-play active video
   useEffect(() => {
@@ -64,17 +64,17 @@ const StyleCarousel: React.FC<Props> = ({
     }
   }, [activeIndex, styles]);
 
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
+  const scrollPrev = () => {
+    if (api) api.scrollPrev();
+  };
 
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
+  const scrollNext = () => {
+    if (api) api.scrollNext();
+  };
 
-  const scrollTo = useCallback((index: number) => {
-    if (emblaApi) emblaApi.scrollTo(index);
-  }, [emblaApi]);
+  const scrollTo = (index: number) => {
+    if (api) api.scrollTo(index);
+  };
 
   const handleVideoClick = (styleId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -110,80 +110,93 @@ const StyleCarousel: React.FC<Props> = ({
       </Button>
 
       {/* Carousel Container */}
-      <div className="overflow-hidden w-full px-20" ref={emblaRef}>
-        <div className="flex items-center gap-4">
-          {styles.map((style, index) => {
-            const isActive = index === activeIndex;
-            const isPlaying = playingVideo === style.id;
-            
-            return (
-              <div
-                key={style.id}
-                className={`
-                  flex-[0_0_280px] transition-all duration-500 ease-out cursor-pointer
-                  ${isActive 
-                    ? 'scale-100 opacity-100 z-10' 
-                    : 'scale-75 opacity-40 z-0 blur-[1px]'
-                  }
-                `}
-                onClick={() => scrollTo(index)}
-              >
-                {/* Video Container with Gradient Border */}
-                <div 
-                  className={`
-                    relative rounded-2xl overflow-hidden transition-all duration-500
-                    ${isActive 
-                      ? 'p-[3px] bg-gradient-to-br from-primary via-accent to-primary shadow-2xl shadow-primary/30' 
-                      : 'p-[1px] bg-border/30'
-                    }
-                  `}
+      <div className="w-full px-20">
+        <Carousel
+          opts={{
+            align: 'center',
+            loop: true,
+          }}
+          setApi={setApi}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-4">
+            {styles.map((style, index) => {
+              const isActive = index === activeIndex;
+              const isPlaying = playingVideo === style.id;
+              
+              return (
+                <CarouselItem
+                  key={style.id}
+                  className="pl-4 basis-[280px] md:basis-[300px]"
                 >
-                  <div className="relative bg-background rounded-xl overflow-hidden aspect-[9/16]">
-                    <video
-                      ref={(el) => { videoRefs.current[style.id] = el; }}
-                      src={style.video_url}
-                      className="w-full h-full object-cover"
-                      loop
-                      muted
-                      playsInline
-                    />
-                    
-                    {/* Play/Pause Overlay */}
+                  <div
+                    className={`
+                      transition-all duration-500 ease-out cursor-pointer
+                      ${isActive 
+                        ? 'scale-100 opacity-100 z-10' 
+                        : 'scale-75 opacity-40 z-0 blur-[1px]'
+                      }
+                    `}
+                    onClick={() => scrollTo(index)}
+                  >
+                    {/* Video Container with Gradient Border */}
                     <div 
                       className={`
-                        absolute inset-0 flex items-center justify-center bg-black/20
-                        transition-opacity duration-300
-                        ${isActive ? 'opacity-0 hover:opacity-100' : 'opacity-0'}
-                      `}
-                      onClick={(e) => isActive && handleVideoClick(style.id, e)}
-                    >
-                      <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        {isPlaying ? (
-                          <Pause className="w-8 h-8 text-white" />
-                        ) : (
-                          <Play className="w-8 h-8 text-white ml-1" />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Style Name Badge */}
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <div className={`
-                        px-4 py-2 rounded-xl backdrop-blur-md text-center transition-all duration-300
+                        relative rounded-2xl overflow-hidden transition-all duration-500
                         ${isActive 
-                          ? 'bg-gradient-to-r from-primary/80 to-accent/80 text-white' 
-                          : 'bg-black/40 text-white/80'
+                          ? 'p-[3px] bg-gradient-to-br from-primary via-accent to-primary shadow-2xl shadow-primary/30' 
+                          : 'p-[1px] bg-border/30'
                         }
-                      `}>
-                        <span className="text-sm font-semibold">{style.name}</span>
+                      `}
+                    >
+                      <div className="relative bg-background rounded-xl overflow-hidden aspect-[9/16]">
+                        <video
+                          ref={(el) => { videoRefs.current[style.id] = el; }}
+                          src={style.video_url}
+                          className="w-full h-full object-cover"
+                          loop
+                          muted
+                          playsInline
+                        />
+                        
+                        {/* Play/Pause Overlay */}
+                        <div 
+                          className={`
+                            absolute inset-0 flex items-center justify-center bg-black/20
+                            transition-opacity duration-300
+                            ${isActive ? 'opacity-0 hover:opacity-100' : 'opacity-0'}
+                          `}
+                          onClick={(e) => isActive && handleVideoClick(style.id, e)}
+                        >
+                          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            {isPlaying ? (
+                              <Pause className="w-8 h-8 text-white" />
+                            ) : (
+                              <Play className="w-8 h-8 text-white ml-1" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Style Name Badge */}
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className={`
+                            px-4 py-2 rounded-xl backdrop-blur-md text-center transition-all duration-300
+                            ${isActive 
+                              ? 'bg-gradient-to-r from-primary/80 to-accent/80 text-white' 
+                              : 'bg-black/40 text-white/80'
+                            }
+                          `}>
+                            <span className="text-sm font-semibold">{style.name}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                </CarouselItem>
+              );
+            })}
+          </CarouselContent>
+        </Carousel>
       </div>
 
       {/* Dot Indicators */}
