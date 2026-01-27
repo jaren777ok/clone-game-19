@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSession } from '@/hooks/useSession';
 import { supabase } from '@/integrations/supabase/client';
+import { extractLinksFromText, removeLinksFromText } from '@/lib/linkUtils';
+import LinkPreviewCard from './LinkPreviewCard';
 
 interface Props {
   onBack: () => void;
@@ -30,7 +32,7 @@ const Feature = ({ icon: Icon, text }: { icon: React.ElementType; text: string }
   </div>
 );
 
-// Message bubble component with typewriter support
+// Message bubble component with typewriter support and link previews
 const MessageBubble = ({ 
   message, 
   displayedContent,
@@ -43,6 +45,10 @@ const MessageBubble = ({
   const isUser = message.role === 'user';
   const content = displayedContent !== undefined ? displayedContent : message.content;
   
+  // Solo procesar enlaces en mensajes de usuario
+  const links = isUser ? extractLinksFromText(content) : [];
+  const textWithoutLinks = isUser ? removeLinksFromText(content) : content;
+  
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
@@ -50,15 +56,29 @@ const MessageBubble = ({
           <Bot className="w-4 h-4 text-white" />
         </div>
       )}
-      <div className={`max-w-[70%] p-4 rounded-2xl ${
-        isUser
-          ? 'bg-primary/10 cyber-border'
-          : 'bg-card/50 border border-border/30'
-      }`}>
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-          {content}
-          {isTyping && <span className="animate-pulse text-primary">|</span>}
-        </p>
+      <div className="max-w-[70%] space-y-2">
+        {/* Texto del mensaje */}
+        {(textWithoutLinks || !isUser) && (
+          <div className={`p-4 rounded-2xl ${
+            isUser
+              ? 'bg-primary/10 cyber-border'
+              : 'bg-card/50 border border-border/30'
+          }`}>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">
+              {isUser ? textWithoutLinks : content}
+              {isTyping && <span className="animate-pulse text-primary">|</span>}
+            </p>
+          </div>
+        )}
+        
+        {/* Tarjetas de preview para enlaces (solo en mensajes de usuario) */}
+        {isUser && links.length > 0 && (
+          <div className="space-y-2">
+            {links.map((link, index) => (
+              <LinkPreviewCard key={index} url={link} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
