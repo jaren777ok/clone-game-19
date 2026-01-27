@@ -1,261 +1,144 @@
 
-## Plan: Mejoras de UX en NeuroCopyGenerator y API Keys en CustomizeCardsModal
+
+## Plan: Correcciones de UI en NeuroCopyGenerator y Sistema de Colores de Botones
 
 ### Objetivo
-Implementar mejoras visuales y de experiencia de usuario en el componente NeuroCopy GPT y agregar la funcionalidad de enviar claves API a la webhook del modal de personalización de tarjetas.
+Resolver tres problemas de diseño:
+1. Título "NeuroCopy GPT" en una sola línea
+2. Área de chat con scroll fijo (sin expandir la página)
+3. Eliminar el color naranja sólido de los botones y usar degradado rosa-magenta
 
 ---
 
-### PARTE 1: Mejoras en NeuroCopyGenerator.tsx
+### Problema 1: Título "NeuroCopy GPT" en una sola línea
 
-#### 1.1 Animación Flotante del Icono
+**Causa del problema:**
+El span con clase `text-gradient-safe` tiene `display: block` en el CSS, lo que fuerza al texto "GPT" a ir a una nueva línea.
 
-Agregar un keyframe de animación suave de flotación en `tailwind.config.ts`:
+**Solución:**
+Modificar el título para que use `inline` en lugar de `block` para el gradiente, o quitar la clase `text-gradient-safe` y aplicar el gradiente directamente con estilos inline.
 
-```typescript
-// Nuevo keyframe
-'float': {
-  '0%, 100%': { transform: 'translateY(0px)' },
-  '50%': { transform: 'translateY(-10px)' }
-}
+**Archivo:** `src/components/video/NeuroCopyGenerator.tsx`
 
-// Nueva animation
-'float': 'float 3s ease-in-out infinite'
-```
-
-Aplicar la clase `animate-float` al contenedor del icono en el panel izquierdo.
-
----
-
-#### 1.2 Título "NeuroCopy GPT" en una sola línea
-
-Cambiar de:
 ```tsx
-<h1 className="text-3xl font-bold text-center">
-  NeuroCopy <span className="text-gradient-safe">GPT</span>
-</h1>
-```
-
-A:
-```tsx
+// ANTES (línea 294-296)
 <h1 className="text-2xl font-bold text-center whitespace-nowrap">
   NeuroCopy <span className="text-gradient-safe">GPT</span>
 </h1>
-```
 
-Reducir ligeramente el tamaño y agregar `whitespace-nowrap` para evitar el salto de línea.
+// DESPUÉS - Aplicar gradiente inline sin romper la línea
+<h1 className="text-2xl font-bold text-center whitespace-nowrap">
+  NeuroCopy{' '}
+  <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+    GPT
+  </span>
+</h1>
+```
 
 ---
 
-#### 1.3 Efecto Typewriter para Mensajes
+### Problema 2: Área de Chat con Scroll Fijo
 
-**Nuevo estado y lógica:**
+**Causa del problema:**
+El `ScrollArea` usa `flex-1` pero no tiene una altura máxima definida, lo que permite que la página crezca indefinidamente.
 
-```typescript
-const [typingMessageId, setTypingMessageId] = useState<string | null>('welcome');
-const [displayedContent, setDisplayedContent] = useState<{ [key: string]: string }>({});
-```
+**Solución:**
+Crear una estructura de layout fijo con altura de viewport y overflow controlado. El panel derecho debe usar `h-screen` y `overflow-hidden` para contener el scroll interno.
 
-**Función de efecto typewriter:**
+**Archivo:** `src/components/video/NeuroCopyGenerator.tsx`
 
-```typescript
-const typeMessage = (messageId: string, fullContent: string, speed: number = 20) => {
-  setTypingMessageId(messageId);
-  let index = 0;
-  
-  const interval = setInterval(() => {
-    if (index <= fullContent.length) {
-      setDisplayedContent(prev => ({
-        ...prev,
-        [messageId]: fullContent.slice(0, index)
-      }));
-      index++;
-    } else {
-      clearInterval(interval);
-      setTypingMessageId(null);
-    }
-  }, speed);
-  
-  return () => clearInterval(interval);
-};
-```
-
-**Mensaje de bienvenida con typewriter:**
-
-Al montar el componente, iniciar el efecto typewriter para el mensaje de bienvenida:
-
-```typescript
-useEffect(() => {
-  const welcomeMessage = 'Hola, soy Neurocopy GPT. Dime qué guión necesitas o pega un enlace para empezar.';
-  typeMessage('welcome', welcomeMessage, 30);
-}, []);
-```
-
-**Respuestas de la IA con typewriter:**
-
-Cuando se recibe una respuesta de la webhook, en lugar de agregar el mensaje completo directamente, iniciar el typewriter:
-
-```typescript
-// Después de recibir la respuesta:
-const aiMessageId = crypto.randomUUID();
-const aiMessage: Message = {
-  id: aiMessageId,
-  content: script, // Contenido completo guardado
-  role: 'assistant',
-  timestamp: new Date()
-};
-
-setMessages(prev => [...prev, aiMessage]);
-typeMessage(aiMessageId, script, 15); // Velocidad más rápida para textos largos
-setLastGeneratedScript(script);
-```
-
-**Actualizar MessageBubble para usar contenido progresivo:**
+Cambios en la estructura del panel derecho:
 
 ```tsx
-const MessageBubble = ({ 
-  message, 
-  displayedContent, 
-  isTyping 
-}: { 
-  message: Message; 
-  displayedContent?: string;
-  isTyping?: boolean;
-}) => {
-  const isUser = message.role === 'user';
-  const content = displayedContent !== undefined ? displayedContent : message.content;
+// Contenedor principal del chat con altura fija
+<div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+  {/* Header del Chat - altura fija */}
+  <div className="flex-shrink-0 border-b border-border/30 p-4 ...">
+    ...
+  </div>
   
-  return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mr-3 flex-shrink-0">
-          <Bot className="w-4 h-4 text-white" />
-        </div>
-      )}
-      <div className={`max-w-[70%] p-4 rounded-2xl ${
-        isUser
-          ? 'bg-primary/10 cyber-border'
-          : 'bg-card/50 border border-border/30'
-      }`}>
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-          {content}
-          {isTyping && <span className="animate-pulse">|</span>}
-        </p>
-      </div>
+  {/* Área de Mensajes - flex-1 con overflow */}
+  <ScrollArea className="flex-1 min-h-0">
+    <div className="p-6 space-y-6 pb-4">
+      ...
     </div>
-  );
-};
+  </ScrollArea>
+  
+  {/* Botón Usar Guión - altura fija */}
+  {lastGeneratedScript && !typingMessageId && (
+    <div className="flex-shrink-0 border-t ...">
+      ...
+    </div>
+  )}
+  
+  {/* Input Bar - altura fija */}
+  <div className="flex-shrink-0 border-t ...">
+    ...
+  </div>
+</div>
 ```
+
+**Clave técnica:**
+- `h-screen` en el contenedor padre para fijar la altura
+- `overflow-hidden` para prevenir scroll externo
+- `flex-shrink-0` en header e input para que no se compriman
+- `min-h-0` en el ScrollArea para que el flex funcione correctamente
 
 ---
 
-### PARTE 2: API Keys en CustomizeCardsModal
+### Problema 3: Eliminar Color Naranja de Botones
 
-#### 2.1 Pasar API Keys al Modal
+**Causa del problema:**
+- Variable `--accent: 15 100% 60%` define un naranja
+- La variante `outline` del botón usa `hover:bg-accent` que aplica este naranja
+- El botón `default` usa `bg-primary` (rosa/magenta) que está correcto
 
-**Modificar flujo de datos:**
+**Solución:**
+Cambiar el estilo de los botones para:
+1. Usar degradado rosa-magenta en lugar de colores sólidos
+2. Eliminar el hover naranja de la variante `outline`
+3. Crear una nueva clase de utilidad para botones con degradado
 
-```text
-VideoCreationFlow.tsx
-        ↓ (aiApiKeys)
-StyleSelector.tsx
-        ↓ (aiApiKeys)
-CustomizeCardsModal.tsx
-        ↓ (enviar en webhook)
+**Archivo:** `src/components/ui/button.tsx`
+
+Modificar la variante `outline`:
+
+```tsx
+// ANTES
+outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+
+// DESPUÉS - Quitar el hover naranja
+outline: "border border-input bg-background hover:bg-primary/10 hover:text-primary",
 ```
 
-**VideoCreationFlow.tsx:**
+**Archivo:** `src/index.css`
 
-Cargar las API keys del usuario y pasarlas a StyleSelector:
+Agregar una nueva clase de utilidad para botones con degradado:
 
-```typescript
-// Agregar estado para AI API keys
-const [aiApiKeys, setAiApiKeys] = useState({ openai_api_key: '', gemini_api_key: '' });
-
-// useEffect para cargar las keys
-useEffect(() => {
-  const loadAiApiKeys = async () => {
-    if (!user?.id) return;
-    
-    const { data } = await supabase
-      .from('user_ai_api_keys')
-      .select('openai_api_key, gemini_api_key')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    
-    if (data) {
-      setAiApiKeys({
-        openai_api_key: data.openai_api_key || '',
-        gemini_api_key: data.gemini_api_key || ''
-      });
-    }
-  };
-  
-  loadAiApiKeys();
-}, [user?.id]);
-
-// Pasar a StyleSelector
-<StyleSelector
-  onSelectStyle={selectStyle}
-  onBack={handleBack}
-  generatedScript={flowState.generatedScript || ''}
-  aiApiKeys={aiApiKeys}  // NUEVO
-/>
-```
-
-**StyleSelector.tsx:**
-
-Recibir y pasar las API keys:
-
-```typescript
-interface Props {
-  onSelectStyle: (...) => void;
-  onBack: () => void;
-  generatedScript: string;
-  aiApiKeys: { openai_api_key: string; gemini_api_key: string };  // NUEVO
+```css
+.btn-gradient {
+  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+  color: white;
+  border: none;
 }
 
-// En el JSX
-<CustomizeCardsModal
-  isOpen={showCustomizeModal}
-  onClose={handleCustomizeCancel}
-  onConfirm={handleCustomizeConfirm}
-  generatedScript={generatedScript}
-  aiApiKeys={aiApiKeys}  // NUEVO
-/>
-```
-
-**CustomizeCardsModal.tsx:**
-
-Recibir las API keys y enviarlas en la webhook:
-
-```typescript
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (customization: CardCustomization) => void;
-  generatedScript: string;
-  aiApiKeys: { openai_api_key: string; gemini_api_key: string };  // NUEVO
+.btn-gradient:hover {
+  opacity: 0.9;
 }
-
-const handleCompleteWithAI = async () => {
-  setLoadingAI(true);
-  
-  try {
-    const response = await fetch('https://cris.cloude.es/webhook/generador-de-texto', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        guion: generatedScript,
-        openai_api_key: aiApiKeys.openai_api_key,   // NUEVO
-        gemini_api_key: aiApiKeys.gemini_api_key    // NUEVO
-      })
-    });
-    
-    // ... resto del código
-  }
-};
 ```
+
+**Archivos a modificar para botones específicos:**
+
+1. **`CustomizeCardsModal.tsx`** - Botón "Confirmar":
+   - Cambiar de `className="flex-1 cyber-glow h-12"` 
+   - A `className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90 h-12"`
+
+2. **`VideoStyleCard.tsx`** - Botón "Elegir Estilo":
+   - Cuando `isSelected`, ya usa variant="default" (rosa)
+   - Cuando no seleccionado, usa `variant="outline"` que ahora no tendrá hover naranja
+
+3. **`NeuroCopyGenerator.tsx`** - Botón "Usar este Guión":
+   - Ya usa `bg-gradient-to-r from-primary to-accent` ✓ (correcto)
 
 ---
 
@@ -263,24 +146,24 @@ const handleCompleteWithAI = async () => {
 
 | Archivo | Cambios |
 |---------|---------|
-| `tailwind.config.ts` | Agregar keyframe y animation `float` |
-| `src/components/video/NeuroCopyGenerator.tsx` | Animación flotante, título en una línea, efecto typewriter |
-| `src/pages/VideoCreationFlow.tsx` | Cargar y pasar AI API keys a StyleSelector |
-| `src/components/video/StyleSelector.tsx` | Recibir y pasar AI API keys a CustomizeCardsModal |
-| `src/components/video/CustomizeCardsModal.tsx` | Recibir AI API keys y enviarlas en la webhook |
+| `src/components/video/NeuroCopyGenerator.tsx` | 1. Título en una línea (inline gradient) 2. Layout fijo para scroll |
+| `src/components/ui/button.tsx` | Cambiar hover de `outline` de naranja a rosa transparente |
+| `src/components/video/CustomizeCardsModal.tsx` | Botón "Confirmar" con degradado |
 
 ---
 
 ### Resultado Visual Esperado
 
-**Panel Izquierdo de NeuroCopyGenerator:**
-- Icono con glow flotando suavemente arriba y abajo
-- "NeuroCopy GPT" en una sola línea
+**Panel Izquierdo:**
+- "NeuroCopy GPT" todo en una sola línea con "GPT" en degradado
 
-**Chat:**
-- Mensaje de bienvenida aparece letra por letra con cursor parpadeante
-- Respuestas de la IA aparecen progresivamente letra por letra
-- Fluidez visual mejorada
+**Panel Derecho (Chat):**
+- Altura fija que ocupa todo el viewport
+- Barra de scroll vertical cuando hay mucho contenido
+- Header e input siempre visibles
 
-**Modal de Personalización:**
-- Botón "Completar con IA" envía las claves API junto con el guión
+**Botones en toda la app:**
+- Sin color naranja sólido en hover
+- Botones principales con degradado rosa-magenta (como la imagen del rayo)
+- Botones outline con hover rosa transparente
+
