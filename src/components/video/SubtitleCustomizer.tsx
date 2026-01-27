@@ -785,7 +785,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
               onClick={handleContinue}
               className="w-full mt-6 bg-gradient-to-r from-primary to-accent text-white font-semibold py-3"
             >
-              Continuar con Neurocopy
+              Usar este Diseño
             </Button>
           </div>
         </div>
