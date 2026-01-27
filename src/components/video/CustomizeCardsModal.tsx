@@ -195,7 +195,7 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, gene
             <Button
               onClick={handleConfirm}
               disabled={!isValid}
-              className="flex-1 cyber-glow h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Confirmar
             </Button>

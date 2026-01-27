@@ -292,7 +292,10 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
           </div>
           {/* Título en una sola línea */}
           <h1 className="text-2xl font-bold text-center whitespace-nowrap">
-            NeuroCopy <span className="text-gradient-safe">GPT</span>
+            NeuroCopy{' '}
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              GPT
+            </span>
           </h1>
           <p className="text-muted-foreground text-center mt-3 text-sm">
             Inteligencia artificial híbrida para copywriting avanzado
@@ -318,18 +321,18 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
       </div>
       
       {/* Panel Derecho - Chat (70%) */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header del Chat */}
-        <div className="border-b border-border/30 p-4 flex items-center justify-between bg-card/10">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Header del Chat - altura fija */}
+        <div className="flex-shrink-0 border-b border-border/30 p-4 flex items-center justify-between bg-card/10">
           <h2 className="text-lg font-semibold">Conversación con IA</h2>
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
             <Bot className="w-4 h-4 text-primary" />
           </div>
         </div>
         
-        {/* Área de Mensajes */}
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-6 pb-4">
+        {/* Área de Mensajes - con scroll interno */}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="p-6 space-y-6 pb-4">
             {messages.map(message => (
               <MessageBubble 
                 key={message.id} 
@@ -347,7 +350,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
         
         {/* Botón Usar Guión (visible cuando hay script y no está escribiendo) */}
         {lastGeneratedScript && !typingMessageId && (
-          <div className="border-t border-border/30 p-4 bg-card/10">
+          <div className="flex-shrink-0 border-t border-border/30 p-4 bg-card/10">
             <Button
               onClick={() => onUseScript(lastGeneratedScript)}
               className="w-full h-14 bg-gradient-to-r from-primary to-accent hover:opacity-90 cyber-glow text-lg font-semibold transition-transform duration-200 hover:scale-[1.02]"
@@ -358,8 +361,8 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
           </div>
         )}
         
-        {/* Input Bar */}
-        <div className="border-t border-border/30 p-4 bg-card/20">
+        {/* Input Bar - altura fija */}
+        <div className="flex-shrink-0 border-t border-border/30 p-4 bg-card/20">
           <div className="flex items-center gap-3">
             <input
               value={inputMessage}
