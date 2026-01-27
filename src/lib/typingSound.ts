@@ -1,108 +1,57 @@
 /**
- * Procedural Typing Sound Generator
- * Uses Web Audio API to create a "clicky" keyboard/typewriter sound
- * without needing external audio files.
+ * Typing Sound Controller
+ * Uses HTMLAudioElement to play a typing sound from Supabase Storage
+ * with loop support and instant stop capability.
  */
 
-let audioContext: AudioContext | null = null;
-let lastPlayTime = 0;
-let charCounter = 0;
+// URL del audio en Supabase Storage (expira en 2030)
+const TYPING_AUDIO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/efecto%20de%20escribir.MP3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9lZmVjdG8gZGUgZXNjcmliaXIuTVAzIiwiaWF0IjoxNzY5NTUyNjI5LCJleHAiOjE5MjcyMzI2Mjl9.o8o_0_U2VOannh5p9AQRa_ZTRL7fQGuf4ESam-Z1vTc';
 
-// Configuration
-const CONFIG = {
-  volume: 0.08,           // Very subtle (0.05-0.15)
-  baseFrequency: 1000,    // Base frequency in Hz
-  frequencyVariation: 400, // Random variation range
-  duration: 0.025,        // Duration in seconds (25ms)
-  throttleChars: 2,       // Play sound every N characters
-  minInterval: 30,        // Minimum ms between sounds
-};
+// Estado global del audio
+let typingAudio: HTMLAudioElement | null = null;
+let isAudioPlaying = false;
 
 /**
- * Initialize or get the AudioContext (lazy initialization)
+ * Obtiene o crea la instancia del audio (lazy load)
  */
-const getAudioContext = (): AudioContext | null => {
-  if (typeof window === 'undefined') return null;
-  
-  if (!audioContext) {
-    try {
-      audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    } catch (e) {
-      console.warn('Web Audio API not supported');
-      return null;
-    }
+const getAudio = (): HTMLAudioElement => {
+  if (!typingAudio) {
+    typingAudio = new Audio(TYPING_AUDIO_URL);
+    typingAudio.loop = true;  // Bucle automático
+    typingAudio.volume = 0.5; // Volumen moderado
+    typingAudio.preload = 'auto'; // Precargar para reproducción inmediata
   }
-  
-  return audioContext;
+  return typingAudio;
 };
 
 /**
- * Play a single typing sound
- * Uses a short burst of noise-like oscillation with rapid decay
+ * Inicia la reproducción del audio en bucle
+ * Solo inicia si no está ya reproduciéndose
  */
-export const playTypingSound = (): void => {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-  
-  // Throttle: only play every N characters
-  charCounter++;
-  if (charCounter % CONFIG.throttleChars !== 0) return;
-  
-  // Throttle: minimum interval between sounds
-  const now = Date.now();
-  if (now - lastPlayTime < CONFIG.minInterval) return;
-  lastPlayTime = now;
-  
-  // Resume context if suspended (browser autoplay policy)
-  if (ctx.state === 'suspended') {
-    ctx.resume();
+export const startTypingAudio = (): void => {
+  const audio = getAudio();
+  if (!isAudioPlaying) {
+    audio.currentTime = 0;
+    audio.play().catch(e => console.warn('Audio play blocked:', e));
+    isAudioPlaying = true;
   }
-  
-  const currentTime = ctx.currentTime;
-  
-  // Create oscillator for the "click" sound
-  const oscillator = ctx.createOscillator();
-  const gainNode = ctx.createGain();
-  
-  // Random frequency for natural variation
-  const frequency = CONFIG.baseFrequency + (Math.random() - 0.5) * CONFIG.frequencyVariation;
-  
-  // Square wave gives a more "clicky" sound
-  oscillator.type = 'square';
-  oscillator.frequency.setValueAtTime(frequency, currentTime);
-  
-  // Quick frequency drop for more realistic "click"
-  oscillator.frequency.exponentialRampToValueAtTime(
-    frequency * 0.5,
-    currentTime + CONFIG.duration
-  );
-  
-  // Volume envelope: instant attack, fast decay
-  gainNode.gain.setValueAtTime(CONFIG.volume, currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + CONFIG.duration);
-  
-  // Connect nodes
-  oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
-  
-  // Play and cleanup
-  oscillator.start(currentTime);
-  oscillator.stop(currentTime + CONFIG.duration);
 };
 
 /**
- * Reset the character counter (call when starting a new message)
+ * Detiene el audio inmediatamente y resetea la posición
  */
-export const resetTypingSoundCounter = (): void => {
-  charCounter = 0;
+export const stopTypingAudio = (): void => {
+  if (typingAudio && isAudioPlaying) {
+    typingAudio.pause();
+    typingAudio.currentTime = 0;
+    isAudioPlaying = false;
+  }
 };
 
 /**
- * Cleanup function to close AudioContext when no longer needed
+ * Limpieza completa del audio (para cuando se desmonta el componente)
  */
 export const cleanupTypingSound = (): void => {
-  if (audioContext && audioContext.state !== 'closed') {
-    audioContext.close();
-    audioContext = null;
-  }
+  stopTypingAudio();
+  typingAudio = null;
 };

@@ -9,7 +9,7 @@ import { useSession } from '@/hooks/useSession';
 import { supabase } from '@/integrations/supabase/client';
 import { extractLinksFromText, removeLinksFromText } from '@/lib/linkUtils';
 import LinkPreviewCard from './LinkPreviewCard';
-import { playTypingSound, resetTypingSoundCounter, cleanupTypingSound } from '@/lib/typingSound';
+import { startTypingAudio, stopTypingAudio, cleanupTypingSound } from '@/lib/typingSound';
 
 interface Props {
   onBack: () => void;
@@ -130,25 +130,25 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
     setTypingMessageId(messageId);
     let index = 0;
     
-    // Reset sound counter for new message
-    resetTypingSoundCounter();
-    
     // Clear any existing interval
     if (typewriterRef.current) {
       clearInterval(typewriterRef.current);
     }
     
+    // INICIAR audio en bucle
+    startTypingAudio();
+    
     typewriterRef.current = setInterval(() => {
       if (index <= fullContent.length) {
-        // Play typing sound effect
-        playTypingSound();
-        
         setDisplayedContent(prev => ({
           ...prev,
           [messageId]: fullContent.slice(0, index)
         }));
         index++;
       } else {
+        // Texto terminado - DETENER audio inmediatamente
+        stopTypingAudio();
+        
         if (typewriterRef.current) {
           clearInterval(typewriterRef.current);
           typewriterRef.current = null;
@@ -171,7 +171,8 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
       if (typewriterRef.current) {
         clearInterval(typewriterRef.current);
       }
-      // Cleanup audio context on unmount
+      // Detener audio y limpiar al desmontar
+      stopTypingAudio();
       cleanupTypingSound();
     };
   }, [typeMessage]);
