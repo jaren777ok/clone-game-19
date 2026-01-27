@@ -34,7 +34,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
       video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/Estilo%201.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9Fc3RpbG8gMS5tcDQiLCJpYXQiOjE3NTYwMDAyNDEsImV4cCI6MTkxMzY4MDI0MX0.wf5jhgI_7u8xbO9iTDc41_z_UD3ZezVplBxTzdmr_8U',
       requirements: {
         items: ['Se requiere Fondo Verde', 'Se requiere Avatar Horizontal'],
-        downloadUrl: 'https://drive.google.com/drive/folders/1example',
+        downloadUrl: 'https://drive.google.com/uc?id=1Fq2RtxL9J4hYkhYBsmLOGQbb1dd2N3TD&export=download',
         downloadLabel: 'Descargar Fondo Verde'
       }
     },
@@ -45,7 +45,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
       video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/ESTILO%202.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9FU1RJTE8gMi5tcDQiLCJpYXQiOjE3NTYwMDA0MzksImV4cCI6MTkxMzY4MDQzOX0.36mopUOs_sN7xCOjZYyAtl1aZvPeG2-ZqHMZosKnJqg',
       requirements: {
         items: ['Se requiere Fondo Verde', 'Se requiere Avatar Horizontal'],
-        downloadUrl: 'https://drive.google.com/drive/folders/1example',
+        downloadUrl: 'https://drive.google.com/uc?id=1Fq2RtxL9J4hYkhYBsmLOGQbb1dd2N3TD&export=download',
         downloadLabel: 'Descargar Fondo Verde'
       }
     },
@@ -214,7 +214,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
       />
       
       {/* Dark Overlay for readability */}
-      <div className="absolute inset-0 bg-background/80" />
+      <div className="absolute inset-0 bg-background/50" />
       
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex">

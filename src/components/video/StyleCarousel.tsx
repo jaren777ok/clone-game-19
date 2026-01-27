@@ -115,6 +115,9 @@ const StyleCarousel: React.FC<Props> = ({
           opts={{
             align: 'center',
             loop: true,
+            dragFree: false,
+            skipSnaps: false,
+            containScroll: 'trimSnaps',
           }}
           setApi={setApi}
           className="w-full"
@@ -131,7 +134,7 @@ const StyleCarousel: React.FC<Props> = ({
                 >
                   <div
                     className={`
-                      transition-all duration-500 ease-out cursor-pointer
+                      transition-all duration-500 ease-out cursor-pointer flex flex-col items-center
                       ${isActive 
                         ? 'scale-100 opacity-100 z-10' 
                         : 'scale-75 opacity-40 z-0 blur-[1px]'
@@ -139,6 +142,17 @@ const StyleCarousel: React.FC<Props> = ({
                     `}
                     onClick={() => scrollTo(index)}
                   >
+                    {/* Style Name ABOVE the video */}
+                    <div className={`
+                      mb-3 px-4 py-1.5 rounded-lg transition-all duration-300 text-center
+                      ${isActive 
+                        ? 'bg-gradient-to-r from-primary to-accent text-white font-bold text-base shadow-lg shadow-primary/20' 
+                        : 'text-muted-foreground/70 font-medium text-sm'
+                      }
+                    `}>
+                      {style.name}
+                    </div>
+
                     {/* Video Container with Gradient Border */}
                     <div 
                       className={`
@@ -159,7 +173,7 @@ const StyleCarousel: React.FC<Props> = ({
                           playsInline
                         />
                         
-                        {/* Play/Pause Overlay */}
+                        {/* Play/Pause Overlay - only on hover for active */}
                         <div 
                           className={`
                             absolute inset-0 flex items-center justify-center bg-black/20
@@ -174,19 +188,6 @@ const StyleCarousel: React.FC<Props> = ({
                             ) : (
                               <Play className="w-8 h-8 text-white ml-1" />
                             )}
-                          </div>
-                        </div>
-
-                        {/* Style Name Badge */}
-                        <div className="absolute bottom-4 left-4 right-4">
-                          <div className={`
-                            px-4 py-2 rounded-xl backdrop-blur-md text-center transition-all duration-300
-                            ${isActive 
-                              ? 'bg-gradient-to-r from-primary/80 to-accent/80 text-white' 
-                              : 'bg-black/40 text-white/80'
-                            }
-                          `}>
-                            <span className="text-sm font-semibold">{style.name}</span>
                           </div>
                         </div>
                       </div>
