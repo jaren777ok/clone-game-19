@@ -92,112 +92,120 @@ const StyleCarousel: React.FC<Props> = ({
 
   return (
     <div className="relative w-full flex flex-col items-center">
-      {/* Navigation Arrows */}
-      <Button
-        variant="ghost"
-        onClick={scrollPrev}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 hover:from-primary/40 hover:to-accent/40 border border-primary/30 backdrop-blur-sm transition-all duration-300 hover:scale-110"
-      >
-        <ChevronLeft className="w-8 h-8 text-primary" />
-      </Button>
-      
-      <Button
-        variant="ghost"
-        onClick={scrollNext}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 hover:from-primary/40 hover:to-accent/40 border border-primary/30 backdrop-blur-sm transition-all duration-300 hover:scale-110"
-      >
-        <ChevronRight className="w-8 h-8 text-primary" />
-      </Button>
+      {/* 3-Column Layout: [Prev Button] [Carousel] [Next Button] */}
+      <div className="w-full grid grid-cols-[64px_1fr_64px] items-center gap-2">
+        {/* Left Navigation Button */}
+        <div className="flex items-center justify-center">
+          <Button
+            variant="ghost"
+            onClick={scrollPrev}
+            className="w-12 h-12 rounded-full bg-background/80 hover:bg-background border border-primary/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-primary/60 shadow-lg"
+          >
+            <ChevronLeft className="w-6 h-6 text-primary" />
+          </Button>
+        </div>
 
-      {/* Carousel Container */}
-      <div className="w-full px-20">
-        <Carousel
-          opts={{
-            align: 'center',
-            loop: true,
-            dragFree: false,
-            skipSnaps: false,
-            containScroll: 'trimSnaps',
-          }}
-          setApi={setApi}
-          className="w-full"
-        >
-          <CarouselContent className="-ml-4">
-            {styles.map((style, index) => {
-              const isActive = index === activeIndex;
-              const isPlaying = playingVideo === style.id;
-              
-              return (
-                <CarouselItem
-                  key={style.id}
-                  className="pl-4 basis-[280px] md:basis-[300px]"
-                >
-                  <div
-                    className={`
-                      transition-all duration-500 ease-out cursor-pointer flex flex-col items-center
-                      ${isActive 
-                        ? 'scale-100 opacity-100 z-10' 
-                        : 'scale-75 opacity-40 z-0 blur-[1px]'
-                      }
-                    `}
-                    onClick={() => scrollTo(index)}
+        {/* Carousel Container */}
+        <div className="w-full overflow-hidden">
+          <Carousel
+            opts={{
+              align: 'center',
+              loop: true,
+              dragFree: false,
+              skipSnaps: false,
+            }}
+            setApi={setApi}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-4 select-none cursor-grab active:cursor-grabbing touch-pan-y">
+              {styles.map((style, index) => {
+                const isActive = index === activeIndex;
+                const isPlaying = playingVideo === style.id;
+                
+                return (
+                  <CarouselItem
+                    key={style.id}
+                    className="pl-4 basis-[260px] md:basis-[280px]"
                   >
-                    {/* Style Name ABOVE the video */}
-                    <div className={`
-                      mb-3 px-4 py-1.5 rounded-lg transition-all duration-300 text-center
-                      ${isActive 
-                        ? 'bg-gradient-to-r from-primary to-accent text-white font-bold text-base shadow-lg shadow-primary/20' 
-                        : 'text-muted-foreground/70 font-medium text-sm'
-                      }
-                    `}>
-                      {style.name}
-                    </div>
-
-                    {/* Video Container with Gradient Border */}
-                    <div 
+                    <div
                       className={`
-                        relative rounded-2xl overflow-hidden transition-all duration-500
+                        transition-all duration-500 ease-out cursor-pointer flex flex-col items-center select-none
                         ${isActive 
-                          ? 'p-[3px] bg-gradient-to-br from-primary via-accent to-primary shadow-2xl shadow-primary/30' 
-                          : 'p-[1px] bg-border/30'
+                          ? 'scale-100 opacity-100 z-10' 
+                          : 'scale-75 opacity-40 z-0 blur-[1px]'
                         }
                       `}
+                      onClick={() => scrollTo(index)}
                     >
-                      <div className="relative bg-background rounded-xl overflow-hidden aspect-[9/16]">
-                        <video
-                          ref={(el) => { videoRefs.current[style.id] = el; }}
-                          src={style.video_url}
-                          className="w-full h-full object-cover"
-                          loop
-                          muted
-                          playsInline
-                        />
-                        
-                        {/* Play/Pause Overlay - only on hover for active */}
-                        <div 
-                          className={`
-                            absolute inset-0 flex items-center justify-center bg-black/20
-                            transition-opacity duration-300
-                            ${isActive ? 'opacity-0 hover:opacity-100' : 'opacity-0'}
-                          `}
-                          onClick={(e) => isActive && handleVideoClick(style.id, e)}
-                        >
-                          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                            {isPlaying ? (
-                              <Pause className="w-8 h-8 text-white" />
-                            ) : (
-                              <Play className="w-8 h-8 text-white ml-1" />
-                            )}
+                      {/* Style Name ABOVE the video */}
+                      <div className={`
+                        mb-3 px-4 py-1.5 rounded-lg transition-all duration-300 text-center
+                        ${isActive 
+                          ? 'bg-gradient-to-r from-primary to-accent text-white font-bold text-base shadow-lg shadow-primary/20' 
+                          : 'text-muted-foreground/70 font-medium text-sm'
+                        }
+                      `}>
+                        {style.name}
+                      </div>
+
+                      {/* Video Container with Gradient Border */}
+                      <div 
+                        className={`
+                          relative rounded-2xl overflow-hidden transition-all duration-500
+                          ${isActive 
+                            ? 'p-[3px] bg-gradient-to-br from-primary via-accent to-primary shadow-2xl shadow-primary/30' 
+                            : 'p-[1px] bg-border/30'
+                          }
+                        `}
+                      >
+                        <div className="relative bg-background rounded-xl overflow-hidden aspect-[9/16]">
+                          {/* Video with pointer-events-none to allow drag */}
+                          <video
+                            ref={(el) => { videoRefs.current[style.id] = el; }}
+                            src={style.video_url}
+                            className="w-full h-full object-cover pointer-events-none"
+                            loop
+                            muted
+                            playsInline
+                          />
+                          
+                          {/* Play/Pause Overlay - with pointer-events-auto for clicking */}
+                          <div 
+                            className={`
+                              absolute inset-0 flex items-center justify-center bg-black/20
+                              transition-opacity duration-300 pointer-events-auto
+                              ${isActive ? 'opacity-0 hover:opacity-100' : 'opacity-0 pointer-events-none'}
+                            `}
+                            onClick={(e) => isActive && handleVideoClick(style.id, e)}
+                          >
+                            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                              {isPlaying ? (
+                                <Pause className="w-8 h-8 text-white" />
+                              ) : (
+                                <Play className="w-8 h-8 text-white ml-1" />
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </CarouselItem>
-              );
-            })}
-          </CarouselContent>
-        </Carousel>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+          </Carousel>
+        </div>
+
+        {/* Right Navigation Button */}
+        <div className="flex items-center justify-center">
+          <Button
+            variant="ghost"
+            onClick={scrollNext}
+            className="w-12 h-12 rounded-full bg-background/80 hover:bg-background border border-primary/30 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-primary/60 shadow-lg"
+          >
+            <ChevronRight className="w-6 h-6 text-primary" />
+          </Button>
+        </div>
       </div>
 
       {/* Dot Indicators */}
