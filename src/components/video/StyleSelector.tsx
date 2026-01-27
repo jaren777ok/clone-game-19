@@ -11,9 +11,10 @@ import StyleGrid from './StyleGrid';
 interface Props {
   onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => void;
   onBack: () => void;
+  generatedScript: string;
 }
 
-const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
+const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript }) => {
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [previouslySelectedStyle, setPreviouslySelectedStyle] = useState<VideoStyle | null>(null);
@@ -235,6 +236,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack }) => {
         isOpen={showCustomizeModal}
         onClose={handleCustomizeCancel}
         onConfirm={handleCustomizeConfirm}
+        generatedScript={generatedScript}
       />
 
       {/* Modal de nombre del presentador */}

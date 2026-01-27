@@ -165,6 +165,7 @@ const VideoCreationFlow = () => {
         <StyleSelector
           onSelectStyle={selectStyle}
           onBack={handleBack}
+          generatedScript={flowState.generatedScript || ''}
         />
       );
 
