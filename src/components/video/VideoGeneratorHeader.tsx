@@ -12,14 +12,13 @@ const VideoGeneratorHeader = () => {
   return (
     <div className="flex items-center justify-between mb-4 sm:mb-8 px-2 sm:px-0">
       <Button
-        variant="ghost"
-        onClick={() => navigate('/dashboard')}
+        variant="outline"
+        onClick={() => navigate('/crear-video')}
         className="cyber-border hover:cyber-glow text-xs sm:text-sm px-2 sm:px-4"
         size={isMobile ? "sm" : "default"}
       >
         <ArrowLeft className="w-4 h-4 sm:mr-2" />
-        <span className="hidden sm:inline">Volver al Dashboard</span>
-        <span className="sm:hidden">Dashboard</span>
+        <span>Volver</span>
       </Button>
 
       <Button

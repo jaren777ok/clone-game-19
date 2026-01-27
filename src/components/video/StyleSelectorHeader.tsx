@@ -17,7 +17,7 @@ const StyleSelectorHeader: React.FC<Props> = ({ onBack }) => {
           className="cyber-border hover:cyber-glow text-sm"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Cambiar avatar
+          Cambiar Guion
         </Button>
       </div>
 
