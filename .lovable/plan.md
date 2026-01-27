@@ -1,200 +1,85 @@
 
 
-## Plan: Reemplazar Sonido Procedural con Audio de Supabase
+## Plan: Corrección de Textos de Botones y Navegación
 
-### Objetivo
-Usar el archivo de audio MP3 de Supabase en lugar del sonido procedural generado. El audio debe:
-1. Iniciar cuando empieza el efecto typewriter
-2. Reproducirse en **bucle** si el texto sigue generándose
-3. **Cortarse inmediatamente** cuando termine la generación del texto
+### Resumen de Cambios
+
+Se corregirán los textos de los botones en tres páginas y se modificará la navegación del generador para volver a los pasos anteriores en lugar del dashboard.
 
 ---
 
-### Arquitectura de la Solución
+### 1. Cambiar "Cambiar avatar" a "Cambiar Guion"
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                    FLUJO DE AUDIO                                   │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. typeMessage() inicia                                            │
-│         │                                                           │
-│         ▼                                                           │
-│  2. startTypingAudio()                                              │
-│         │                                                           │
-│         ├──► Carga el audio desde Supabase (una sola vez, cacheado) │
-│         │                                                           │
-│         ├──► Configura audio.loop = true                            │
-│         │                                                           │
-│         └──► audio.play()                                           │
-│                                                                     │
-│  3. Mientras index < fullContent.length                             │
-│         │                                                           │
-│         └──► El audio sigue en loop automáticamente                 │
-│                                                                     │
-│  4. Cuando index > fullContent.length (texto terminado)             │
-│         │                                                           │
-│         ▼                                                           │
-│  5. stopTypingAudio()                                               │
-│         │                                                           │
-│         ├──► audio.pause()                                          │
-│         │                                                           │
-│         └──► audio.currentTime = 0 (reset para próximo uso)         │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+**Archivo:** `src/components/video/StyleSelectorHeader.tsx`
+
+| Línea | Antes | Después |
+|-------|-------|---------|
+| 20 | `Cambiar avatar` | `Cambiar Guion` |
+
+**Razón:** En el selector de estilos, el usuario viene del paso de NeuroCopy (generación de guion), no del selector de avatar. El botón debe reflejar a dónde regresa.
 
 ---
 
-### Cambios Detallados
+### 2. Cambiar "Continuar con Neurocopy" a "Usar este Diseño"
 
-#### Archivo: `src/lib/typingSound.ts` (REESCRIBIR COMPLETO)
+**Archivo:** `src/components/video/SubtitleCustomizer.tsx`
 
-Reemplazar todo el contenido con un sistema basado en HTMLAudioElement:
+| Línea | Antes | Después |
+|-------|-------|---------|
+| 788 | `Continuar con Neurocopy` | `Usar este Diseño` |
 
-```typescript
-// URL del audio en Supabase Storage
-const TYPING_AUDIO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/efecto%20de%20escribir.MP3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9lZmVjdG8gZGUgZXNjcmliaXIuTVAzIiwiaWF0IjoxNzY5NTUyNjI5LCJleHAiOjE5MjcyMzI2Mjl9.o8o_0_U2VOannh5p9AQRa_ZTRL7fQGuf4ESam-Z1vTc';
-
-// Variables globales
-let typingAudio: HTMLAudioElement | null = null;
-let isAudioPlaying = false;
-
-// Inicializar audio (lazy load)
-const getAudio = (): HTMLAudioElement => {
-  if (!typingAudio) {
-    typingAudio = new Audio(TYPING_AUDIO_URL);
-    typingAudio.loop = true;  // Bucle automático
-    typingAudio.volume = 0.5; // Volumen moderado
-  }
-  return typingAudio;
-};
-
-// Iniciar reproducción en bucle
-export const startTypingAudio = (): void => {
-  const audio = getAudio();
-  if (!isAudioPlaying) {
-    audio.currentTime = 0;
-    audio.play().catch(e => console.warn('Audio play blocked:', e));
-    isAudioPlaying = true;
-  }
-};
-
-// Detener audio inmediatamente
-export const stopTypingAudio = (): void => {
-  if (typingAudio && isAudioPlaying) {
-    typingAudio.pause();
-    typingAudio.currentTime = 0;
-    isAudioPlaying = false;
-  }
-};
-
-// Cleanup
-export const cleanupTypingSound = (): void => {
-  stopTypingAudio();
-  typingAudio = null;
-};
-```
-
-**Características clave:**
-- `audio.loop = true` - El navegador maneja el bucle automáticamente
-- Lazy loading - El audio solo se carga una vez cuando se necesita
-- Control simple con `play()` / `pause()`
-- Reset con `currentTime = 0` para próximo uso
+**Razón:** El texto actual es confuso ya que NeuroCopy es el paso anterior. "Usar este Diseño" refleja mejor la acción de confirmar la personalización de subtítulos.
 
 ---
 
-#### Archivo: `src/components/video/NeuroCopyGenerator.tsx`
+### 3. Modificar botón "Volver al Dashboard" en el Generador
 
-**Cambios en imports (línea 12):**
-```typescript
-// Antes:
-import { playTypingSound, resetTypingSoundCounter, cleanupTypingSound } from '@/lib/typingSound';
+**Archivo:** `src/components/video/VideoGeneratorHeader.tsx`
 
-// Después:
-import { startTypingAudio, stopTypingAudio, cleanupTypingSound } from '@/lib/typingSound';
-```
+#### Cambios:
 
-**Cambios en función `typeMessage` (líneas 128-164):**
+**a) Texto del botón:**
+| Línea | Antes | Después |
+|-------|-------|---------|
+| 21 | `Volver al Dashboard` | `Volver` |
+| 22 | `Dashboard` | `Volver` |
 
-```typescript
-const typeMessage = useCallback((messageId: string, fullContent: string, speed: number = 25) => {
-  setTypingMessageId(messageId);
-  let index = 0;
-  
-  // Limpiar interval anterior
-  if (typewriterRef.current) {
-    clearInterval(typewriterRef.current);
-  }
-  
-  // INICIAR audio en bucle
-  startTypingAudio();
-  
-  typewriterRef.current = setInterval(() => {
-    if (index <= fullContent.length) {
-      // Ya no llamamos playTypingSound() aquí - el audio está en loop
-      setDisplayedContent(prev => ({
-        ...prev,
-        [messageId]: fullContent.slice(0, index)
-      }));
-      index++;
-    } else {
-      // Texto terminado - DETENER audio
-      stopTypingAudio();
-      
-      if (typewriterRef.current) {
-        clearInterval(typewriterRef.current);
-        typewriterRef.current = null;
-      }
-      setTypingMessageId(null);
-      setDisplayedContent(prev => ({
-        ...prev,
-        [messageId]: fullContent
-      }));
-    }
-  }, speed);
-}, []);
-```
+**b) Navegación:**
+- En lugar de navegar a `/dashboard`, navegar a `/crear-video` que es donde está el flujo de creación
+- Esto permitirá al usuario regresar a los pasos anteriores y corregir selecciones
 
-**Cambios en useEffect de cleanup (líneas 166-177):**
+**c) Color del botón (eliminar naranja):**
+- Cambiar de `variant="ghost"` a `variant="outline"` para que use el esquema de colores correcto sin el fondo naranja en hover
 
-```typescript
-useEffect(() => {
-  typeMessage('welcome', welcomeMessageContent, 30);
-  
-  return () => {
-    if (typewriterRef.current) {
-      clearInterval(typewriterRef.current);
-    }
-    // Detener audio si está reproduciéndose
-    stopTypingAudio();
-    cleanupTypingSound();
-  };
-}, [typeMessage]);
+El código modificado será:
+```tsx
+<Button
+  variant="outline"  // Cambiar de "ghost" a "outline"
+  onClick={() => navigate('/crear-video')}  // Cambiar destino
+  className="cyber-border hover:cyber-glow text-xs sm:text-sm px-2 sm:px-4"
+  size={isMobile ? "sm" : "default"}
+>
+  <ArrowLeft className="w-4 h-4 sm:mr-2" />
+  <span className="hidden sm:inline">Volver</span>
+  <span className="sm:hidden">Volver</span>
+</Button>
 ```
 
 ---
 
 ### Resumen de Archivos a Modificar
 
-| Archivo | Acción | Descripción |
-|---------|--------|-------------|
-| `src/lib/typingSound.ts` | Reescribir | Cambiar de Web Audio API a HTMLAudioElement con bucle |
-| `src/components/video/NeuroCopyGenerator.tsx` | Modificar | Actualizar imports y lógica de start/stop audio |
+| Archivo | Cambios |
+|---------|---------|
+| `src/components/video/StyleSelectorHeader.tsx` | Texto: "Cambiar avatar" → "Cambiar Guion" |
+| `src/components/video/SubtitleCustomizer.tsx` | Texto: "Continuar con Neurocopy" → "Usar este Diseño" |
+| `src/components/video/VideoGeneratorHeader.tsx` | Texto: "Volver al Dashboard" → "Volver", Navegación: `/dashboard` → `/crear-video`, Variante: `ghost` → `outline` |
 
 ---
 
-### Ventajas de Este Enfoque
+### Comportamiento Esperado
 
-1. **Simplicidad**: `audio.loop = true` maneja el bucle automáticamente sin lógica adicional
-2. **Rendimiento**: El audio se carga una sola vez y se reutiliza
-3. **Control preciso**: `pause()` detiene inmediatamente, sin fade-out
-4. **Compatible**: HTMLAudioElement funciona en todos los navegadores modernos
-5. **Sin dependencias**: No necesita Web Audio API complejo
-
-### Consideraciones Técnicas
-
-- El token del URL de Supabase expira en **2030** (exp: 1927232629), así que no hay problema de expiración
-- El audio se precarga automáticamente cuando se llama a `getAudio()` por primera vez
-- Si el usuario cambia de página durante la escritura, el `useEffect` cleanup detiene el audio
+1. **En selector de estilos:** El botón dice "Cambiar Guion" y regresa al paso de NeuroCopy
+2. **En subtítulos:** El botón dice "Usar este Diseño" y avanza al generador
+3. **En generador:** El botón dice "Volver", tiene color consistente con el tema (sin naranja), y regresa al flujo `/crear-video` donde el usuario puede revisar/cambiar pasos anteriores
 
