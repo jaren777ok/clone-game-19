@@ -165,7 +165,7 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, gene
             variant="outline"
             onClick={handleCompleteWithAI}
             disabled={loadingAI || !generatedScript}
-            className="w-full cyber-border hover:cyber-glow h-12 text-primary hover:text-primary/80 flex items-center justify-center gap-2"
+            className="cyber-border hover:cyber-glow h-12 text-primary transition-transform duration-200 hover:scale-105 active:scale-100 focus:bg-transparent active:bg-transparent flex items-center justify-center gap-2"
           >
             {loadingAI ? (
               <>
