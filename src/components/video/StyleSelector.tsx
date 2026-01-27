@@ -55,7 +55,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
       description: 'Ideal para contenido educativo y explicativo',
       video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/EDUCATIVO%201%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9FRFVDQVRJVk8gMSBNT0RFTE8ubXA0IiwiaWF0IjoxNzU2MDAwNjE5LCJleHAiOjE5MTM2ODA2MTl9.OdWDM7cVu2dxJGfXHdM9SFHQDuLtk0hQ79GQzJ66o6w',
       requirements: {
-        items: ['Avatar Vertical recomendado'],
+        items: ['Avatar Horizontal recomendado'],
       }
     },
     {
@@ -64,7 +64,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
       description: 'Variante educativa con diseño moderno',
       video_url: 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/EDUCATIVO%202%20MODELO.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9FRFVDQVRJVk8gMiBNT0RFTE8ubXA0IiwiaWF0IjoxNzU2MDAwNzIzLCJleHAiOjE5MTM2ODA3MjN9.cUZAyWSOKKRLUO7s3aCk9IclZZo6BxJeLGq5Of99OpU',
       requirements: {
-        items: ['Avatar Vertical recomendado'],
+        items: ['Avatar Horizontal recomendado'],
       }
     },
     {

@@ -9,6 +9,7 @@ import { useSession } from '@/hooks/useSession';
 import { supabase } from '@/integrations/supabase/client';
 import { extractLinksFromText, removeLinksFromText } from '@/lib/linkUtils';
 import LinkPreviewCard from './LinkPreviewCard';
+import { playTypingSound, resetTypingSoundCounter, cleanupTypingSound } from '@/lib/typingSound';
 
 interface Props {
   onBack: () => void;
@@ -124,10 +125,13 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
   const { user } = useAuth();
   const { sessionId } = useSession();
 
-  // Typewriter effect function
+  // Typewriter effect function with typing sound
   const typeMessage = useCallback((messageId: string, fullContent: string, speed: number = 25) => {
     setTypingMessageId(messageId);
     let index = 0;
+    
+    // Reset sound counter for new message
+    resetTypingSoundCounter();
     
     // Clear any existing interval
     if (typewriterRef.current) {
@@ -136,6 +140,9 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
     
     typewriterRef.current = setInterval(() => {
       if (index <= fullContent.length) {
+        // Play typing sound effect
+        playTypingSound();
+        
         setDisplayedContent(prev => ({
           ...prev,
           [messageId]: fullContent.slice(0, index)
@@ -164,6 +171,8 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
       if (typewriterRef.current) {
         clearInterval(typewriterRef.current);
       }
+      // Cleanup audio context on unmount
+      cleanupTypingSound();
     };
   }, [typeMessage]);
 
