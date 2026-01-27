@@ -1,169 +1,261 @@
 
-
-## Plan: Correcciones de UI en NeuroCopyGenerator y Sistema de Colores de Botones
+## Plan: Previews de Enlaces en Chat de NeuroCopy GPT
 
 ### Objetivo
-Resolver tres problemas de diseño:
-1. Título "NeuroCopy GPT" en una sola línea
-2. Área de chat con scroll fijo (sin expandir la página)
-3. Eliminar el color naranja sólido de los botones y usar degradado rosa-magenta
+Cuando el usuario pega un enlace de TikTok, Instagram o cualquier página web en el chat, mostrar una tarjeta de preview visual junto con el texto del mensaje. La tarjeta debe ser clickeable y abrir el enlace en una nueva pestaña.
 
 ---
 
-### Problema 1: Título "NeuroCopy GPT" en una sola línea
+### Diseño Visual Propuesto
 
-**Causa del problema:**
-El span con clase `text-gradient-safe` tiene `display: block` en el CSS, lo que fuerza al texto "GPT" a ir a una nueva línea.
-
-**Solución:**
-Modificar el título para que use `inline` en lugar de `block` para el gradiente, o quitar la clase `text-gradient-safe` y aplicar el gradiente directamente con estilos inline.
-
-**Archivo:** `src/components/video/NeuroCopyGenerator.tsx`
-
-```tsx
-// ANTES (línea 294-296)
-<h1 className="text-2xl font-bold text-center whitespace-nowrap">
-  NeuroCopy <span className="text-gradient-safe">GPT</span>
-</h1>
-
-// DESPUÉS - Aplicar gradiente inline sin romper la línea
-<h1 className="text-2xl font-bold text-center whitespace-nowrap">
-  NeuroCopy{' '}
-  <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-    GPT
-  </span>
-</h1>
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ Mensaje del Usuario con Enlaces                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  "dame un guión de este video"                                  │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ 🎵 TikTok                                         ↗️    │   │
+│  │ tiktok.com/@2pierofx0                                   │   │
+│  │ /video/7583194841744477460                              │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ 📸 Instagram                                      ↗️    │   │
+│  │ instagram.com/reel/DTYup44DGc2                          │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ 🌐 Web                                            ↗️    │   │
+│  │ cnnespanol.cnn.com                                      │   │
+│  │ /mundo/analisis-trump-siembra-division...               │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Problema 2: Área de Chat con Scroll Fijo
+### Arquitectura de la Solución
 
-**Causa del problema:**
-El `ScrollArea` usa `flex-1` pero no tiene una altura máxima definida, lo que permite que la página crezca indefinidamente.
-
-**Solución:**
-Crear una estructura de layout fijo con altura de viewport y overflow controlado. El panel derecho debe usar `h-screen` y `overflow-hidden` para contener el scroll interno.
-
-**Archivo:** `src/components/video/NeuroCopyGenerator.tsx`
-
-Cambios en la estructura del panel derecho:
-
-```tsx
-// Contenedor principal del chat con altura fija
-<div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-  {/* Header del Chat - altura fija */}
-  <div className="flex-shrink-0 border-b border-border/30 p-4 ...">
-    ...
-  </div>
-  
-  {/* Área de Mensajes - flex-1 con overflow */}
-  <ScrollArea className="flex-1 min-h-0">
-    <div className="p-6 space-y-6 pb-4">
-      ...
-    </div>
-  </ScrollArea>
-  
-  {/* Botón Usar Guión - altura fija */}
-  {lastGeneratedScript && !typingMessageId && (
-    <div className="flex-shrink-0 border-t ...">
-      ...
-    </div>
-  )}
-  
-  {/* Input Bar - altura fija */}
-  <div className="flex-shrink-0 border-t ...">
-    ...
-  </div>
-</div>
+```text
+Mensaje del usuario
+        ↓
+┌─────────────────────────┐
+│ extractLinksFromText()  │ ← Función que detecta URLs con regex
+└─────────────────────────┘
+        ↓
+┌─────────────────────────┐
+│ identifyLinkType()      │ ← Identifica si es TikTok, Instagram o Web
+└─────────────────────────┘
+        ↓
+┌─────────────────────────┐
+│ LinkPreviewCard         │ ← Componente visual para cada enlace
+└─────────────────────────┘
+        ↓
+┌─────────────────────────┐
+│ MessageBubble           │ ← Renderiza texto + previews
+└─────────────────────────┘
 ```
-
-**Clave técnica:**
-- `h-screen` en el contenedor padre para fijar la altura
-- `overflow-hidden` para prevenir scroll externo
-- `flex-shrink-0` en header e input para que no se compriman
-- `min-h-0` en el ScrollArea para que el flex funcione correctamente
 
 ---
 
-### Problema 3: Eliminar Color Naranja de Botones
+### Cambios en Archivos
 
-**Causa del problema:**
-- Variable `--accent: 15 100% 60%` define un naranja
-- La variante `outline` del botón usa `hover:bg-accent` que aplica este naranja
-- El botón `default` usa `bg-primary` (rosa/magenta) que está correcto
+#### 1. Crear nuevo componente `LinkPreviewCard.tsx`
 
-**Solución:**
-Cambiar el estilo de los botones para:
-1. Usar degradado rosa-magenta en lugar de colores sólidos
-2. Eliminar el hover naranja de la variante `outline`
-3. Crear una nueva clase de utilidad para botones con degradado
+**Ubicación:** `src/components/video/LinkPreviewCard.tsx`
 
-**Archivo:** `src/components/ui/button.tsx`
+**Funcionalidad:**
+- Recibe una URL como prop
+- Detecta el tipo de enlace (TikTok, Instagram, Web genérico)
+- Muestra un icono apropiado según el tipo
+- Extrae información legible de la URL (usuario, ID del video, dominio)
+- Es clickeable y abre la URL en nueva pestaña
 
-Modificar la variante `outline`:
+**Estructura del componente:**
 
 ```tsx
-// ANTES
-outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-
-// DESPUÉS - Quitar el hover naranja
-outline: "border border-input bg-background hover:bg-primary/10 hover:text-primary",
-```
-
-**Archivo:** `src/index.css`
-
-Agregar una nueva clase de utilidad para botones con degradado:
-
-```css
-.btn-gradient {
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
-  color: white;
-  border: none;
+interface LinkPreviewCardProps {
+  url: string;
 }
 
-.btn-gradient:hover {
-  opacity: 0.9;
-}
+// Tipos de enlaces soportados
+type LinkType = 'tiktok' | 'instagram' | 'youtube' | 'web';
+
+// Función para detectar tipo de enlace
+const identifyLinkType = (url: string): LinkType => {
+  if (url.includes('tiktok.com')) return 'tiktok';
+  if (url.includes('instagram.com')) return 'instagram';
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  return 'web';
+};
+
+// Función para extraer información de la URL
+const extractLinkInfo = (url: string, type: LinkType) => {
+  // Extraer dominio, usuario, path, etc.
+};
 ```
 
-**Archivos a modificar para botones específicos:**
-
-1. **`CustomizeCardsModal.tsx`** - Botón "Confirmar":
-   - Cambiar de `className="flex-1 cyber-glow h-12"` 
-   - A `className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90 h-12"`
-
-2. **`VideoStyleCard.tsx`** - Botón "Elegir Estilo":
-   - Cuando `isSelected`, ya usa variant="default" (rosa)
-   - Cuando no seleccionado, usa `variant="outline"` que ahora no tendrá hover naranja
-
-3. **`NeuroCopyGenerator.tsx`** - Botón "Usar este Guión":
-   - Ya usa `bg-gradient-to-r from-primary to-accent` ✓ (correcto)
+**Diseño visual del componente:**
+- Fondo con gradiente sutil y borde cyber
+- Icono a la izquierda según plataforma (TikTok: nota musical, Instagram: cámara, Web: globo)
+- Información de la URL truncada elegantemente
+- Icono de "abrir en nueva pestaña" a la derecha
+- Hover con efecto cyber-glow
+- Colores de marca para cada plataforma
 
 ---
 
-### Resumen de Archivos a Modificar
+#### 2. Crear utilidad `linkUtils.ts`
 
-| Archivo | Cambios |
-|---------|---------|
-| `src/components/video/NeuroCopyGenerator.tsx` | 1. Título en una línea (inline gradient) 2. Layout fijo para scroll |
-| `src/components/ui/button.tsx` | Cambiar hover de `outline` de naranja a rosa transparente |
-| `src/components/video/CustomizeCardsModal.tsx` | Botón "Confirmar" con degradado |
+**Ubicación:** `src/lib/linkUtils.ts`
+
+**Funciones:**
+
+```tsx
+// Regex para detectar URLs en texto
+const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
+
+// Extraer todas las URLs de un texto
+export const extractLinksFromText = (text: string): string[] => {
+  const matches = text.match(URL_REGEX);
+  return matches || [];
+};
+
+// Remover URLs del texto para mostrar solo el mensaje
+export const removeLinksFromText = (text: string): string => {
+  return text.replace(URL_REGEX, '').trim();
+};
+
+// Identificar tipo de plataforma
+export const identifyPlatform = (url: string): 'tiktok' | 'instagram' | 'youtube' | 'twitter' | 'web' => {
+  if (url.includes('tiktok.com')) return 'tiktok';
+  if (url.includes('instagram.com')) return 'instagram';
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  if (url.includes('twitter.com') || url.includes('x.com')) return 'twitter';
+  return 'web';
+};
+
+// Formatear URL para display
+export const formatUrlForDisplay = (url: string) => {
+  try {
+    const urlObj = new URL(url);
+    return {
+      domain: urlObj.hostname.replace('www.', ''),
+      path: urlObj.pathname.length > 30 
+        ? urlObj.pathname.substring(0, 30) + '...' 
+        : urlObj.pathname
+    };
+  } catch {
+    return { domain: url, path: '' };
+  }
+};
+```
 
 ---
 
-### Resultado Visual Esperado
+#### 3. Modificar `MessageBubble` en `NeuroCopyGenerator.tsx`
 
-**Panel Izquierdo:**
-- "NeuroCopy GPT" todo en una sola línea con "GPT" en degradado
+**Cambios:**
 
-**Panel Derecho (Chat):**
-- Altura fija que ocupa todo el viewport
-- Barra de scroll vertical cuando hay mucho contenido
-- Header e input siempre visibles
+1. Importar el nuevo componente y utilidades
+2. Antes de renderizar el contenido, extraer enlaces
+3. Separar texto de enlaces
+4. Renderizar texto primero, luego las tarjetas de preview
 
-**Botones en toda la app:**
-- Sin color naranja sólido en hover
-- Botones principales con degradado rosa-magenta (como la imagen del rayo)
-- Botones outline con hover rosa transparente
+```tsx
+const MessageBubble = ({ message, displayedContent, isTyping }) => {
+  const isUser = message.role === 'user';
+  const content = displayedContent !== undefined ? displayedContent : message.content;
+  
+  // Solo procesar enlaces en mensajes de usuario
+  const links = isUser ? extractLinksFromText(content) : [];
+  const textWithoutLinks = isUser ? removeLinksFromText(content) : content;
+  
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {/* Avatar de IA */}
+      {!isUser && (
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent ...">
+          <Bot className="w-4 h-4 text-white" />
+        </div>
+      )}
+      
+      <div className="max-w-[70%] space-y-3">
+        {/* Texto del mensaje (sin enlaces) */}
+        {textWithoutLinks && (
+          <div className={`p-4 rounded-2xl ${isUser ? 'bg-primary/10 cyber-border' : 'bg-card/50'}`}>
+            <p className="text-sm whitespace-pre-wrap">{textWithoutLinks}</p>
+          </div>
+        )}
+        
+        {/* Tarjetas de preview para cada enlace */}
+        {links.map((link, index) => (
+          <LinkPreviewCard key={index} url={link} />
+        ))}
+      </div>
+    </div>
+  );
+};
+```
 
+---
+
+### Diseño Visual de LinkPreviewCard
+
+**Colores por plataforma:**
+- TikTok: Borde con gradiente negro/rosa (#000000 a #ff0050)
+- Instagram: Borde con gradiente púrpura/naranja (#833AB4 a #F77737)
+- YouTube: Borde rojo (#FF0000)
+- Web genérica: Borde del tema (cyber-border)
+
+**Iconos por plataforma (usando Lucide):**
+- TikTok: `Music` o crear icono SVG personalizado
+- Instagram: `Camera` o `Instagram` (si existe)
+- YouTube: `Youtube` (Lucide lo tiene)
+- Web: `Globe`
+
+**Estructura visual:**
+
+```text
+┌──────────────────────────────────────────────────────┐
+│ [🎵]  TikTok                              [↗️]       │
+│       tiktok.com/@usuario                            │
+│       /video/1234567890...                           │
+└──────────────────────────────────────────────────────┘
+```
+
+---
+
+### Resumen de Archivos a Crear/Modificar
+
+| Archivo | Acción | Descripción |
+|---------|--------|-------------|
+| `src/lib/linkUtils.ts` | CREAR | Funciones de detección y formateo de URLs |
+| `src/components/video/LinkPreviewCard.tsx` | CREAR | Componente de tarjeta de preview |
+| `src/components/video/NeuroCopyGenerator.tsx` | MODIFICAR | Integrar detección de enlaces y previews en MessageBubble |
+
+---
+
+### Comportamiento Esperado
+
+1. **Usuario escribe:** "dame un guión de este video https://www.tiktok.com/@2pierofx0/video/7583..."
+
+2. **Se muestra:**
+   - Burbuja con texto: "dame un guión de este video"
+   - Debajo: Tarjeta de TikTok con icono, dominio truncado y botón para abrir
+
+3. **Al hacer clic en la tarjeta:** Abre el enlace en nueva pestaña
+
+4. **Múltiples enlaces:** Se muestran múltiples tarjetas apiladas verticalmente
+
+---
+
+### Notas Técnicas
+
+- Los previews se muestran **solo en mensajes del usuario** (no en respuestas de IA)
+- La funcionalidad es **puramente estética/frontend** - no requiere llamadas a APIs
+- Se mantiene toda la funcionalidad existente de envío a webhook
+- El efecto typewriter **no aplica** a las tarjetas de preview (aparecen inmediatamente)
