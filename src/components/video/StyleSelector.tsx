@@ -12,9 +12,10 @@ interface Props {
   onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => void;
   onBack: () => void;
   generatedScript: string;
+  aiApiKeys: { openai_api_key: string; gemini_api_key: string };
 }
 
-const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript }) => {
+const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript, aiApiKeys }) => {
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [previouslySelectedStyle, setPreviouslySelectedStyle] = useState<VideoStyle | null>(null);
@@ -237,6 +238,7 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
         onClose={handleCustomizeCancel}
         onConfirm={handleCustomizeConfirm}
         generatedScript={generatedScript}
+        aiApiKeys={aiApiKeys}
       />
 
       {/* Modal de nombre del presentador */}

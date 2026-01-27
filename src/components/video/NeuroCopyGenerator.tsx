@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ArrowLeft, Sparkles, Send, Bot, Zap, Link, Rocket, MessageCircle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,9 +30,18 @@ const Feature = ({ icon: Icon, text }: { icon: React.ElementType; text: string }
   </div>
 );
 
-// Message bubble component
-const MessageBubble = ({ message }: { message: Message }) => {
+// Message bubble component with typewriter support
+const MessageBubble = ({ 
+  message, 
+  displayedContent,
+  isTyping 
+}: { 
+  message: Message; 
+  displayedContent?: string;
+  isTyping?: boolean;
+}) => {
   const isUser = message.role === 'user';
+  const content = displayedContent !== undefined ? displayedContent : message.content;
   
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -46,7 +55,10 @@ const MessageBubble = ({ message }: { message: Message }) => {
           ? 'bg-primary/10 cyber-border'
           : 'bg-card/50 border border-border/30'
       }`}>
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        <p className="text-sm whitespace-pre-wrap leading-relaxed">
+          {content}
+          {isTyping && <span className="animate-pulse text-primary">|</span>}
+        </p>
       </div>
     </div>
   );
@@ -67,10 +79,12 @@ const TypingIndicator = () => (
 );
 
 const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
+  const welcomeMessageContent = 'Hola, soy Neurocopy GPT. Dime qué guión necesitas o pega un enlace para empezar.';
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
-      content: 'Hola, soy Neurocopy GPT. Dime qué guión necesitas o pega un enlace para empezar.',
+      content: welcomeMessageContent,
       role: 'assistant',
       timestamp: new Date()
     }
@@ -80,10 +94,58 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
   const [lastGeneratedScript, setLastGeneratedScript] = useState<string | null>(null);
   const [aiApiKeys, setAiApiKeys] = useState({ openai_api_key: '', gemini_api_key: '' });
   
+  // Typewriter effect states
+  const [typingMessageId, setTypingMessageId] = useState<string | null>('welcome');
+  const [displayedContent, setDisplayedContent] = useState<{ [key: string]: string }>({});
+  const typewriterRef = useRef<NodeJS.Timeout | null>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { sessionId } = useSession();
+
+  // Typewriter effect function
+  const typeMessage = useCallback((messageId: string, fullContent: string, speed: number = 25) => {
+    setTypingMessageId(messageId);
+    let index = 0;
+    
+    // Clear any existing interval
+    if (typewriterRef.current) {
+      clearInterval(typewriterRef.current);
+    }
+    
+    typewriterRef.current = setInterval(() => {
+      if (index <= fullContent.length) {
+        setDisplayedContent(prev => ({
+          ...prev,
+          [messageId]: fullContent.slice(0, index)
+        }));
+        index++;
+      } else {
+        if (typewriterRef.current) {
+          clearInterval(typewriterRef.current);
+          typewriterRef.current = null;
+        }
+        setTypingMessageId(null);
+        // Set final content
+        setDisplayedContent(prev => ({
+          ...prev,
+          [messageId]: fullContent
+        }));
+      }
+    }, speed);
+  }, []);
+
+  // Welcome message typewriter effect
+  useEffect(() => {
+    typeMessage('welcome', welcomeMessageContent, 30);
+    
+    return () => {
+      if (typewriterRef.current) {
+        clearInterval(typewriterRef.current);
+      }
+    };
+  }, [typeMessage]);
 
   // Load user's AI API keys
   useEffect(() => {
@@ -110,7 +172,7 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isGenerating]);
+  }, [messages, isGenerating, displayedContent]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isGenerating) return;
@@ -121,6 +183,12 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
       role: 'user',
       timestamp: new Date()
     };
+    
+    // Immediately show user message (no typewriter for user messages)
+    setDisplayedContent(prev => ({
+      ...prev,
+      [userMessage.id]: userMessage.content
+    }));
     
     setMessages(prev => [...prev, userMessage]);
     const currentInput = inputMessage;
@@ -151,8 +219,9 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
       
       const script = data?.[0]?.guion_IA || 'No se pudo generar el guión. Por favor, intenta de nuevo.';
       
+      const aiMessageId = crypto.randomUUID();
       const aiMessage: Message = {
-        id: crypto.randomUUID(),
+        id: aiMessageId,
         content: script,
         role: 'assistant',
         timestamp: new Date()
@@ -160,6 +229,10 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
       
       setMessages(prev => [...prev, aiMessage]);
       setLastGeneratedScript(script);
+      
+      // Start typewriter effect for AI response (faster speed for long texts)
+      const typeSpeed = script.length > 500 ? 10 : 15;
+      typeMessage(aiMessageId, script, typeSpeed);
       
       toast({
         title: "¡Guión generado!",
@@ -169,14 +242,16 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
     } catch (error) {
       console.error('Error:', error);
       
+      const errorMessageId = crypto.randomUUID();
       const errorMessage: Message = {
-        id: crypto.randomUUID(),
+        id: errorMessageId,
         content: 'Lo siento, hubo un error al generar el guión. Por favor, intenta de nuevo.',
         role: 'assistant',
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, errorMessage]);
+      typeMessage(errorMessageId, errorMessage.content, 20);
       
       toast({
         title: "Error al generar guión",
@@ -211,10 +286,12 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
         
         {/* Logo y Título */}
         <div className="flex flex-col items-center mt-20">
-          <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mb-6">
+          {/* Icono con animación flotante */}
+          <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mb-6 animate-float">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-center">
+          {/* Título en una sola línea */}
+          <h1 className="text-2xl font-bold text-center whitespace-nowrap">
             NeuroCopy <span className="text-gradient-safe">GPT</span>
           </h1>
           <p className="text-muted-foreground text-center mt-3 text-sm">
@@ -254,7 +331,12 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
         <ScrollArea className="flex-1 p-6">
           <div className="space-y-6 pb-4">
             {messages.map(message => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble 
+                key={message.id} 
+                message={message}
+                displayedContent={displayedContent[message.id]}
+                isTyping={typingMessageId === message.id}
+              />
             ))}
             
             {isGenerating && <TypingIndicator />}
@@ -263,8 +345,8 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
           </div>
         </ScrollArea>
         
-        {/* Botón Usar Guión (visible cuando hay script) */}
-        {lastGeneratedScript && (
+        {/* Botón Usar Guión (visible cuando hay script y no está escribiendo) */}
+        {lastGeneratedScript && !typingMessageId && (
           <div className="border-t border-border/30 p-4 bg-card/10">
             <Button
               onClick={() => onUseScript(lastGeneratedScript)}

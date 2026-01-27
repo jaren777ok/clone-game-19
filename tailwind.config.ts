@@ -103,21 +103,30 @@ export default {
 						boxShadow: '0 0 30px rgba(255, 0, 128, 0.6), 0 0 60px rgba(255, 0, 128, 0.25)'
 					}
 				},
-				'glow-text': {
-					'0%, 100%': {
-						textShadow: '0 0 10px rgba(255, 0, 128, 0.6)'
-					},
-					'50%': {
-						textShadow: '0 0 20px rgba(255, 0, 128, 0.9), 0 0 30px rgba(255, 0, 128, 0.5)'
-					}
+			'glow-text': {
+				'0%, 100%': {
+					textShadow: '0 0 10px rgba(255, 0, 128, 0.6)'
+				},
+				'50%': {
+					textShadow: '0 0 20px rgba(255, 0, 128, 0.9), 0 0 30px rgba(255, 0, 128, 0.5)'
 				}
 			},
-			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'cyber-pulse': 'cyber-pulse 2s ease-in-out infinite',
-				'glow-text': 'glow-text 2s ease-in-out infinite'
+			'float': {
+				'0%, 100%': {
+					transform: 'translateY(0px)'
+				},
+				'50%': {
+					transform: 'translateY(-10px)'
+				}
 			}
+		},
+		animation: {
+			'accordion-down': 'accordion-down 0.2s ease-out',
+			'accordion-up': 'accordion-up 0.2s ease-out',
+			'cyber-pulse': 'cyber-pulse 2s ease-in-out infinite',
+			'glow-text': 'glow-text 2s ease-in-out infinite',
+			'float': 'float 3s ease-in-out infinite'
+		}
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
 import AvatarSelector from '@/components/video/AvatarSelector';
 import SecondAvatarSelector from '@/components/video/SecondAvatarSelector';
@@ -14,6 +15,7 @@ import SubtitleCustomizer from '@/components/video/SubtitleCustomizer';
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [aiApiKeys, setAiApiKeys] = useState({ openai_api_key: '', gemini_api_key: '' });
   const {
     flowState,
     apiKeys,
@@ -30,6 +32,28 @@ const VideoCreationFlow = () => {
     goToStep,
     resetFlow
   } = useVideoCreationFlow();
+
+  // Load AI API keys for passing to StyleSelector -> CustomizeCardsModal
+  useEffect(() => {
+    const loadAiApiKeys = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('user_ai_api_keys')
+        .select('openai_api_key, gemini_api_key')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setAiApiKeys({
+          openai_api_key: data.openai_api_key || '',
+          gemini_api_key: data.gemini_api_key || ''
+        });
+      }
+    };
+    
+    loadAiApiKeys();
+  }, [user?.id]);
 
   const handleBack = () => {
     switch (flowState.step) {
@@ -166,6 +190,7 @@ const VideoCreationFlow = () => {
           onSelectStyle={selectStyle}
           onBack={handleBack}
           generatedScript={flowState.generatedScript || ''}
+          aiApiKeys={aiApiKeys}
         />
       );
 

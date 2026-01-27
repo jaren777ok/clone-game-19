@@ -17,6 +17,7 @@ interface Props {
   onClose: () => void;
   onConfirm: (customization: CardCustomization) => void;
   generatedScript: string;
+  aiApiKeys: { openai_api_key: string; gemini_api_key: string };
 }
 
 // Función utilitaria para transformar comillas dobles a simples
@@ -24,7 +25,7 @@ const transformQuotes = (value: string): string => {
   return value.replace(/"/g, "'");
 };
 
-const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, generatedScript }) => {
+const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, generatedScript, aiApiKeys }) => {
   const [date, setDate] = useState<Date>(new Date());
   const [titulo, setTitulo] = useState('');
   const [subtitulo, setSubtitulo] = useState('');
@@ -38,7 +39,9 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, gene
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          guion: generatedScript
+          guion: generatedScript,
+          openai_api_key: aiApiKeys.openai_api_key,
+          gemini_api_key: aiApiKeys.gemini_api_key
         })
       });
       
