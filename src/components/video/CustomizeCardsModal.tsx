@@ -28,37 +28,37 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, gene
   const [date, setDate] = useState<Date>(new Date());
   const [titulo, setTitulo] = useState('');
   const [subtitulo, setSubtitulo] = useState('');
-  const [loadingTitulo, setLoadingTitulo] = useState(false);
-  const [loadingSubtitulo, setLoadingSubtitulo] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
 
-  const handleCompleteWithAI = async (campo: 'titulo' | 'subtitulo') => {
-    const setLoading = campo === 'titulo' ? setLoadingTitulo : setLoadingSubtitulo;
-    const setValue = campo === 'titulo' ? setTitulo : setSubtitulo;
-    const maxLength = campo === 'titulo' ? 62 : 45;
-    
-    setLoading(true);
+  const handleCompleteWithAI = async () => {
+    setLoadingAI(true);
     
     try {
       const response = await fetch('https://cris.cloude.es/webhook/generador-de-texto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          guion: generatedScript,
-          campo: campo
+          guion: generatedScript
         })
       });
       
       const data = await response.json();
       
-      // Respuesta esperada: [{ "exito": "texto" }]
-      if (data && data[0] && data[0].exito) {
-        const texto = transformQuotes(data[0].exito.slice(0, maxLength));
-        setValue(texto);
+      // Nueva respuesta esperada: [{ "titulo": "...", "subtitulo": "..." }]
+      if (data && data[0]) {
+        if (data[0].titulo) {
+          const tituloTexto = transformQuotes(data[0].titulo.slice(0, 62));
+          setTitulo(tituloTexto);
+        }
+        if (data[0].subtitulo) {
+          const subtituloTexto = transformQuotes(data[0].subtitulo.slice(0, 45));
+          setSubtitulo(subtituloTexto);
+        }
       }
     } catch (error) {
       console.error('Error al completar con IA:', error);
     } finally {
-      setLoading(false);
+      setLoadingAI(false);
     }
   };
 
@@ -134,26 +134,6 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, gene
               className="cyber-border focus:cyber-glow h-12"
               maxLength={62}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => handleCompleteWithAI('titulo')}
-              disabled={loadingTitulo || !generatedScript}
-              className="w-full mt-1 text-primary hover:text-primary/80 hover:bg-primary/10 flex items-center justify-center gap-2"
-            >
-              {loadingTitulo ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Completar con IA
-                </>
-              )}
-            </Button>
           </div>
 
           {/* Campo Subtítulo */}
@@ -177,27 +157,28 @@ const CustomizeCardsModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, gene
               className="cyber-border focus:cyber-glow h-12"
               maxLength={45}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => handleCompleteWithAI('subtitulo')}
-              disabled={loadingSubtitulo || !generatedScript}
-              className="w-full mt-1 text-primary hover:text-primary/80 hover:bg-primary/10 flex items-center justify-center gap-2"
-            >
-              {loadingSubtitulo ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Completar con IA
-                </>
-              )}
-            </Button>
           </div>
+
+          {/* Botón único de completar con IA */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCompleteWithAI}
+            disabled={loadingAI || !generatedScript}
+            className="w-full cyber-border hover:cyber-glow h-12 text-primary hover:text-primary/80 flex items-center justify-center gap-2"
+          >
+            {loadingAI ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generando título y subtítulo...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Completar todo con IA
+              </>
+            )}
+          </Button>
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">
