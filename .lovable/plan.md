@@ -1,16 +1,15 @@
 
 
-## Plan: Mejoras en el Selector de Avatares
+## Plan: Mejoras Visuales y Corrección del Efecto Typewriter
 
 ### Resumen de Cambios
 
-Este plan implementa mejoras de usabilidad y rendimiento en el selector de avatares:
+Este plan implementa tres mejoras:
 
-1. **Videos en formato horizontal (16:9)** estilo YouTube
-2. **Botón de audio** para activar/desactivar sonido del video
-3. **Eliminar overlay "Click para elegir"** del carrusel
-4. **Panel izquierdo solo con imagen** (no video) para ahorrar recursos
-5. **Asegurar fondo animado visible** con opacidad 20%
+1. **Tarjetas de video 30% más grandes** en el carrusel de avatares
+2. **Fondo de video con efectos** igual que la página de estilos de edición
+3. **Botón "Cambiar Guion"** en la página de estilos (corregido)
+4. **Corrección del efecto typewriter** - eliminar el flash del texto completo antes de escribir
 
 ---
 
@@ -18,185 +17,141 @@ Este plan implementa mejoras de usabilidad y rendimiento en el selector de avata
 
 | Archivo | Acción | Descripción |
 |---------|--------|-------------|
-| `src/components/video/AvatarCarousel.tsx` | Modificar | Videos horizontales, botón audio, sin overlay "click para elegir" |
-| `src/components/video/AvatarLeftPanel.tsx` | Modificar | Solo imagen (no video) en preview |
-| `src/components/video/AvatarSelector.tsx` | Verificar | Confirmar que el video de fondo tiene opacidad correcta |
+| `src/components/video/AvatarCarousel.tsx` | Modificar | Aumentar tamaño de tarjetas 30% |
+| `src/components/video/AvatarSelector.tsx` | Modificar | Actualizar URL del video de fondo |
+| `src/components/video/NeuroCopyGenerator.tsx` | Modificar | Corregir el flash del typewriter |
 
 ---
 
-### Cambios Detallados
+### Cambio 1: Tarjetas de Video 30% Más Grandes
 
-#### 1. AvatarCarousel.tsx - Videos Horizontales con Audio
+**Archivo:** `src/components/video/AvatarCarousel.tsx`
 
-**Cambio de aspecto de video:**
+**Tamaños actuales → Nuevos tamaños (30% más grandes):**
+
 ```typescript
-// ANTES (vertical/cuadrado):
-<div className="relative bg-background rounded-xl overflow-hidden aspect-square w-[160px] md:w-[200px] lg:w-[240px]">
+// ANTES (línea 138):
+className="pl-4 basis-[260px] md:basis-[320px] lg:basis-[380px]"
 
-// DESPUÉS (horizontal 16:9):
+// DESPUÉS (+30%):
+className="pl-4 basis-[338px] md:basis-[416px] lg:basis-[494px]"
+```
+
+```typescript
+// ANTES (línea 171):
 <div className="relative bg-background rounded-xl overflow-hidden aspect-video w-[220px] md:w-[280px] lg:w-[340px]">
+
+// DESPUÉS (+30%):
+<div className="relative bg-background rounded-xl overflow-hidden aspect-video w-[286px] md:w-[364px] lg:w-[442px]">
 ```
 
-**Agregar control de audio:**
-- Nuevo estado `isMuted` para controlar el audio del video activo
-- Botón pequeño de speaker en la esquina del video activo
-- El usuario puede hacer click para activar/desactivar audio
-
-**Eliminar overlay "Click para elegir":**
-- Remover completamente el div con el texto "Click para elegir"
-- Mantener solo el video/imagen sin overlay
-
-**Código del botón de audio:**
-```typescript
-// Botón de audio en esquina inferior derecha del video activo
-{isActive && avatar.preview_video_url && (
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      toggleMute();
-    }}
-    className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/60 
-               hover:bg-black/80 flex items-center justify-center 
-               transition-all duration-300 backdrop-blur-sm z-20"
-  >
-    {isMuted ? (
-      <VolumeX className="w-5 h-5 text-white" />
-    ) : (
-      <Volume2 className="w-5 h-5 text-white" />
-    )}
-  </button>
-)}
-```
-
-#### 2. AvatarLeftPanel.tsx - Solo Imagen
-
-**Simplificar preview a solo imagen:**
-```typescript
-// ANTES (video o imagen):
-{activeAvatar.preview_video_url ? (
-  <video ... />
-) : (
-  <img ... />
-)}
-
-// DESPUÉS (siempre imagen):
-<img
-  src={activeAvatar.preview_image_url}
-  alt={activeAvatar.avatar_name}
-  className="w-full h-full object-cover"
-  onError={(e) => {
-    const target = e.target as HTMLImageElement;
-    target.src = '/placeholder.svg';
-  }}
-/>
-```
-
-**Beneficios:**
-- Ahorra memoria al no duplicar reproducción de video
-- El video solo se reproduce en el carrusel central
-- Panel izquierdo es solo referencia visual estática
-
-#### 3. AvatarSelector.tsx - Verificar Fondo
-
-El fondo ya está configurado correctamente con:
-- Video de fondo: `fondonormal.mp4`
-- Opacidad: `opacity-20`
-- Overlay de gradiente para legibilidad
-
-Si no se ve el fondo, puede ser un problema de carga del video. Agregar fallback de color de fondo:
-```typescript
-<video
-  autoPlay
-  loop
-  muted
-  playsInline
-  className="absolute inset-0 w-full h-full object-cover opacity-20"
-  style={{ backgroundColor: 'hsl(var(--background))' }}
->
-```
+**Cálculo:**
+- 260px × 1.3 = 338px
+- 320px × 1.3 = 416px
+- 380px × 1.3 = 494px
+- 220px × 1.3 = 286px
+- 280px × 1.3 = 364px
+- 340px × 1.3 = 442px
 
 ---
 
-### Estructura Visual Final
+### Cambio 2: Video de Fondo con Efectos
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│  [Video Background: fondonormal.mp4 - opacity 20%]                      │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌────────────────────┐  ┌────────────────────────────────────────────┐ │
-│  │  PANEL IZQUIERDO   │  │         CARRUSEL HORIZONTAL                │ │
-│  │                    │  │                                            │ │
-│  │  ← Cambiar Estilo  │  │    ┌─────────────────────────────────┐     │ │
-│  │                    │  │    │    Video Horizontal 16:9        │     │ │
-│  │  [IMAGEN estática] │  │[◄] │         (con audio)         🔊  │ [►] │ │
-│  │                    │  │    │                                 │     │ │
-│  │  Nombre Avatar     │  │    └─────────────────────────────────┘     │ │
-│  │                    │  │                                            │ │
-│  │  [Elegir Avatar]   │  │        ● ● ● [●] ● ● ●  (paginación)       │ │
-│  │                    │  │                                            │ │
-│  └────────────────────┘  └────────────────────────────────────────────┘ │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+**Archivo:** `src/components/video/AvatarSelector.tsx`
+
+Actualizar la constante del video de fondo con la nueva URL proporcionada:
+
+```typescript
+// ANTES (línea 12):
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3NDg1MzI3MTAsImV4cCI6MTc4MDA2ODcxMH0.Rj3APPFjHJzePYFCRIu5b96E8wLf4pqYLHrk9E2ri6Q';
+
+// DESPUÉS:
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3MTQwMTEsImV4cCI6MTkyNzM5NDAxMX0.STRpu_JjaJ_A-PxWt0FuSfcESIf0wW5XkhZ2m-qWWDs';
 ```
+
+El archivo ya tiene los overlays de gradiente correctos (líneas 159-162), igual que StyleSelector.
 
 ---
 
-### Detalles Técnicos
+### Cambio 3: Verificar Botón "Cambiar Guion" en StyleSelector
 
-#### Estado de Audio en AvatarCarousel
+**Archivo:** `src/components/video/StyleSelectorHeader.tsx`
+
+El botón ya dice "Cambiar Guion" (línea 20). No requiere cambios.
+
+---
+
+### Cambio 4: Corrección del Efecto Typewriter (Flash de Texto)
+
+**Archivo:** `src/components/video/NeuroCopyGenerator.tsx`
+
+**Problema identificado:**
+Cuando llega la respuesta del webhook, el código hace:
+1. `setMessages([...prev, aiMessage])` - Agrega mensaje con contenido completo
+2. `typeMessage(aiMessageId, script)` - Inicia typewriter
+
+Por un breve momento (~0.3s), el componente `MessageBubble` muestra `message.content` completo porque `displayedContent[messageId]` aún no existe.
+
+**Solución:**
+Inicializar `displayedContent` con cadena vacía ANTES de agregar el mensaje al estado:
+
 ```typescript
-const [isMuted, setIsMuted] = useState(true);
+// ANTES (líneas 260-265):
+setMessages(prev => [...prev, aiMessage]);
+setLastGeneratedScript(script);
 
-const toggleMute = () => {
-  setIsMuted(prev => !prev);
-};
+// Start typewriter effect for AI response (faster speed for long texts)
+const typeSpeed = script.length > 500 ? 10 : 15;
+typeMessage(aiMessageId, script, typeSpeed);
 
-// En el video activo:
-<video
-  ref={(el) => { videoRefs.current[avatar.avatar_id] = el; }}
-  src={avatar.preview_video_url}
-  className="w-full h-full object-cover pointer-events-none"
-  loop
-  muted={isMuted}  // Controlado por estado
-  playsInline
-/>
+// DESPUÉS:
+// Inicializar displayedContent como vacío ANTES de agregar el mensaje
+// Esto previene que se muestre el texto completo por un instante
+setDisplayedContent(prev => ({
+  ...prev,
+  [aiMessageId]: ''
+}));
+
+setMessages(prev => [...prev, aiMessage]);
+setLastGeneratedScript(script);
+
+// Start typewriter effect for AI response (faster speed for long texts)
+const typeSpeed = script.length > 500 ? 10 : 15;
+typeMessage(aiMessageId, script, typeSpeed);
 ```
 
-#### Actualizar useEffect para manejar audio
+Además, aplicar la misma lógica para mensajes de error (líneas 276-284):
+
 ```typescript
-useEffect(() => {
-  const activeAvatar = avatars[activeIndex];
-  if (!activeAvatar) return;
+// ANTES:
+setMessages(prev => [...prev, errorMessage]);
+typeMessage(errorMessageId, errorMessage.content, 20);
 
-  // Pause all videos and reset mute
-  Object.values(videoRefs.current).forEach(video => {
-    if (video) {
-      video.pause();
-      video.currentTime = 0;
-      video.muted = true;  // Reset mute al cambiar
-    }
-  });
-
-  // Reset mute state when changing avatar
-  setIsMuted(true);
-
-  // Play the active video
-  const activeVideo = videoRefs.current[activeAvatar.avatar_id];
-  if (activeVideo) {
-    activeVideo.play().catch(console.error);
-  }
-}, [activeIndex, avatars]);
+// DESPUÉS:
+setDisplayedContent(prev => ({
+  ...prev,
+  [errorMessageId]: ''
+}));
+setMessages(prev => [...prev, errorMessage]);
+typeMessage(errorMessageId, errorMessage.content, 20);
 ```
 
 ---
 
 ### Resultado Esperado
 
-1. Los avatares se muestran en formato horizontal (16:9) como YouTube
-2. Hay un botón de speaker para activar/desactivar audio
-3. No hay overlay "Click para elegir" - el botón está en el panel izquierdo
-4. El panel izquierdo muestra solo imagen estática (ahorra memoria)
-5. El fondo animado es visible con opacidad correcta
-6. La experiencia es más fluida y menos redundante
+1. **Tarjetas de avatar 30% más grandes** - Mejor visibilidad en el carrusel
+2. **Video de fondo actualizado** - Usa el token más reciente que expira en 2031
+3. **Efectos visuales** - Mantiene los mismos gradientes y overlays que StyleSelector
+4. **Sin flash de texto** - El mensaje de IA se muestra gradualmente desde el principio sin mostrar el texto completo primero
+5. **Audio sincronizado** - El sonido de escritura sigue funcionando correctamente
+
+---
+
+### Notas Técnicas
+
+- Los tamaños de las tarjetas se redondean a números enteros para evitar sub-pixels
+- El video de fondo ya tiene `opacity-20` configurado correctamente
+- El fix del typewriter es una inicialización del estado antes del render
+- No hay cambios en la lógica del audio de escritura
 
