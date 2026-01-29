@@ -9,7 +9,7 @@ import LoadMoreButton from './LoadMoreButton';
 import PreviousSelectionBanner from './PreviousSelectionBanner';
 
 // Background video URL (same as StyleSelector)
-const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3NDg1MzI3MTAsImV4cCI6MTc4MDA2ODcxMH0.Rj3APPFjHJzePYFCRIu5b96E8wLf4pqYLHrk9E2ri6Q';
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3MTQwMTEsImV4cCI6MTkyNzM5NDAxMX0.STRpu_JjaJ_A-PxWt0FuSfcESIf0wW5XkhZ2m-qWWDs';
 
 interface Props {
   selectedApiKey: HeyGenApiKey;
