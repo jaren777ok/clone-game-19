@@ -763,8 +763,8 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                 loop
                 playsInline
               />
-              {/* Subtitle Overlay */}
-              <div className="absolute inset-0 flex items-end justify-center pb-8">
+              {/* Subtitle Overlay - Center-lower position */}
+              <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: '15%' }}>
                 <div className="text-center px-4">
                   {renderWordByWord()}
                 </div>
