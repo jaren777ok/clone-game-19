@@ -367,6 +367,7 @@ const ScriptForm = ({
             onClose={() => setShowManualModal(false)}
             script={script}
             flowState={flowState}
+            selectedApiKey={flowState?.selectedApiKey}
             onConfirm={handleManualModalConfirm}
             onConfirmWithUrls={handleManualModalConfirmWithUrls}
           />

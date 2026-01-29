@@ -31,23 +31,25 @@ const ApiKeyForm: React.FC<Props> = ({ hasExistingKeys, onSuccess, onCancel }) =
     try {
       const encryptedKey = btoa(formData.apiKey);
 
-      // Validate API key with HeyGen
-      const response = await supabase.functions.invoke('heygen-avatars', {
-        body: { 
-          apiKey: formData.apiKey,
-          offset: 0,
-          limit: 1
-        }
+      // Validate API key with HeyGen quota endpoint (faster than loading avatars)
+      const response = await supabase.functions.invoke('heygen-quota', {
+        body: { apiKey: formData.apiKey }
       });
 
-      if (response.error) {
+      if (response.error || !response.data?.isValid) {
         toast({
           title: "Clave API inválida",
-          description: "La clave API proporcionada no es válida o no tiene acceso a HeyGen.",
+          description: response.data?.error || "La clave API proporcionada no es válida o no tiene acceso a HeyGen.",
           variant: "destructive"
         });
         return;
       }
+
+      console.log('✅ API Key validated:', {
+        isValid: response.data.isValid,
+        isPaidPlan: response.data.isPaidPlan,
+        remainingQuota: response.data.remainingQuota
+      });
 
       // Save to database
       const { error } = await supabase

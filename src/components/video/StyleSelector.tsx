@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization } from '@/types/videoFlow';
+import { VideoStyle, CardCustomization, PresenterCustomization, ApiVersionCustomization, ManualCustomization, HeyGenApiKey } from '@/types/videoFlow';
 import CustomizeCardsModal from './CustomizeCardsModal';
 import PresenterNameModal from './PresenterNameModal';
-import ApiVersionModal from './ApiVersionModal';
 import StyleLeftPanel from './StyleLeftPanel';
 import StyleCarousel from './StyleCarousel';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Props {
   onSelectStyle: (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => void;
   onBack: () => void;
   generatedScript: string;
   aiApiKeys: { openai_api_key: string; gemini_api_key: string };
+  selectedApiKey: HeyGenApiKey | null;
 }
 
 const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk1NDg2MzEsImV4cCI6MTkyNzIyODYzMX0.EwRytP9Dr__3-p5f-560Aaq7ZTbFC9AkGmBgvN-lAOs';
 
-const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript, aiApiKeys }) => {
+const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript, aiApiKeys, selectedApiKey }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [showPresenterModal, setShowPresenterModal] = useState(false);
-  const [showApiVersionModal, setShowApiVersionModal] = useState(false);
+  const [isDetectingPlan, setIsDetectingPlan] = useState(false);
   
   const [pendingStyle, setPendingStyle] = useState<VideoStyle | null>(null);
   const [pendingCardCustomization, setPendingCardCustomization] = useState<CardCustomization | null>(null);
@@ -114,23 +116,72 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
     }
   }, []);
 
+  // Auto-detect plan and proceed with style selection
+  const detectPlanAndProceed = async (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization) => {
+    if (!selectedApiKey) {
+      toast.error("No hay clave API seleccionada");
+      return;
+    }
+
+    setIsDetectingPlan(true);
+    
+    try {
+      // Decode the API key
+      const apiKey = atob(selectedApiKey.api_key_encrypted);
+      
+      // Verify plan with heygen-quota edge function
+      const response = await supabase.functions.invoke('heygen-quota', {
+        body: { apiKey }
+      });
+
+      if (response.error || !response.data?.isValid) {
+        throw new Error("Error verificando plan de API");
+      }
+
+      const isPaidVersion = response.data.isPaidPlan;
+      
+      // Create apiVersionCustomization automatically based on plan
+      const apiVersionCustomization: ApiVersionCustomization = {
+        isPaidVersion,
+        width: isPaidVersion ? 1920 : 1280,
+        height: isPaidVersion ? 1080 : 720
+      };
+
+      console.log('✅ Plan detectado automáticamente:', {
+        isPaidVersion,
+        resolution: isPaidVersion ? '1920x1080' : '1280x720',
+        remainingQuota: response.data.remainingQuota
+      });
+
+      // Proceed with the selected style
+      onSelectStyle(
+        style, 
+        cardCustomization || undefined, 
+        presenterCustomization || undefined,
+        apiVersionCustomization
+      );
+
+    } catch (error) {
+      console.error('Error detectando plan:', error);
+      toast.error("Error verificando tu plan de HeyGen. Por favor intenta de nuevo.");
+    } finally {
+      setIsDetectingPlan(false);
+      setPendingStyle(null);
+      setPendingCardCustomization(null);
+      setPendingPresenterCustomization(null);
+    }
+  };
+
   const handleSelectStyle = (style: VideoStyle) => {
     setPlayingVideo(null);
 
-    // For "Carga Manual" styles (style-5 and style-6), go directly without modals
+    // For "Carga Manual" styles (style-5 and style-6), go directly without plan detection
     if (style.id === 'style-5' || style.id === 'style-6') {
       onSelectStyle(style);
       return;
     }
     
-    // For Multi-Avatar style (style-7), show API version modal first
-    if (style.id === 'style-7') {
-      setShowApiVersionModal(true);
-      setPendingStyle(style);
-      return;
-    }
-    
-    // For other styles, check if they need customization
+    // For styles that need customization first
     const needsCardCustomization = ['style-1'].includes(style.id);
     const needsPresenterCustomization = ['style-2'].includes(style.id);
 
@@ -141,37 +192,25 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
       setShowPresenterModal(true);
       setPendingStyle(style);
     } else {
-      // No customization needed, but still need API version for remaining styles
-      setShowApiVersionModal(true);
-      setPendingStyle(style);
+      // No customization needed, auto-detect plan and proceed
+      detectPlanAndProceed(style);
     }
   };
 
   const handleCustomizeConfirm = (customization: CardCustomization) => {
-    setPendingCardCustomization(customization);
     setShowCustomizeModal(false);
-    setShowApiVersionModal(true);
+    // Auto-detect plan after customization
+    if (pendingStyle) {
+      detectPlanAndProceed(pendingStyle, customization);
+    }
   };
 
   const handlePresenterConfirm = (customization: PresenterCustomization) => {
-    setPendingPresenterCustomization(customization);
     setShowPresenterModal(false);
-    setShowApiVersionModal(true);
-  };
-
-  const handleApiVersionConfirm = (apiVersionCustomization: ApiVersionCustomization) => {
+    // Auto-detect plan after customization
     if (pendingStyle) {
-      onSelectStyle(
-        pendingStyle, 
-        pendingCardCustomization || undefined, 
-        pendingPresenterCustomization || undefined,
-        apiVersionCustomization
-      );
+      detectPlanAndProceed(pendingStyle, undefined, customization);
     }
-    setShowApiVersionModal(false);
-    setPendingStyle(null);
-    setPendingCardCustomization(null);
-    setPendingPresenterCustomization(null);
   };
 
   const handleCustomizeCancel = () => {
@@ -183,13 +222,6 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
 
   const handlePresenterCancel = () => {
     setShowPresenterModal(false);
-    setPendingStyle(null);
-    setPendingCardCustomization(null);
-    setPendingPresenterCustomization(null);
-  };
-
-  const handleApiVersionCancel = () => {
-    setShowApiVersionModal(false);
     setPendingStyle(null);
     setPendingCardCustomization(null);
     setPendingPresenterCustomization(null);
@@ -237,6 +269,21 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
         </div>
       </div>
 
+      {/* Loading overlay while detecting plan */}
+      {isDetectingPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-card/90 shadow-[0_0_40px_rgba(255,20,147,0.2)] border border-primary/20">
+            <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <p className="text-lg font-medium text-foreground">
+              Detectando tu plan de HeyGen...
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Esto solo toma un momento
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       <CustomizeCardsModal
         isOpen={showCustomizeModal}
@@ -250,12 +297,6 @@ const StyleSelector: React.FC<Props> = ({ onSelectStyle, onBack, generatedScript
         isOpen={showPresenterModal}
         onClose={handlePresenterCancel}
         onConfirm={handlePresenterConfirm}
-      />
-
-      <ApiVersionModal
-        isOpen={showApiVersionModal}
-        onClose={handleApiVersionCancel}
-        onConfirm={handleApiVersionConfirm}
       />
 
       {/* Background decorations */}

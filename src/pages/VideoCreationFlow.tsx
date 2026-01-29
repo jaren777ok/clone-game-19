@@ -191,6 +191,7 @@ const VideoCreationFlow = () => {
           onBack={handleBack}
           generatedScript={flowState.generatedScript || ''}
           aiApiKeys={aiApiKeys}
+          selectedApiKey={flowState.selectedApiKey}
         />
       );
 

@@ -1,1 +1,10 @@
 project_id = "jbunbmphadxmzjokwgkw"
+
+[functions.heygen-avatars]
+verify_jwt = false
+
+[functions.heygen-voices]
+verify_jwt = false
+
+[functions.heygen-quota]
+verify_jwt = false
