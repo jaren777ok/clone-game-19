@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/types/videoFlow';
 import {
@@ -23,7 +23,12 @@ const AvatarCarousel: React.FC<Props> = ({
   onSelectAvatar,
 }) => {
   const [api, setApi] = useState<CarouselApi>();
+  const [isMuted, setIsMuted] = useState(true);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+
+  const toggleMute = () => {
+    setIsMuted(prev => !prev);
+  };
 
   // Handle slide selection
   useEffect(() => {
@@ -42,18 +47,22 @@ const AvatarCarousel: React.FC<Props> = ({
     };
   }, [api, onActiveIndexChange]);
 
-  // Auto-play active video when available
+  // Auto-play active video when available and handle mute reset
   useEffect(() => {
     const activeAvatar = avatars[activeIndex];
     if (!activeAvatar) return;
 
-    // Pause all videos first
+    // Pause all videos first and reset their mute state
     Object.values(videoRefs.current).forEach(video => {
       if (video) {
         video.pause();
         video.currentTime = 0;
+        video.muted = true;
       }
     });
+
+    // Reset mute state when changing avatar
+    setIsMuted(true);
 
     // Play the active video if it exists
     const activeVideo = videoRefs.current[activeAvatar.avatar_id];
@@ -126,7 +135,7 @@ const AvatarCarousel: React.FC<Props> = ({
                 return (
                   <CarouselItem
                     key={avatar.avatar_id}
-                    className="pl-4 basis-[200px] md:basis-[240px] lg:basis-[280px]"
+                    className="pl-4 basis-[260px] md:basis-[320px] lg:basis-[380px]"
                   >
                     <div
                       className={`
@@ -159,7 +168,7 @@ const AvatarCarousel: React.FC<Props> = ({
                           }
                         `}
                       >
-                        <div className="relative bg-background rounded-xl overflow-hidden aspect-square w-[160px] md:w-[200px] lg:w-[240px]">
+                        <div className="relative bg-background rounded-xl overflow-hidden aspect-video w-[220px] md:w-[280px] lg:w-[340px]">
                           {/* Video or Image */}
                           {avatar.preview_video_url && isActive ? (
                             <video
@@ -167,7 +176,7 @@ const AvatarCarousel: React.FC<Props> = ({
                               src={avatar.preview_video_url}
                               className="w-full h-full object-cover pointer-events-none"
                               loop
-                              muted
+                              muted={isMuted}
                               playsInline
                             />
                           ) : (
@@ -183,15 +192,21 @@ const AvatarCarousel: React.FC<Props> = ({
                             />
                           )}
                           
-                          {/* Click to select overlay for active avatar */}
-                          {isActive && (
-                            <div 
-                              className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition-colors duration-300 pointer-events-auto"
+                          {/* Audio toggle button for active avatar with video */}
+                          {isActive && avatar.preview_video_url && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleMute();
+                              }}
+                              className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-all duration-300 backdrop-blur-sm z-20"
                             >
-                              <span className="opacity-0 hover:opacity-100 text-white font-semibold text-sm bg-primary/80 px-3 py-1.5 rounded-full transition-opacity duration-300">
-                                Click para elegir
-                              </span>
-                            </div>
+                              {isMuted ? (
+                                <VolumeX className="w-5 h-5 text-white" />
+                              ) : (
+                                <Volume2 className="w-5 h-5 text-white" />
+                              )}
+                            </button>
                           )}
                         </div>
                       </div>
