@@ -1,15 +1,13 @@
 
 
-## Plan: Rediseño del Administrador de Claves API y Mejoras de UX
+## Plan: Validación Automática de API Key y Detección de Plan HeyGen
 
 ### Resumen de Cambios
 
-Este plan implementa:
+Este plan implementa dos mejoras importantes:
 
-1. **Rediseño completo del Administrador de Claves API** con video de fondo y tarjetas premium
-2. **Simplificación de navegación en SavedVideos** - solo botón "Volver al Dashboard"
-3. **Eliminar botón "Videos Guardados" de VideoGeneratorHeader**
-4. **Corregir problema de refresh automático** cuando el usuario cambia de pestaña del navegador
+1. **Nueva validación de clave API**: Usar el endpoint `/v2/user/remaining_quota` de HeyGen para validar la clave (más ligero que cargar avatares)
+2. **Detección automática de plan Pro/Free**: Eliminar el modal manual de selección y detectar automáticamente si tiene `plan_credit` en la respuesta
 
 ---
 
@@ -17,268 +15,422 @@ Este plan implementa:
 
 | Archivo | Acción | Descripción |
 |---------|--------|-------------|
-| `src/components/video/HeyGenApiKeyManager.tsx` | Reescribir | Video de fondo, nuevo layout premium |
-| `src/components/video/ApiKeyList.tsx` | Reescribir | Tarjetas elevadas con sombra etérea |
-| `src/components/video/ApiKeyCard.tsx` | Reescribir | Diseño premium con iconos de proyecto |
-| `src/components/video/ApiKeyForm.tsx` | Reescribir | Modal/tarjeta con borde degradado |
-| `src/pages/SavedVideos.tsx` | Modificar | Solo botón "Volver al Dashboard" |
-| `src/components/video/VideoGeneratorHeader.tsx` | Modificar | Eliminar botón "Videos Guardados" |
+| `supabase/functions/heygen-quota/index.ts` | Crear | Nueva edge function para verificar quota y plan |
+| `src/components/video/ApiKeyForm.tsx` | Modificar | Usar nueva edge function para validación |
+| `src/components/video/StyleSelector.tsx` | Modificar | Auto-detectar plan y eliminar modal manual |
+| `src/hooks/useVideoCreationFlow.ts` | Modificar | Agregar función para obtener quota de la API key |
+| `src/types/videoFlow.ts` | Modificar | Agregar interface para quota response |
 
 ---
 
-### Cambio 1: HeyGenApiKeyManager - Video de Fondo y Layout Premium
+### Cambio 1: Nueva Edge Function `heygen-quota`
 
-**Estructura visual (basada en imágenes de referencia):**
+**Archivo:** `supabase/functions/heygen-quota/index.ts`
 
-```text
-┌───────────────────────────────────────────────────────────────────────┐
-│  [Video Background: fondonormal.mp4 - opacity 20%]                    │
-│  [Dark overlay for readability]                                       │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  ← Volver al Dashboard                                                │
-│                                                                       │
-│              "Gestión de Claves API"                                  │
-│     (Título grande con degradado rosa-magenta)                        │
-│                                                                       │
-│  "Administra tus claves API de HeyGen o agrega nuevas para           │
-│   potenciar tu creación."                                             │
-│                                                                       │
-│                                                                       │
-│  Tus Conexiones API Activas:                                          │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  [⚡] HG NBN PROYECTO                    [Continuar con esta]  🗑  │  │
-│  │       Creada el 23/8/2025                   (botón degradado)      │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│      ^ Tarjeta con borde glow rosa-magenta y sombra etérea            │
-│                                                                       │
-│  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  [💎] Proyecto Beta                      [Continuar con esta]  🗑  │  │
-│  │       Creada el 23/8/2025                                          │
-│  └─────────────────────────────────────────────────────────────────┘  │
-│                                                                       │
-│  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐  │
-│  │  [+]  Agregar nueva clave API                                   │  │
-│  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘  │
-│      ^ Tarjeta con borde punteado - hover ilumina todo                │
-│                                                                       │
-│                    ● SISTEMA NEURAL ACTIVO ●                          │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
-```
-
-**Código clave para el fondo:**
-```typescript
-const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3MTYyNzQsImV4cCI6MTkyNzM5NjI3NH0.WY9BkeYyf8U0doTqKMBmXo0X_2pecKTwDy3tMN7VKHY';
-
-// Video de fondo
-<video
-  src={BACKGROUND_VIDEO_URL}
-  className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
-  autoPlay
-  muted
-  loop
-  playsInline
-/>
-<div className="absolute inset-0 bg-background/50" />
-```
-
----
-
-### Cambio 2: ApiKeyCard - Tarjetas con Sombra Etérea
-
-**Estilos de la tarjeta:**
-```typescript
-// Tarjeta con borde glow y sombra rosa-magenta
-<div className="
-  relative rounded-xl 
-  bg-card/80 backdrop-blur-sm 
-  border border-primary/30
-  shadow-[0_0_30px_rgba(255,20,147,0.15)]
-  hover:shadow-[0_0_40px_rgba(255,20,147,0.25)]
-  hover:border-primary/50
-  transition-all duration-300
-">
-```
-
-**Iconos de proyecto variados:**
-```typescript
-// Rotación de iconos para cada clave
-const projectIcons = [Shield, Zap, Star, Cpu, Key];
-const IconComponent = projectIcons[index % projectIcons.length];
-```
-
----
-
-### Cambio 3: Tarjeta "Agregar Nueva Clave API"
-
-**Estilo de borde punteado y efecto hover:**
-```typescript
-<button
-  onClick={onShowAddForm}
-  className="
-    w-full p-6 rounded-xl
-    border-2 border-dashed border-muted-foreground/30
-    hover:border-primary/50
-    hover:shadow-[0_0_30px_rgba(255,20,147,0.2)]
-    hover:bg-primary/5
-    transition-all duration-300
-    flex items-center justify-center gap-4
-  "
->
-  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-    <Plus className="w-6 h-6 text-background" />
-  </div>
-  <span className="text-lg font-semibold text-foreground">
-    Agregar nueva clave API
-  </span>
-</button>
-```
-
----
-
-### Cambio 4: ApiKeyForm - Formulario con Borde Degradado
-
-**Contenedor del formulario:**
-```typescript
-// Contenedor con borde glow degradado
-<div className="
-  relative rounded-2xl 
-  bg-card/90 backdrop-blur-md
-  p-[1px] 
-  bg-gradient-to-br from-primary/50 via-accent/30 to-primary/50
-  shadow-[0_0_40px_rgba(255,20,147,0.2)]
-">
-  <div className="bg-card rounded-2xl p-6 sm:p-8">
-    {/* Form content */}
-  </div>
-</div>
-```
-
-**Campos de entrada con focus glow:**
-```typescript
-<Input
-  className="
-    bg-background/50 border-muted-foreground/20
-    focus:border-primary/50 focus:ring-primary/20
-    focus:shadow-[0_0_15px_rgba(255,20,147,0.15)]
-  "
-/>
-```
-
----
-
-### Cambio 5: SavedVideos - Simplificar Navegación
-
-**Eliminar ambos botones actuales y dejar solo uno:**
+Esta función:
+- Llama al endpoint `https://api.heygen.com/v2/user/remaining_quota`
+- Retorna si la clave es válida y si tiene `plan_credit` (plan de pago)
 
 ```typescript
-// ANTES (líneas 174-191):
-<div className="flex items-center justify-between mb-8">
-  <Button onClick={() => navigate('/crear-video')}>
-    Volver al Generador
-  </Button>
-  <Button onClick={() => navigate('/dashboard')}>
-    Dashboard
-  </Button>
-</div>
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-// DESPUÉS:
-<div className="flex items-center mb-8">
-  <Button
-    variant="outline"
-    onClick={() => navigate('/dashboard')}
-    className="cyber-border hover:cyber-glow"
-  >
-    <ArrowLeft className="w-4 h-4 mr-2" />
-    Volver al Dashboard
-  </Button>
-</div>
-```
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
----
+interface QuotaResponse {
+  isValid: boolean;
+  isPaidPlan: boolean;
+  remainingQuota: number;
+  error?: string;
+}
 
-### Cambio 6: VideoGeneratorHeader - Eliminar Botón "Videos Guardados"
-
-**Mantener solo el botón "Volver":**
-
-```typescript
-// ANTES (líneas 24-33):
-<Button onClick={() => navigate('/videos-guardados')}>
-  <Bookmark /> Videos Guardados
-</Button>
-
-// DESPUÉS:
-// Eliminar completamente este botón
-```
-
-El header quedará solo con el botón "Volver" que regresa a `/crear-video`.
-
----
-
-### Cambio 7: Corregir Problema de Refresh en SavedVideos
-
-**Problema identificado:**
-El `useEffect` en SavedVideos hace `fetchVideos()` cada vez que `user` cambia. Cuando el usuario cambia de pestaña y regresa, el navegador puede re-ejecutar efectos.
-
-**Solución:**
-1. Usar un flag para evitar re-fetch innecesario
-2. Solo hacer fetch inicial, no en cada cambio de foco
-
-```typescript
-// ANTES:
-useEffect(() => {
-  fetchVideos();
-}, [user]);
-
-// DESPUÉS:
-const [hasFetched, setHasFetched] = useState(false);
-
-useEffect(() => {
-  if (user && !hasFetched) {
-    fetchVideos();
-    setHasFetched(true);
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
   }
-}, [user, hasFetched]);
 
-// También agregar cleanup para evitar state updates en componente desmontado
-const fetchVideos = async () => {
-  if (!user || hasFetched) return;
-  // ... resto del código
+  try {
+    const { apiKey } = await req.json()
+
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ 
+          isValid: false, 
+          isPaidPlan: false, 
+          remainingQuota: 0,
+          error: 'API key is required' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Llamar al endpoint de quota de HeyGen
+    const response = await fetch('https://api.heygen.com/v2/user/remaining_quota', {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'x-api-key': apiKey
+      }
+    })
+
+    if (!response.ok) {
+      return new Response(
+        JSON.stringify({ 
+          isValid: false, 
+          isPaidPlan: false, 
+          remainingQuota: 0,
+          error: 'Invalid API key or HeyGen service error' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const data = await response.json()
+    
+    // La respuesta puede venir como array o como objeto directo
+    const quotaData = Array.isArray(data) ? data[0] : data
+    
+    if (quotaData.error) {
+      return new Response(
+        JSON.stringify({ 
+          isValid: false, 
+          isPaidPlan: false, 
+          remainingQuota: 0,
+          error: quotaData.error 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Detectar si tiene plan de pago verificando si existe "plan_credit" en details
+    const details = quotaData.data?.details || {}
+    const hasPlanCredit = 'plan_credit' in details && details.plan_credit > 0
+    const remainingQuota = quotaData.data?.remaining_quota || 0
+
+    console.log('HeyGen quota check:', {
+      remainingQuota,
+      hasPlanCredit,
+      details: Object.keys(details)
+    })
+
+    return new Response(
+      JSON.stringify({ 
+        isValid: true, 
+        isPaidPlan: hasPlanCredit,
+        remainingQuota,
+        details 
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+
+  } catch (error) {
+    console.error('Edge function error:', error)
+    return new Response(
+      JSON.stringify({ 
+        isValid: false, 
+        isPaidPlan: false, 
+        remainingQuota: 0,
+        error: 'Internal server error' 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})
+```
+
+---
+
+### Cambio 2: Actualizar ApiKeyForm.tsx
+
+**Usar la nueva edge function para validar:**
+
+```typescript
+// ANTES (líneas 34-50):
+const response = await supabase.functions.invoke('heygen-avatars', {
+  body: { 
+    apiKey: formData.apiKey,
+    offset: 0,
+    limit: 1
+  }
+});
+
+if (response.error) {
+  toast({ title: "Clave API inválida", ... });
+  return;
+}
+
+// DESPUÉS:
+const response = await supabase.functions.invoke('heygen-quota', {
+  body: { apiKey: formData.apiKey }
+});
+
+if (response.error || !response.data?.isValid) {
+  toast({
+    title: "Clave API inválida",
+    description: response.data?.error || 
+      "La clave API proporcionada no es válida o no tiene acceso a HeyGen.",
+    variant: "destructive"
+  });
+  return;
+}
+```
+
+**Beneficios:**
+- Validación más rápida (no carga lista de avatares)
+- Obtiene información útil sobre la quota disponible
+
+---
+
+### Cambio 3: Automatizar Detección de Plan en StyleSelector
+
+**Archivo:** `src/components/video/StyleSelector.tsx`
+
+**Agregar prop para obtener la API key seleccionada:**
+
+```typescript
+interface Props {
+  onSelectStyle: (...) => void;
+  onBack: () => void;
+  generatedScript: string;
+  aiApiKeys: { openai_api_key: string; gemini_api_key: string };
+  selectedApiKey: HeyGenApiKey | null;  // NUEVO
+}
+```
+
+**Agregar función para detectar plan automáticamente:**
+
+```typescript
+const [isDetectingPlan, setIsDetectingPlan] = useState(false);
+
+const detectPlanAndProceed = async (style: VideoStyle) => {
+  if (!selectedApiKey) {
+    toast.error("No hay clave API seleccionada");
+    return;
+  }
+
+  setIsDetectingPlan(true);
+  
+  try {
+    // Decodificar la API key
+    const apiKey = atob(selectedApiKey.api_key_encrypted);
+    
+    // Verificar plan con la nueva edge function
+    const response = await supabase.functions.invoke('heygen-quota', {
+      body: { apiKey }
+    });
+
+    if (response.error || !response.data?.isValid) {
+      throw new Error("Error verificando plan de API");
+    }
+
+    const isPaidVersion = response.data.isPaidPlan;
+    
+    // Crear apiVersionCustomization automáticamente
+    const apiVersionCustomization: ApiVersionCustomization = {
+      isPaidVersion,
+      width: isPaidVersion ? 1920 : 1280,
+      height: isPaidVersion ? 1080 : 720
+    };
+
+    console.log('✅ Plan detectado automáticamente:', {
+      isPaidVersion,
+      resolution: isPaidVersion ? '1920x1080' : '1280x720'
+    });
+
+    // Proceder con el estilo seleccionado
+    onSelectStyle(
+      style, 
+      pendingCardCustomization || undefined, 
+      pendingPresenterCustomization || undefined,
+      apiVersionCustomization
+    );
+
+  } catch (error) {
+    console.error('Error detectando plan:', error);
+    toast.error("Error verificando tu plan de HeyGen. Por favor intenta de nuevo.");
+  } finally {
+    setIsDetectingPlan(false);
+    setPendingStyle(null);
+    setPendingCardCustomization(null);
+    setPendingPresenterCustomization(null);
+  }
 };
 ```
 
-**Alternativa adicional:**
-Usar `{ staleTime: Infinity }` si se migra a React Query, o simplemente mantener los datos en estado local sin refetch automático.
+**Modificar handleSelectStyle para usar auto-detección:**
+
+```typescript
+const handleSelectStyle = (style: VideoStyle) => {
+  setPlayingVideo(null);
+
+  // Estilos manuales van directo sin verificación de plan
+  if (style.id === 'style-5' || style.id === 'style-6') {
+    onSelectStyle(style);
+    return;
+  }
+  
+  // Estilos con personalización de tarjeta
+  if (['style-1'].includes(style.id)) {
+    setShowCustomizeModal(true);
+    setPendingStyle(style);
+    return;
+  }
+  
+  // Estilos con nombre de presentador
+  if (['style-2'].includes(style.id)) {
+    setShowPresenterModal(true);
+    setPendingStyle(style);
+    return;
+  }
+
+  // Para todos los demás estilos, detectar plan automáticamente
+  setPendingStyle(style);
+  detectPlanAndProceed(style);
+};
+
+// Actualizar handlers de modales:
+const handleCustomizeConfirm = (customization: CardCustomization) => {
+  setPendingCardCustomization(customization);
+  setShowCustomizeModal(false);
+  // Auto-detectar plan después de personalizar
+  if (pendingStyle) {
+    detectPlanAndProceed(pendingStyle);
+  }
+};
+
+const handlePresenterConfirm = (customization: PresenterCustomization) => {
+  setPendingPresenterCustomization(customization);
+  setShowPresenterModal(false);
+  // Auto-detectar plan después de personalizar
+  if (pendingStyle) {
+    detectPlanAndProceed(pendingStyle);
+  }
+};
+```
+
+**Eliminar uso de ApiVersionModal:**
+
+```typescript
+// Remover estado showApiVersionModal
+// Remover import de ApiVersionModal
+// Remover handleApiVersionConfirm y handleApiVersionCancel
+// Remover el componente <ApiVersionModal /> del JSX
+```
+
+**Agregar indicador de carga mientras detecta plan:**
+
+```typescript
+{isDetectingPlan && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-card/90 shadow-[0_0_40px_rgba(255,20,147,0.2)]">
+      <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <p className="text-lg font-medium text-foreground">
+        Detectando tu plan de HeyGen...
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Esto solo toma un momento
+      </p>
+    </div>
+  </div>
+)}
+```
 
 ---
 
-### Indicador "SISTEMA NEURAL ACTIVO"
+### Cambio 4: Actualizar ManualUploadModal
 
-Agregar el indicador al pie de la página del administrador de claves API:
+Para estilos manuales (style-5, style-6), también necesitamos auto-detectar el plan en lugar de mostrar el modal.
+
+**Archivo:** `src/hooks/useManualUploadFlow.ts`
+
+Agregar función de auto-detección similar que se llame en lugar de mostrar el paso `api-version`.
+
+---
+
+### Cambio 5: Actualizar VideoCreationFlow Props
+
+**Archivo:** `src/pages/VideoCreationFlow.tsx`
+
+Pasar `selectedApiKey` al StyleSelector:
 
 ```typescript
-<div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-  <div className="flex items-center gap-2 text-primary animate-pulse">
-    <div className="w-2 h-2 rounded-full bg-primary" />
-    <span className="text-sm font-medium tracking-wider">
-      SISTEMA NEURAL ACTIVO
-    </span>
-    <div className="w-2 h-2 rounded-full bg-primary" />
-  </div>
-</div>
+<StyleSelector
+  onSelectStyle={selectStyle}
+  onBack={() => goToStep('neurocopy')}
+  generatedScript={flowState.generatedScript || ''}
+  aiApiKeys={aiApiKeys}
+  selectedApiKey={flowState.selectedApiKey}  // NUEVO
+/>
 ```
+
+---
+
+### Diagrama de Flujo Actualizado
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    FLUJO ANTERIOR                               │
+└─────────────────────────────────────────────────────────────────┘
+Usuario ingresa API Key
+        ↓
+[Edge: heygen-avatars] ← Carga avatares (lento)
+        ↓
+   ¿Es válida?
+        ↓
+  Se guarda en BD
+        ↓
+  ... varios pasos ...
+        ↓
+  Selecciona Estilo
+        ↓
+[Modal Manual: "¿Tienes plan de pago?"] ← Usuario puede equivocarse
+        ↓
+  Continúa flujo
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    FLUJO NUEVO                                  │
+└─────────────────────────────────────────────────────────────────┘
+Usuario ingresa API Key
+        ↓
+[Edge: heygen-quota] ← Solo verifica quota (rápido)
+        ↓
+   ¿Es válida?
+        ↓
+  Se guarda en BD
+        ↓
+  ... varios pasos ...
+        ↓
+  Selecciona Estilo
+        ↓
+[Edge: heygen-quota] ← Auto-detecta plan_credit
+        ↓
+   ¿Tiene plan_credit?
+      Sí → 1920x1080 (HD)
+      No → 1280x720 (SD)
+        ↓
+  Continúa flujo automáticamente
+```
+
+---
+
+### Beneficios
+
+1. **Validación más rápida**: El endpoint `/remaining_quota` es más ligero que cargar avatares
+2. **Sin errores de usuario**: La detección es automática, elimina la posibilidad de seleccionar el plan incorrecto
+3. **Mejor UX**: Un paso menos en el flujo, experiencia más fluida
+4. **Datos útiles**: Se puede mostrar la quota disponible al usuario si se desea
 
 ---
 
 ### Resultado Esperado
 
-1. **Administrador de Claves API premium** con video de fondo animado y tarjetas con sombra etérea rosa-magenta
-2. **Formulario elegante** con borde degradado brillante
-3. **Botón "Agregar nueva clave"** con borde punteado y efecto hover que ilumina
-4. **SavedVideos** con solo un botón "Volver al Dashboard" coherente
-5. **Sin botón "Videos Guardados"** en el generador final
-6. **Sin refresh automático** al cambiar de pestaña del navegador
-7. **Indicador "SISTEMA NEURAL ACTIVO"** en el pie de página
+1. Al guardar una nueva clave API, se valida con `/remaining_quota` (más rápido)
+2. Al seleccionar un estilo, se detecta automáticamente si tiene `plan_credit`
+3. Se elimina el modal de "¿Tienes la versión paga?" 
+4. La resolución del video se configura automáticamente:
+   - **Con plan_credit** → 1920x1080
+   - **Sin plan_credit** → 1280x720
+5. El flujo es más simple y sin posibilidad de error del usuario
 
