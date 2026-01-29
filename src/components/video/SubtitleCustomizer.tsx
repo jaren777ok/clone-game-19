@@ -752,12 +752,12 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
         {/* Right Panel (65%) - Preview */}
         <div className="flex-1 flex flex-col justify-center items-center p-8">
-          <div className="w-full max-w-3xl">
-            {/* Video Preview with Subtitles */}
-            <div className="relative rounded-2xl overflow-hidden border border-primary/30 shadow-[0_0_40px_rgba(255,20,147,0.2)]">
+          <div className="flex flex-col items-center">
+            {/* Video Preview with Subtitles - Vertical 9:16 */}
+            <div className="relative rounded-2xl overflow-hidden border border-primary/30 shadow-[0_0_40px_rgba(255,20,147,0.2)]" style={{ aspectRatio: '9/16', height: '70vh', maxHeight: '600px' }}>
               <video
                 src={PREVIEW_VIDEO_URL}
-                className="w-full aspect-video object-cover"
+                className="w-full h-full object-cover"
                 autoPlay
                 muted
                 loop
@@ -765,7 +765,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
               />
               {/* Subtitle Overlay */}
               <div className="absolute inset-0 flex items-end justify-center pb-8">
-                <div className="text-center">
+                <div className="text-center px-4">
                   {renderWordByWord()}
                 </div>
               </div>
