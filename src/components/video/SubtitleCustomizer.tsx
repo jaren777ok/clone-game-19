@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Eye, Palette, Type, Sparkles, RotateCcw, Monitor } from 'lucide-react';
+import { ArrowLeft, Palette, Type, Sparkles, RotateCcw, Monitor } from 'lucide-react';
 import { SubtitleCustomization } from '@/types/videoFlow';
-// Fixed Transform import issue - using RotateCcw instead
 
 interface SubtitleCustomizerProps {
   onSelectCustomization: (customization: SubtitleCustomization) => void;
   onBack: () => void;
 }
+
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3MTYyNzQsImV4cCI6MTkyNzM5NjI3NH0.WY9BkeYyf8U0doTqKMBmXo0X_2pecKTwDy3tMN7VKHY';
+
+const PREVIEW_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/video%20de%20prueba%20subtitulos.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy92aWRlbyBkZSBwcnVlYmEgc3VidGl0dWxvcy5tcDQiLCJpYXQiOjE3Njk3MjA1NjEsImV4cCI6MTkyNzQwMDU2MX0.bsgwHIxC3SNEOg4ney65wtOMvTn7zbXL56ofK-VTsM0';
 
 const FONTS = [
   { name: 'Montserrat', class: 'font-montserrat', preview: 'Montserrat' },
@@ -91,7 +92,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   const [animationKey, setAnimationKey] = useState(0);
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
   const [currentWordInGroup, setCurrentWordInGroup] = useState(0);
-  const [currentWordCount, setCurrentWordCount] = useState(1); // Para efecto align
+  const [currentWordCount, setCurrentWordCount] = useState(1);
   const sampleText = "La Mente Humana es muy Rara";
 
   // Trigger animation when effects change
@@ -105,11 +106,10 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   // Auto-manage hasBackgroundColor for highlight and karaoke effects
   useEffect(() => {
     if (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') {
-      // Force hasBackgroundColor to false for highlight and karaoke effects
       setCustomization(prev => ({
         ...prev,
         hasBackgroundColor: false,
-        fill: prev.fill || '#ffffff' // Ensure fill has a default value
+        fill: prev.fill || '#ffffff'
       }));
     }
   }, [customization.subtitleEffect]);
@@ -132,34 +132,31 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       groups.push(words.slice(i, i + 3));
     }
     
-    // Special logic for "align" effect - sequential word appearance
     if (customization.placementEffect === 'align') {
       const timer = setInterval(() => {
         if (currentWordCount < 3) {
           setCurrentWordCount(prev => prev + 1);
         } else {
-          // Move to next group and reset word count
           const nextGroupIndex = (currentGroupIndex + 1) % groups.length;
           setCurrentGroupIndex(nextGroupIndex);
           setCurrentWordCount(1);
           setAnimationKey(Date.now());
         }
-      }, 800); // 0.8 seconds per word
+      }, 800);
       
       return () => clearInterval(timer);
     }
     
-    // Original logic for other effects
     if (groups.length > 1) {
       const timer = setInterval(() => {
         setCurrentGroupIndex(prev => (prev + 1) % groups.length);
-      }, 3000); // Change group every 3 seconds
+      }, 3000);
       
       return () => clearInterval(timer);
     }
   }, [sampleText, animationKey, customization.placementEffect, currentWordCount, currentGroupIndex]);
 
-  // Auto-cycle for highlight + static and karaoke + static effects: groups of 3 words with sequential highlighting
+  // Auto-cycle for highlight + static and karaoke + static effects
   useEffect(() => {
     if ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') && customization.placementEffect === 'static') {
       const words = sampleText.split(' ');
@@ -173,14 +170,13 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
           const currentGroup = groups[currentGroupIndex] || [];
           
           if (prev + 1 >= currentGroup.length) {
-            // Move to next group when current word cycle completes
             setCurrentGroupIndex(prevGroup => (prevGroup + 1) % groups.length);
-            return 0; // Reset to first word of new group
+            return 0;
           }
           
-          return prev + 1; // Next word in same group
+          return prev + 1;
         });
-      }, 1200); // Increased timing to 1.2 seconds for better visualization
+      }, 1200);
       
       return () => clearInterval(timer);
     }
@@ -188,17 +184,13 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
 
   // Helper function to sanitize backgroundColor
   const sanitizeBackgroundColor = (customization: SubtitleCustomization): string => {
-    // Para efectos highlight y karaoke: siempre ""
     if (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') {
       return "";
     }
-    
-    // Para otros efectos: "" si no está activado, valor hexadecimal si está activado
     return customization.hasBackgroundColor ? customization.backgroundColor : "";
   };
 
   const handleContinue = () => {
-    // Asegurar que los valores calculados están presentes
     const finalCustomization = {
       ...customization,
       Tamañofuente: getFontWeight(customization.fontFamily),
@@ -211,15 +203,12 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   const getPreviewClasses = () => {
     const font = FONTS.find(f => f.name === customization.fontFamily);
     
-    // Base font sizes - reduced for better fit
     let classes = `text-xl md:text-2xl lg:text-3xl font-bold transition-all duration-500 ${font?.class || 'font-montserrat'}`;
     
-    // Optimized size for highlight + static and karaoke + static combinations - slightly larger but still fitting 3 words
     if ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') && customization.placementEffect === 'static') {
       classes = `text-xl md:text-2xl lg:text-2xl font-bold transition-all duration-500 whitespace-nowrap ${font?.class || 'font-montserrat'}`;
     }
     
-    // Apply text transform
     if (customization.textTransform === 'uppercase') classes += ' uppercase';
     else if (customization.textTransform === 'lowercase') classes += ' lowercase';
     else if (customization.textTransform === 'capitalize') classes += ' capitalize';
@@ -228,7 +217,6 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   };
 
   const getAnimationStyles = (): React.CSSProperties => {
-    // Special handling for highlight effect
     if (customization.subtitleEffect === 'highlight') {
       return {
         color: customization.fill || '#ffffff',
@@ -241,7 +229,6 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       };
     }
 
-    // Special handling for karaoke effect (only color change, no background)
     if (customization.subtitleEffect === 'karaoke') {
       return {
         color: customization.fill || '#ffffff',
@@ -263,7 +250,6 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       position: 'relative' as const,
     };
 
-    // Add subtitle effects
     if (customization.subtitleEffect === 'fade') {
       styles.animation = 'fadeIn 0.8s ease-out';
     } else if (customization.subtitleEffect === 'bounce') {
@@ -272,7 +258,6 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       styles.animation = 'slideDown 0.7s ease-out';
     }
 
-    // Add placement effects (not for static)
     if (customization.placementEffect === 'animate') {
       styles.transform = 'scale(1.02)';
     }
@@ -289,9 +274,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
     
     const currentGroup = groups[currentGroupIndex] || [];
     
-    // Special handling for highlight and karaoke effects
     if (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') {
-      // For highlight/karaoke + static: sequential word-by-word highlighting/karaoke in groups of 3
       if (customization.placementEffect === 'static') {
         const words = sampleText.split(' ');
         const groups = [];
@@ -301,19 +284,17 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
         
         const currentGroup = groups[currentGroupIndex] || [];
         
-        // Different rendering for highlight vs karaoke
         if (customization.subtitleEffect === 'highlight') {
           return (
             <div className="inline-flex flex-wrap gap-1">
               {currentGroup.map((word, index) => {
-                // Only the word with the current index within the group is highlighted
                 const isHighlighted = index === currentWordInGroup;
                 
                 return (
                   <div
                     key={`${animationKey}-group-${currentGroupIndex}-word-${index}`}
                     style={{
-                      color: customization.fill || '#ffffff', // Always use user's chosen text color
+                      color: customization.fill || '#ffffff',
                       backgroundColor: isHighlighted ? customization.textColor : 'transparent',
                       padding: '6px 12px',
                       borderRadius: '8px',
@@ -330,11 +311,9 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
             </div>
           );
         } else if (customization.subtitleEffect === 'karaoke') {
-          // Karaoke effect: cumulative color change from left to right
           return (
             <div className="inline-flex flex-wrap gap-1">
               {currentGroup.map((word, index) => {
-                // Words up to and including current word get karaoke color (textColor)
                 const isKaraokeActive = index <= currentWordInGroup;
                 
                 return (
@@ -342,7 +321,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                     key={`${animationKey}-group-${currentGroupIndex}-word-${index}`}
                     style={{
                       color: isKaraokeActive ? customization.textColor : (customization.fill || '#ffffff'),
-                      backgroundColor: 'transparent', // No background for karaoke
+                      backgroundColor: 'transparent',
                       padding: '6px 12px',
                       borderRadius: '8px',
                       transition: 'color 0.5s ease-in-out',
@@ -360,7 +339,6 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
         }
       }
       
-      // For other highlight/karaoke effects: show word by word with respective animation
       return (
         <div className="inline-flex flex-wrap gap-2">
           {currentGroup.map((word, index) => (
@@ -379,7 +357,6 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       );
     }
     
-    // For "align" effect: show words sequentially (1 → 2 → 3) and center them
     if (customization.placementEffect === 'align') {
       const wordsToShow = currentGroup.slice(0, currentWordCount);
       return (
@@ -399,7 +376,6 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       );
     }
     
-    // For static effect: show without animations
     if (customization.placementEffect === 'static') {
       const groupText = currentGroup.join(' ');
       return (
@@ -413,11 +389,9 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
       );
     }
     
-    // For other effects: show the group as a unit with combined effects
     const groupText = currentGroup.join(' ');
     const baseStyles = getAnimationStyles();
     
-    // Combine subtitle effect with animate (pop) effect if selected
     let combinedAnimation = '';
     if (customization.subtitleEffect === 'fade') {
       combinedAnimation = customization.placementEffect === 'animate' 
@@ -452,7 +426,7 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-cyber-dark to-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Custom CSS animations */}
       <style>{`
         @keyframes fadeIn {
@@ -499,38 +473,66 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
             transform: scale(1.02);
           }
         }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
       `}</style>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      {/* Background Video */}
+      <video
+        src={BACKGROUND_VIDEO_URL}
+        className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+      <div className="absolute inset-0 bg-background/50" />
+
+      {/* Gradient overlays */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-3xl" />
+
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex">
+        {/* Left Panel (35%) - Options */}
+        <div className="w-[35%] min-w-[380px] max-w-[480px] border-r border-border/30 p-6 overflow-y-auto bg-card/20 backdrop-blur-sm">
+          {/* Back Button */}
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={onBack}
-            className="text-muted-foreground hover:text-foreground"
+            className="cyber-border hover:cyber-glow hover:bg-primary/10 mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Atrás
+            Cambiar voz
           </Button>
-          <div className="text-center">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Personalizar Subtítulos
-            </h1>
-            <p className="text-muted-foreground mt-2">Estilo Noticia - Configuración avanzada</p>
-          </div>
-          <div className="w-20" />
-        </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Controls Panel */}
-          <div className="space-y-6">
+          {/* Header with floating icon */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center cyber-glow mb-4 animate-float">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-center">
+              Personalizar <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Subtítulos</span>
+            </h1>
+          </div>
+
+          {/* Separator */}
+          <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent mb-6" />
+
+          {/* Options Sections */}
+          <div className="space-y-5">
             {/* Font Selection */}
-            <Card className="p-6 border-cyber-glow/20 bg-card/50 backdrop-blur">
-              <div className="flex items-center gap-2 mb-4">
-                <Type className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Tipo de Fuente</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Type className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold">Tipo de Fuente</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {FONTS.map((font) => (
                   <button
                     key={font.name}
@@ -540,254 +542,263 @@ const SubtitleCustomizer: React.FC<SubtitleCustomizerProps> = ({
                       Tamañofuente: getFontWeight(font.name),
                       "Fixed size": getFixedSize(font.name)
                     }))}
-                    className={`p-3 rounded-lg border text-left transition-all ${
+                    className={`p-2 rounded-lg border text-left text-xs transition-all ${
                       customization.fontFamily === font.name
                         ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
+                        : 'border-border/50 hover:border-primary/50 bg-card/30'
                     }`}
                   >
-                    <div className={`${font.class} text-sm font-medium`}>
+                    <div className={`${font.class} font-medium`}>
                       {font.preview}
                     </div>
                   </button>
                 ))}
               </div>
-            </Card>
+            </div>
 
             {/* Subtitle Effects */}
-            <Card className="p-6 border-cyber-glow/20 bg-card/50 backdrop-blur">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Efectos de Subtítulos</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold">Efectos de Subtítulos</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {SUBTITLE_EFFECTS.map((effect) => (
                   <button
                     key={effect.id}
                     onClick={() => setCustomization(prev => ({ ...prev, subtitleEffect: effect.id }))}
-                    className={`p-3 rounded-lg border text-left transition-all ${
+                    className={`p-2 rounded-lg border text-left transition-all ${
                       customization.subtitleEffect === effect.id
                         ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
+                        : 'border-border/50 hover:border-primary/50 bg-card/30'
                     }`}
                   >
-                    <div className="font-medium">{effect.name}</div>
-                    <div className="text-xs text-muted-foreground">{effect.description}</div>
+                    <div className="font-medium text-xs">{effect.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{effect.description}</div>
                   </button>
                 ))}
               </div>
-            </Card>
+            </div>
 
             {/* Placement Effects */}
-            <Card className="p-6 border-cyber-glow/20 bg-card/50 backdrop-blur">
-              <div className="flex items-center gap-2 mb-4">
-                <Monitor className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Efectos de Colocación</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Monitor className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold">Efectos de Colocación</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {PLACEMENT_EFFECTS.map((effect) => (
                   <button
                     key={effect.id}
                     onClick={() => setCustomization(prev => ({ ...prev, placementEffect: effect.id }))}
-                    className={`p-3 rounded-lg border text-left transition-all ${
+                    className={`p-2 rounded-lg border text-left transition-all ${
                       customization.placementEffect === effect.id
                         ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
+                        : 'border-border/50 hover:border-primary/50 bg-card/30'
                     }`}
                   >
-                    <div className="font-medium">{effect.name}</div>
-                    <div className="text-xs text-muted-foreground">{effect.description}</div>
+                    <div className="font-medium text-xs">{effect.name}</div>
                   </button>
                 ))}
               </div>
-            </Card>
+            </div>
 
             {/* Text Transform */}
-            <Card className="p-6 border-cyber-glow/20 bg-card/50 backdrop-blur">
-              <div className="flex items-center gap-2 mb-4">
-                <RotateCcw className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Transformación de Texto</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold">Transformación de Texto</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {TEXT_TRANSFORMS.map((transform) => (
                   <button
                     key={transform.id}
                     onClick={() => setCustomization(prev => ({ ...prev, textTransform: transform.id }))}
-                    className={`p-2 sm:p-3 rounded-lg border text-left transition-all ${
+                    className={`p-2 rounded-lg border text-left transition-all ${
                       customization.textTransform === transform.id
                         ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50'
+                        : 'border-border/50 hover:border-primary/50 bg-card/30'
                     }`}
                   >
-                    <div className="font-medium text-xs sm:text-sm">{transform.name}</div>
-                    <div className="text-xs text-muted-foreground">{transform.description}</div>
+                    <div className="font-medium text-[10px]">{transform.name}</div>
                   </button>
                 ))}
               </div>
-            </Card>
-
-            {/* Colors */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Background Color - Logic changes for Highlight */}
-              <Card className="p-4 border-cyber-glow/20 bg-card/50 backdrop-blur">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-primary" />
-                    <h4 className="font-semibold">
-                      {customization.subtitleEffect === 'highlight' ? 'Fondo Nuevo Color' : 
-                       customization.subtitleEffect === 'karaoke' ? 'Karaoke Nuevo Color' : 'Color de Fondo'}
-                    </h4>
-                  </div>
-                  {customization.subtitleEffect !== 'highlight' && customization.subtitleEffect !== 'karaoke' && (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={customization.hasBackgroundColor}
-                        onCheckedChange={(checked) => {
-                          setCustomization(prev => ({ 
-                            ...prev, 
-                            hasBackgroundColor: checked,
-                            backgroundColor: checked ? (prev.backgroundColor || '#421010') : prev.backgroundColor
-                          }));
-                        }}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {customization.hasBackgroundColor ? 'Activado' : 'Desactivado'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Show color selection for highlight, karaoke OR when background is enabled */}
-                {(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke' || customization.hasBackgroundColor) ? (
-                  <div className="space-y-3 animate-fade-in">
-                    <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
-                      {COLOR_PALETTE.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setCustomization(prev => ({ ...prev, 
-                            textColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? color : prev.textColor,
-                            backgroundColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? prev.backgroundColor : color
-                          }))}
-                          className={`w-8 h-8 rounded border-2 transition-all ${
-                            ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? customization.textColor : customization.backgroundColor) === color
-                              ? 'border-primary scale-110'
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                    <input
-                      type="color"
-                      value={(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? customization.textColor : customization.backgroundColor}
-                      onChange={(e) => setCustomization(prev => ({ ...prev, 
-                        textColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? e.target.value : prev.textColor,
-                        backgroundColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? prev.backgroundColor : e.target.value
-                      }))}
-                      className="w-full h-8 rounded border border-border"
-                    />
-                  </div>
-                ) : (
-                  <div className="py-8 text-center text-muted-foreground animate-fade-in">
-                    <div className="text-sm">Activar para personalizar color de fondo</div>
-                  </div>
-                )}
-              </Card>
-
-              {/* Text Color / Letra Nueva Color for Highlight */}
-              <Card className="p-4 border-cyber-glow/20 bg-card/50 backdrop-blur">
-                <div className="flex items-center gap-2 mb-3">
-                  <Palette className="w-4 h-4 text-primary" />
-                  <h4 className="font-semibold">
-                    {(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? 'Letra Nueva Color' : 'Color de Letra'}
-                  </h4>
-                </div>
-                {customization.subtitleEffect !== 'highlight' && customization.subtitleEffect !== 'karaoke' ? (
-                  <>
-                    <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
-                      {COLOR_PALETTE.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setCustomization(prev => ({ ...prev, textColor: color }))}
-                          className={`w-8 h-8 rounded border-2 transition-all ${
-                            customization.textColor === color
-                              ? 'border-primary scale-110'
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                    <input
-                      type="color"
-                      value={customization.textColor}
-                      onChange={(e) => setCustomization(prev => ({ ...prev, textColor: e.target.value }))}
-                      className="w-full h-8 rounded border border-border"
-                    />
-                  </>
-                ) : (
-                  /* Special selector for highlight and karaoke fill color */
-                  <>
-                    <div className="grid grid-cols-4 md:grid-cols-5 gap-2 mb-3">
-                      {COLOR_PALETTE.map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setCustomization(prev => ({ ...prev, fill: color }))}
-                          className={`w-8 h-8 rounded border-2 transition-all ${
-                            customization.fill === color
-                              ? 'border-primary scale-110'
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                    <input
-                      type="color"
-                      value={customization.fill || '#ffffff'}
-                      onChange={(e) => setCustomization(prev => ({ ...prev, fill: e.target.value }))}
-                      className="w-full h-8 rounded border border-border"
-                    />
-                  </>
-                )}
-              </Card>
             </div>
-          </div>
 
-          {/* Preview Panel */}
-          <div className="lg:sticky lg:top-8">
-            <Card className="p-8 border-cyber-glow/20 bg-card/50 backdrop-blur">
-              <div className="flex items-center gap-2 mb-6">
-                <Eye className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold">Vista Previa en Tiempo Real</h3>
+            {/* Background Color */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold">
+                    {customization.subtitleEffect === 'highlight' ? 'Fondo Nuevo Color' : 
+                     customization.subtitleEffect === 'karaoke' ? 'Karaoke Nuevo Color' : 'Color de Fondo'}
+                  </h3>
+                </div>
+                {customization.subtitleEffect !== 'highlight' && customization.subtitleEffect !== 'karaoke' && (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={customization.hasBackgroundColor}
+                      onCheckedChange={(checked) => {
+                        setCustomization(prev => ({ 
+                          ...prev, 
+                          hasBackgroundColor: checked,
+                          backgroundColor: checked ? (prev.backgroundColor || '#421010') : prev.backgroundColor
+                        }));
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {customization.hasBackgroundColor ? 'On' : 'Off'}
+                    </span>
+                  </div>
+                )}
               </div>
               
-              <div className="bg-black/80 rounded-lg p-4 md:p-6 lg:p-8 min-h-[220px] md:min-h-[250px] lg:min-h-[280px] flex items-center justify-center">
+              {(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke' || customization.hasBackgroundColor) ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-10 gap-1.5">
+                    {COLOR_PALETTE.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setCustomization(prev => ({ ...prev, 
+                          textColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? color : prev.textColor,
+                          backgroundColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? prev.backgroundColor : color
+                        }))}
+                        className={`w-6 h-6 rounded border transition-all ${
+                          ((customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? customization.textColor : customization.backgroundColor) === color
+                            ? 'border-primary scale-110 ring-2 ring-primary/50'
+                            : 'border-border/30 hover:border-primary/50'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <input
+                    type="color"
+                    value={(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? customization.textColor : customization.backgroundColor}
+                    onChange={(e) => setCustomization(prev => ({ ...prev, 
+                      textColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? e.target.value : prev.textColor,
+                      backgroundColor: (customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? prev.backgroundColor : e.target.value
+                    }))}
+                    className="w-full h-6 rounded border border-border/30"
+                  />
+                </div>
+              ) : (
+                <div className="py-4 text-center text-muted-foreground text-xs">
+                  Activar para personalizar color de fondo
+                </div>
+              )}
+            </div>
+
+            {/* Text Color */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold">
+                  {(customization.subtitleEffect === 'highlight' || customization.subtitleEffect === 'karaoke') ? 'Letra Nueva Color' : 'Color de Letra'}
+                </h3>
+              </div>
+              {customization.subtitleEffect !== 'highlight' && customization.subtitleEffect !== 'karaoke' ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-10 gap-1.5">
+                    {COLOR_PALETTE.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setCustomization(prev => ({ ...prev, textColor: color }))}
+                        className={`w-6 h-6 rounded border transition-all ${
+                          customization.textColor === color
+                            ? 'border-primary scale-110 ring-2 ring-primary/50'
+                            : 'border-border/30 hover:border-primary/50'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <input
+                    type="color"
+                    value={customization.textColor}
+                    onChange={(e) => setCustomization(prev => ({ ...prev, textColor: e.target.value }))}
+                    className="w-full h-6 rounded border border-border/30"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-10 gap-1.5">
+                    {COLOR_PALETTE.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setCustomization(prev => ({ ...prev, fill: color }))}
+                        className={`w-6 h-6 rounded border transition-all ${
+                          customization.fill === color
+                            ? 'border-primary scale-110 ring-2 ring-primary/50'
+                            : 'border-border/30 hover:border-primary/50'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <input
+                    type="color"
+                    value={customization.fill || '#ffffff'}
+                    onChange={(e) => setCustomization(prev => ({ ...prev, fill: e.target.value }))}
+                    className="w-full h-6 rounded border border-border/30"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel (65%) - Preview */}
+        <div className="flex-1 flex flex-col justify-center items-center p-8">
+          <div className="w-full max-w-3xl">
+            {/* Video Preview with Subtitles */}
+            <div className="relative rounded-2xl overflow-hidden border border-primary/30 shadow-[0_0_40px_rgba(255,20,147,0.2)]">
+              <video
+                src={PREVIEW_VIDEO_URL}
+                className="w-full aspect-video object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+              {/* Subtitle Overlay */}
+              <div className="absolute inset-0 flex items-end justify-center pb-8">
                 <div className="text-center">
                   {renderWordByWord()}
                 </div>
               </div>
+            </div>
 
-              <div className="mt-6 space-y-3">
-                <div className="text-sm text-muted-foreground">
-                  <strong>Configuración actual:</strong>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">{customization.fontFamily}</Badge>
-                  <Badge variant="secondary">{customization.subtitleEffect}</Badge>
-                  <Badge variant="secondary">{customization.placementEffect}</Badge>
-                  <Badge variant="secondary">{customization.textTransform}</Badge>
-                </div>
+            {/* Configuration Chips */}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground mb-3">Configuración actual:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Badge variant="secondary" className="bg-card/50 border border-border/30">{customization.fontFamily}</Badge>
+                <Badge variant="secondary" className="bg-card/50 border border-border/30">{customization.subtitleEffect}</Badge>
+                <Badge variant="secondary" className="bg-card/50 border border-border/30">{customization.placementEffect}</Badge>
+                <Badge variant="secondary" className="bg-card/50 border border-border/30">{customization.textTransform}</Badge>
               </div>
-            </Card>
+            </div>
 
+            {/* Use this Design Button */}
             <Button
               onClick={handleContinue}
-              className="w-full mt-6 bg-gradient-to-r from-primary to-accent text-white font-semibold py-3"
+              className="w-full mt-8 h-14 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg font-semibold cyber-glow"
             >
               Usar este Diseño
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Neural System Active Indicator */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex items-center gap-2 text-primary animate-pulse">
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <span className="text-sm font-medium tracking-wider">SISTEMA NEURAL ACTIVO</span>
+          <div className="w-2 h-2 rounded-full bg-primary" />
         </div>
       </div>
     </div>
