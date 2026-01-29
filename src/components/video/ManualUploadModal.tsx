@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload } from "lucide-react";
-import { FlowState, ApiVersionCustomization } from "@/types/videoFlow";
+import { FlowState, ApiVersionCustomization, HeyGenApiKey } from "@/types/videoFlow";
 import { ImageUploadStep } from "./ImageUploadStep";
 import { VideoUploadStep } from "./VideoUploadStep";
 import { ConvertFilesStep } from "./ConvertFilesStep";
@@ -10,13 +9,13 @@ import { ManualUploadStepIndicator } from "./ManualUploadStepIndicator";
 import { ManualUploadProgressBar } from "./ManualUploadProgressBar";
 import { ManualUploadNavigationButtons } from "./ManualUploadNavigationButtons";
 import { useManualUploadFlow } from "@/hooks/useManualUploadFlow";
-import ApiVersionModal from "./ApiVersionModal";
 
 interface ManualUploadModalProps {
   open: boolean;
   onClose: () => void;
   script: string;
   flowState?: FlowState;
+  selectedApiKey?: HeyGenApiKey | null;
   onConfirm: (
     images: File[], 
     videos: File[], 
@@ -34,15 +33,16 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
   onClose,
   script,
   flowState,
+  selectedApiKey,
   onConfirm,
   onConfirmWithUrls
 }) => {
-  // 🔍 DEBUG: Verificar flowState en ManualUploadModal
   console.log('🔍 DEBUG - ManualUploadModal recibió flowState:', {
     hasFlowState: !!flowState,
     hasSubtitleCustomization: !!flowState?.subtitleCustomization,
     subtitleCustomizationData: flowState?.subtitleCustomization,
-    selectedStyle: flowState?.selectedStyle?.id
+    selectedStyle: flowState?.selectedStyle?.id,
+    hasSelectedApiKey: !!selectedApiKey
   });
 
   const {
@@ -53,12 +53,12 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     processingProgress,
     isConverting,
     conversionProgress,
+    isDetectingPlan,
     setImages,
     setVideos,
     handleNext,
     handleBack,
     handleConvertFiles,
-    handleApiVersionConfirm,
     resetAndClose,
     isNextDisabled,
     getStepTitle
@@ -66,8 +66,8 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
     onConfirm, 
     onConfirmWithUrls, 
     onClose,
-    // 🔍 DEBUG: Pasar flowState al hook para preservar subtítulos
-    flowState 
+    flowState,
+    selectedApiKey
   });
 
   return (
@@ -88,22 +88,35 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
 
           <ManualUploadStepIndicator currentStep={currentStep} />
 
+          {/* Loading overlay while detecting plan */}
+          {isDetectingPlan && (
+            <div className="flex flex-col items-center gap-4 p-8">
+              <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+              <p className="text-lg font-medium text-foreground">
+                Detectando tu plan de HeyGen...
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Esto solo toma un momento
+              </p>
+            </div>
+          )}
+
           {/* Content */}
-          {currentStep === 'images' && (
+          {!isDetectingPlan && currentStep === 'images' && (
             <ImageUploadStep 
               images={images}
               onImagesChange={setImages}
             />
           )}
 
-          {currentStep === 'videos' && (
+          {!isDetectingPlan && currentStep === 'videos' && (
             <VideoUploadStep 
               videos={videos}
               onVideosChange={setVideos}
             />
           )}
 
-          {currentStep === 'convert-files' && (
+          {!isDetectingPlan && currentStep === 'convert-files' && (
             <ConvertFilesStep 
               onConvert={handleConvertFiles}
               isConverting={isConverting}
@@ -111,22 +124,16 @@ export const ManualUploadModal: React.FC<ManualUploadModalProps> = ({
             />
           )}
 
-          {currentStep === 'api-version' && (
-            <ApiVersionModal 
-              isOpen={true}
-              onClose={() => {}}
-              onConfirm={handleApiVersionConfirm}
+          {!isDetectingPlan && (
+            <ManualUploadNavigationButtons
+              currentStep={currentStep}
+              isNextDisabled={isNextDisabled()}
+              isProcessing={isProcessing}
+              onBack={handleBack}
+              onNext={handleNext}
+              onCancel={resetAndClose}
             />
           )}
-
-          <ManualUploadNavigationButtons
-            currentStep={currentStep}
-            isNextDisabled={isNextDisabled()}
-            isProcessing={isProcessing}
-            onBack={handleBack}
-            onNext={handleNext}
-            onCancel={resetAndClose}
-          />
         </div>
       </DialogContent>
     </Dialog>

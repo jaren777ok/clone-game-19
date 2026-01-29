@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronRight } from "lucide-react";
 
-type UploadStep = 'images' | 'videos' | 'convert-files' | 'api-version';
+type UploadStep = 'images' | 'videos' | 'convert-files';
 
 interface ManualUploadStepIndicatorProps {
   currentStep: UploadStep;
@@ -13,8 +13,7 @@ export const ManualUploadStepIndicator: React.FC<ManualUploadStepIndicatorProps>
   const steps = [
     { key: 'images', number: 1, label: '14 Imágenes' },
     { key: 'videos', number: 2, label: '5 Videos' },
-    { key: 'convert-files', number: 3, label: 'Convertir' },
-    { key: 'api-version', number: 4, label: 'API Version' }
+    { key: 'convert-files', number: 3, label: 'Convertir y Generar' }
   ];
 
   return (

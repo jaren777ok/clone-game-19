@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { toast } from "sonner";
-import { ApiVersionCustomization } from "@/types/videoFlow";
+import { ApiVersionCustomization, HeyGenApiKey } from "@/types/videoFlow";
 import { sendToConvertFilesWebhook } from "@/lib/webhookUtils";
+import { supabase } from '@/integrations/supabase/client';
 
-type UploadStep = 'images' | 'videos' | 'convert-files' | 'api-version';
+type UploadStep = 'images' | 'videos' | 'convert-files';
 
 interface UseManualUploadFlowProps {
   onConfirm: (
@@ -18,47 +18,41 @@ interface UseManualUploadFlowProps {
     apiVersionCustomization: ApiVersionCustomization
   ) => Promise<void>;
   onClose: () => void;
-  // 🔍 DEBUG: Agregar flowState para preservar subtítulos
   flowState?: any;
+  selectedApiKey?: HeyGenApiKey | null;
 }
 
-export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flowState }: UseManualUploadFlowProps) => {
+export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flowState, selectedApiKey }: UseManualUploadFlowProps) => {
   const [currentStep, setCurrentStep] = useState<UploadStep>('images');
   const [images, setImages] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0, type: '' });
-  const [apiVersionCustomization, setApiVersionCustomization] = useState<ApiVersionCustomization | null>(null);
   const [isConverting, setIsConverting] = useState(false);
   const [conversionProgress, setConversionProgress] = useState('');
   const [convertedUrls, setConvertedUrls] = useState<any>(null);
+  const [isDetectingPlan, setIsDetectingPlan] = useState(false);
 
-  // 🔍 DEBUG: Verificar que flowState contiene subtítulos al inicializar
   console.log('🔍 DEBUG - useManualUploadFlow initialized:', {
     hasFlowState: !!flowState,
     hasSubtitleCustomization: !!flowState?.subtitleCustomization,
-    subtitleCustomizationData: flowState?.subtitleCustomization
+    hasSelectedApiKey: !!selectedApiKey
   });
 
   const handleNext = () => {
-    // 🔍 DEBUG: Verificar que subtítulos se mantienen en cada paso
     console.log('🔍 DEBUG - handleNext called:', {
       currentStep,
-      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
-      subtitleData: flowState?.subtitleCustomization
+      hasSubtitleCustomization: !!flowState?.subtitleCustomization
     });
 
     if (currentStep === 'images' && images.length === 14) {
       setCurrentStep('videos');
     } else if (currentStep === 'videos' && videos.length === 5) {
       setCurrentStep('convert-files');
-    } else if (currentStep === 'convert-files' && convertedUrls) {
-      setCurrentStep('api-version');
     }
   };
 
   const handleBack = () => {
-    // 🔍 DEBUG: Verificar que subtítulos se mantienen al retroceder
     console.log('🔍 DEBUG - handleBack called:', {
       currentStep,
       hasSubtitleCustomization: !!flowState?.subtitleCustomization
@@ -68,8 +62,6 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
       setCurrentStep('images');
     } else if (currentStep === 'convert-files') {
       setCurrentStep('videos');
-    } else if (currentStep === 'api-version') {
-      setCurrentStep('convert-files');
     }
   };
 
@@ -79,10 +71,8 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
       return;
     }
 
-    // 🔍 DEBUG: Verificar subtítulos antes de conversión
     console.log('🔍 DEBUG - handleConvertFiles:', {
       hasSubtitleCustomization: !!flowState?.subtitleCustomization,
-      subtitleData: flowState?.subtitleCustomization,
       imagesCount: images.length,
       videosCount: videos.length
     });
@@ -100,17 +90,12 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
       setConvertedUrls(urls);
       setConversionProgress('¡Conversión completada!');
       
-      toast.success("Archivos convertidos exitosamente");
+      toast.success("Archivos convertidos exitosamente. Detectando tu plan...");
 
-      // 🔍 DEBUG: Verificar que subtítulos siguen existiendo después de conversión
-      console.log('🔍 DEBUG - Después de conversión:', {
-        hasSubtitleCustomization: !!flowState?.subtitleCustomization,
-        convertedUrls: urls
-      });
-      
+      // Auto-detect plan after conversion
       setTimeout(() => {
-        setCurrentStep('api-version');
-      }, 1000);
+        autoDetectPlanAndGenerate(urls);
+      }, 500);
       
     } catch (error) {
       console.error('Error converting files:', error);
@@ -126,35 +111,63 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
     }
   };
 
-  const handleApiVersionConfirm = (customization: ApiVersionCustomization) => {
-    // 🔍 DEBUG: Verificar subtítulos al confirmar API version
-    console.log('🔍 DEBUG - handleApiVersionConfirm:', {
-      hasSubtitleCustomization: !!flowState?.subtitleCustomization,
-      subtitleData: flowState?.subtitleCustomization,
-      apiCustomization: customization
-    });
+  const autoDetectPlanAndGenerate = async (urls?: any) => {
+    if (!selectedApiKey) {
+      toast.error("No hay clave API seleccionada");
+      return;
+    }
 
-    setApiVersionCustomization(customization);
-    handleGenerateVideo(customization);
+    setIsDetectingPlan(true);
+    
+    try {
+      // Decode the API key
+      const apiKey = atob(selectedApiKey.api_key_encrypted);
+      
+      // Verify plan with heygen-quota edge function
+      const response = await supabase.functions.invoke('heygen-quota', {
+        body: { apiKey }
+      });
+
+      if (response.error || !response.data?.isValid) {
+        throw new Error("Error verificando plan de API");
+      }
+
+      const isPaidVersion = response.data.isPaidPlan;
+      
+      // Create apiVersionCustomization automatically based on plan
+      const apiVersionCustomization: ApiVersionCustomization = {
+        isPaidVersion,
+        width: isPaidVersion ? 1920 : 1280,
+        height: isPaidVersion ? 1080 : 720
+      };
+
+      console.log('✅ Plan detectado automáticamente para manual upload:', {
+        isPaidVersion,
+        resolution: isPaidVersion ? '1920x1080' : '1280x720',
+        remainingQuota: response.data.remainingQuota
+      });
+
+      // Generate video with detected plan
+      await handleGenerateVideoWithCustomization(apiVersionCustomization, urls || convertedUrls);
+
+    } catch (error) {
+      console.error('Error detectando plan:', error);
+      toast.error("Error verificando tu plan de HeyGen. Por favor intenta de nuevo.");
+    } finally {
+      setIsDetectingPlan(false);
+    }
   };
 
-  const handleGenerateVideo = async (customization?: ApiVersionCustomization) => {
+  const handleGenerateVideoWithCustomization = async (customization: ApiVersionCustomization, urls?: any) => {
     if (images.length === 0 && videos.length === 0) {
       toast.error("Por favor, sube al menos una imagen o video antes de continuar.");
       return;
     }
 
-    if (!customization && !apiVersionCustomization) {
-      toast.error("Por favor, selecciona la versión de API antes de continuar.");
-      return;
-    }
-
-    // 🔍 DEBUG: Verificar subtítulos antes de generar video
-    console.log('🔍 DEBUG - handleGenerateVideo:', {
+    console.log('🔍 DEBUG - handleGenerateVideoWithCustomization:', {
       hasSubtitleCustomization: !!flowState?.subtitleCustomization,
-      subtitleData: flowState?.subtitleCustomization,
-      hasConvertedUrls: !!convertedUrls,
-      customization: customization || apiVersionCustomization
+      hasConvertedUrls: !!urls,
+      customization
     });
 
     setIsProcessing(true);
@@ -163,18 +176,16 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
     try {
       toast.info("Procesando archivos...");
 
-      if (convertedUrls && onConfirmWithUrls) {
-        // 🔍 DEBUG: Usar URLs convertidas
+      if (urls && onConfirmWithUrls) {
         console.log('🔍 DEBUG - Usando URLs convertidas con subtítulos:', {
           hasSubtitleCustomization: !!flowState?.subtitleCustomization
         });
-        await onConfirmWithUrls(convertedUrls, customization || apiVersionCustomization!);
+        await onConfirmWithUrls(urls, customization);
       } else {
-        // 🔍 DEBUG: Usar archivos directos
         console.log('🔍 DEBUG - Usando archivos directos con subtítulos:', {
           hasSubtitleCustomization: !!flowState?.subtitleCustomization
         });
-        await onConfirm(images, videos, customization || apiVersionCustomization!, (current, total, type) => {
+        await onConfirm(images, videos, customization, (current, total, type) => {
           setProcessingProgress({ current, total, type });
         });
       }
@@ -196,10 +207,17 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
     }
   };
 
+  // Keep legacy handler for backward compatibility
+  const handleApiVersionConfirm = (customization: ApiVersionCustomization) => {
+    console.log('🔍 DEBUG - handleApiVersionConfirm (legacy):', {
+      customization
+    });
+    handleGenerateVideoWithCustomization(customization);
+  };
+
   const isNextDisabled = () => {
     if (currentStep === 'images') return images.length !== 14;
     if (currentStep === 'videos') return videos.length !== 5;
-    if (currentStep === 'convert-files') return !convertedUrls;
     return false;
   };
 
@@ -208,7 +226,6 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
       case 'images': return 'Subir Imágenes';
       case 'videos': return 'Subir Videos';
       case 'convert-files': return 'Convertir Archivos';
-      case 'api-version': return 'Configurar API';
       default: return 'Upload';
     }
   };
@@ -216,7 +233,6 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
   const resetAndClose = () => {
     if (isProcessing) return;
 
-    // 🔍 DEBUG: Verificar subtítulos al cerrar
     console.log('🔍 DEBUG - resetAndClose:', {
       hasSubtitleCustomization: !!flowState?.subtitleCustomization
     });
@@ -224,12 +240,12 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
     setCurrentStep('images');
     setImages([]);
     setVideos([]);
-    setApiVersionCustomization(null);
     setIsProcessing(false);
     setProcessingProgress({ current: 0, total: 0, type: '' });
     setIsConverting(false);
     setConversionProgress('');
     setConvertedUrls(null);
+    setIsDetectingPlan(false);
     onClose();
   };
 
@@ -243,6 +259,7 @@ export const useManualUploadFlow = ({ onConfirm, onConfirmWithUrls, onClose, flo
     isConverting,
     conversionProgress,
     convertedUrls,
+    isDetectingPlan,
     
     // Actions
     setImages,

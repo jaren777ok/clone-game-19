@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-type UploadStep = 'images' | 'videos' | 'convert-files' | 'api-version';
+type UploadStep = 'images' | 'videos' | 'convert-files';
 
 interface ManualUploadNavigationButtonsProps {
   currentStep: UploadStep;
@@ -21,8 +21,8 @@ export const ManualUploadNavigationButtons: React.FC<ManualUploadNavigationButto
   onNext,
   onCancel
 }) => {
-  // Don't show navigation buttons for api-version and convert-files steps
-  if (currentStep === 'api-version' || currentStep === 'convert-files') {
+  // Don't show navigation buttons for convert-files step (auto-proceeds after conversion)
+  if (currentStep === 'convert-files') {
     return null;
   }
 
