@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Bookmark, Calendar, Loader2, Video, Sparkles, Filter, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -33,12 +33,16 @@ const SavedVideos = () => {
   const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
   const [customDateRange, setCustomDateRange] = useState<DateRange>({ from: undefined, to: undefined });
   const [isLoading, setIsLoading] = useState(true);
+  const hasFetched = useRef(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchVideos();
+    if (user && !hasFetched.current) {
+      fetchVideos();
+      hasFetched.current = true;
+    }
   }, [user]);
 
   useEffect(() => {
@@ -171,22 +175,14 @@ const SavedVideos = () => {
       
       {/* Header */}
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center mb-8">
           <Button
-            variant="ghost"
-            onClick={() => navigate('/crear-video')}
+            variant="outline"
+            onClick={() => navigate('/dashboard')}
             className="cyber-border hover:cyber-glow"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al Generador
-          </Button>
-          
-          <Button
-            onClick={() => navigate('/dashboard')}
-            variant="outline"
-            className="cyber-border hover:cyber-glow"
-          >
-            Dashboard
+            Volver al Dashboard
           </Button>
         </div>
 
