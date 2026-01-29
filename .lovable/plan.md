@@ -1,13 +1,16 @@
 
-
-## Plan: Validación Automática de API Key y Detección de Plan HeyGen
+## Plan: Rediseño del Personalizador de Subtítulos
 
 ### Resumen de Cambios
 
-Este plan implementa dos mejoras importantes:
+Este plan implementa:
 
-1. **Nueva validación de clave API**: Usar el endpoint `/v2/user/remaining_quota` de HeyGen para validar la clave (más ligero que cargar avatares)
-2. **Detección automática de plan Pro/Free**: Eliminar el modal manual de selección y detectar automáticamente si tiene `plan_credit` en la respuesta
+1. **Cambiar botón "Atrás" a "Cambiar voz"** con estilo outline sin color anaranjado
+2. **Nuevo layout de dos paneles**: 35% opciones (izquierda) + 65% vista previa con video (derecha)
+3. **Video de ejemplo en bucle** mostrando subtítulos en tiempo real
+4. **Chips de configuración actual** debajo del video
+5. **Botón "Usar este Diseño"** con gradiente rosa-magenta debajo del video
+6. **Video de fondo animado** igual que las otras páginas
 
 ---
 
@@ -15,422 +18,312 @@ Este plan implementa dos mejoras importantes:
 
 | Archivo | Acción | Descripción |
 |---------|--------|-------------|
-| `supabase/functions/heygen-quota/index.ts` | Crear | Nueva edge function para verificar quota y plan |
-| `src/components/video/ApiKeyForm.tsx` | Modificar | Usar nueva edge function para validación |
-| `src/components/video/StyleSelector.tsx` | Modificar | Auto-detectar plan y eliminar modal manual |
-| `src/hooks/useVideoCreationFlow.ts` | Modificar | Agregar función para obtener quota de la API key |
-| `src/types/videoFlow.ts` | Modificar | Agregar interface para quota response |
+| `src/components/video/SubtitleCustomizer.tsx` | Reescribir | Nuevo layout 2 paneles con video de fondo |
 
 ---
 
-### Cambio 1: Nueva Edge Function `heygen-quota`
-
-**Archivo:** `supabase/functions/heygen-quota/index.ts`
-
-Esta función:
-- Llama al endpoint `https://api.heygen.com/v2/user/remaining_quota`
-- Retorna si la clave es válida y si tiene `plan_credit` (plan de pago)
-
-```typescript
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface QuotaResponse {
-  isValid: boolean;
-  isPaidPlan: boolean;
-  remainingQuota: number;
-  error?: string;
-}
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
-  try {
-    const { apiKey } = await req.json()
-
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ 
-          isValid: false, 
-          isPaidPlan: false, 
-          remainingQuota: 0,
-          error: 'API key is required' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Llamar al endpoint de quota de HeyGen
-    const response = await fetch('https://api.heygen.com/v2/user/remaining_quota', {
-      method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'x-api-key': apiKey
-      }
-    })
-
-    if (!response.ok) {
-      return new Response(
-        JSON.stringify({ 
-          isValid: false, 
-          isPaidPlan: false, 
-          remainingQuota: 0,
-          error: 'Invalid API key or HeyGen service error' 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const data = await response.json()
-    
-    // La respuesta puede venir como array o como objeto directo
-    const quotaData = Array.isArray(data) ? data[0] : data
-    
-    if (quotaData.error) {
-      return new Response(
-        JSON.stringify({ 
-          isValid: false, 
-          isPaidPlan: false, 
-          remainingQuota: 0,
-          error: quotaData.error 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Detectar si tiene plan de pago verificando si existe "plan_credit" en details
-    const details = quotaData.data?.details || {}
-    const hasPlanCredit = 'plan_credit' in details && details.plan_credit > 0
-    const remainingQuota = quotaData.data?.remaining_quota || 0
-
-    console.log('HeyGen quota check:', {
-      remainingQuota,
-      hasPlanCredit,
-      details: Object.keys(details)
-    })
-
-    return new Response(
-      JSON.stringify({ 
-        isValid: true, 
-        isPaidPlan: hasPlanCredit,
-        remainingQuota,
-        details 
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
-  } catch (error) {
-    console.error('Edge function error:', error)
-    return new Response(
-      JSON.stringify({ 
-        isValid: false, 
-        isPaidPlan: false, 
-        remainingQuota: 0,
-        error: 'Internal server error' 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-})
-```
-
----
-
-### Cambio 2: Actualizar ApiKeyForm.tsx
-
-**Usar la nueva edge function para validar:**
-
-```typescript
-// ANTES (líneas 34-50):
-const response = await supabase.functions.invoke('heygen-avatars', {
-  body: { 
-    apiKey: formData.apiKey,
-    offset: 0,
-    limit: 1
-  }
-});
-
-if (response.error) {
-  toast({ title: "Clave API inválida", ... });
-  return;
-}
-
-// DESPUÉS:
-const response = await supabase.functions.invoke('heygen-quota', {
-  body: { apiKey: formData.apiKey }
-});
-
-if (response.error || !response.data?.isValid) {
-  toast({
-    title: "Clave API inválida",
-    description: response.data?.error || 
-      "La clave API proporcionada no es válida o no tiene acceso a HeyGen.",
-    variant: "destructive"
-  });
-  return;
-}
-```
-
-**Beneficios:**
-- Validación más rápida (no carga lista de avatares)
-- Obtiene información útil sobre la quota disponible
-
----
-
-### Cambio 3: Automatizar Detección de Plan en StyleSelector
-
-**Archivo:** `src/components/video/StyleSelector.tsx`
-
-**Agregar prop para obtener la API key seleccionada:**
-
-```typescript
-interface Props {
-  onSelectStyle: (...) => void;
-  onBack: () => void;
-  generatedScript: string;
-  aiApiKeys: { openai_api_key: string; gemini_api_key: string };
-  selectedApiKey: HeyGenApiKey | null;  // NUEVO
-}
-```
-
-**Agregar función para detectar plan automáticamente:**
-
-```typescript
-const [isDetectingPlan, setIsDetectingPlan] = useState(false);
-
-const detectPlanAndProceed = async (style: VideoStyle) => {
-  if (!selectedApiKey) {
-    toast.error("No hay clave API seleccionada");
-    return;
-  }
-
-  setIsDetectingPlan(true);
-  
-  try {
-    // Decodificar la API key
-    const apiKey = atob(selectedApiKey.api_key_encrypted);
-    
-    // Verificar plan con la nueva edge function
-    const response = await supabase.functions.invoke('heygen-quota', {
-      body: { apiKey }
-    });
-
-    if (response.error || !response.data?.isValid) {
-      throw new Error("Error verificando plan de API");
-    }
-
-    const isPaidVersion = response.data.isPaidPlan;
-    
-    // Crear apiVersionCustomization automáticamente
-    const apiVersionCustomization: ApiVersionCustomization = {
-      isPaidVersion,
-      width: isPaidVersion ? 1920 : 1280,
-      height: isPaidVersion ? 1080 : 720
-    };
-
-    console.log('✅ Plan detectado automáticamente:', {
-      isPaidVersion,
-      resolution: isPaidVersion ? '1920x1080' : '1280x720'
-    });
-
-    // Proceder con el estilo seleccionado
-    onSelectStyle(
-      style, 
-      pendingCardCustomization || undefined, 
-      pendingPresenterCustomization || undefined,
-      apiVersionCustomization
-    );
-
-  } catch (error) {
-    console.error('Error detectando plan:', error);
-    toast.error("Error verificando tu plan de HeyGen. Por favor intenta de nuevo.");
-  } finally {
-    setIsDetectingPlan(false);
-    setPendingStyle(null);
-    setPendingCardCustomization(null);
-    setPendingPresenterCustomization(null);
-  }
-};
-```
-
-**Modificar handleSelectStyle para usar auto-detección:**
-
-```typescript
-const handleSelectStyle = (style: VideoStyle) => {
-  setPlayingVideo(null);
-
-  // Estilos manuales van directo sin verificación de plan
-  if (style.id === 'style-5' || style.id === 'style-6') {
-    onSelectStyle(style);
-    return;
-  }
-  
-  // Estilos con personalización de tarjeta
-  if (['style-1'].includes(style.id)) {
-    setShowCustomizeModal(true);
-    setPendingStyle(style);
-    return;
-  }
-  
-  // Estilos con nombre de presentador
-  if (['style-2'].includes(style.id)) {
-    setShowPresenterModal(true);
-    setPendingStyle(style);
-    return;
-  }
-
-  // Para todos los demás estilos, detectar plan automáticamente
-  setPendingStyle(style);
-  detectPlanAndProceed(style);
-};
-
-// Actualizar handlers de modales:
-const handleCustomizeConfirm = (customization: CardCustomization) => {
-  setPendingCardCustomization(customization);
-  setShowCustomizeModal(false);
-  // Auto-detectar plan después de personalizar
-  if (pendingStyle) {
-    detectPlanAndProceed(pendingStyle);
-  }
-};
-
-const handlePresenterConfirm = (customization: PresenterCustomization) => {
-  setPendingPresenterCustomization(customization);
-  setShowPresenterModal(false);
-  // Auto-detectar plan después de personalizar
-  if (pendingStyle) {
-    detectPlanAndProceed(pendingStyle);
-  }
-};
-```
-
-**Eliminar uso de ApiVersionModal:**
-
-```typescript
-// Remover estado showApiVersionModal
-// Remover import de ApiVersionModal
-// Remover handleApiVersionConfirm y handleApiVersionCancel
-// Remover el componente <ApiVersionModal /> del JSX
-```
-
-**Agregar indicador de carga mientras detecta plan:**
-
-```typescript
-{isDetectingPlan && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-    <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-card/90 shadow-[0_0_40px_rgba(255,20,147,0.2)]">
-      <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-      <p className="text-lg font-medium text-foreground">
-        Detectando tu plan de HeyGen...
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Esto solo toma un momento
-      </p>
-    </div>
-  </div>
-)}
-```
-
----
-
-### Cambio 4: Actualizar ManualUploadModal
-
-Para estilos manuales (style-5, style-6), también necesitamos auto-detectar el plan en lugar de mostrar el modal.
-
-**Archivo:** `src/hooks/useManualUploadFlow.ts`
-
-Agregar función de auto-detección similar que se llame en lugar de mostrar el paso `api-version`.
-
----
-
-### Cambio 5: Actualizar VideoCreationFlow Props
-
-**Archivo:** `src/pages/VideoCreationFlow.tsx`
-
-Pasar `selectedApiKey` al StyleSelector:
-
-```typescript
-<StyleSelector
-  onSelectStyle={selectStyle}
-  onBack={() => goToStep('neurocopy')}
-  generatedScript={flowState.generatedScript || ''}
-  aiApiKeys={aiApiKeys}
-  selectedApiKey={flowState.selectedApiKey}  // NUEVO
-/>
-```
-
----
-
-### Diagrama de Flujo Actualizado
+### Estructura Visual del Nuevo Diseño
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    FLUJO ANTERIOR                               │
-└─────────────────────────────────────────────────────────────────┘
-Usuario ingresa API Key
-        ↓
-[Edge: heygen-avatars] ← Carga avatares (lento)
-        ↓
-   ¿Es válida?
-        ↓
-  Se guarda en BD
-        ↓
-  ... varios pasos ...
-        ↓
-  Selecciona Estilo
-        ↓
-[Modal Manual: "¿Tienes plan de pago?"] ← Usuario puede equivocarse
-        ↓
-  Continúa flujo
-
-┌─────────────────────────────────────────────────────────────────┐
-│                    FLUJO NUEVO                                  │
-└─────────────────────────────────────────────────────────────────┘
-Usuario ingresa API Key
-        ↓
-[Edge: heygen-quota] ← Solo verifica quota (rápido)
-        ↓
-   ¿Es válida?
-        ↓
-  Se guarda en BD
-        ↓
-  ... varios pasos ...
-        ↓
-  Selecciona Estilo
-        ↓
-[Edge: heygen-quota] ← Auto-detecta plan_credit
-        ↓
-   ¿Tiene plan_credit?
-      Sí → 1920x1080 (HD)
-      No → 1280x720 (SD)
-        ↓
-  Continúa flujo automáticamente
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  [Video Background: fondonormal.mp4 - opacity 20%]                              │
+│  [Gradient overlays for readability]                                            │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  ┌──────────────────────────────┬──────────────────────────────────────────────┐│
+│  │  PANEL IZQUIERDO (35%)       │  PANEL DERECHO (65%)                        ││
+│  │                              │                                              ││
+│  │  [← Cambiar voz]             │  ┌──────────────────────────────────────────┐││
+│  │                              │  │                                          │││
+│  │  ┌────────────────────────┐  │  │   VIDEO DE EJEMPLO                       │││
+│  │  │ ✨ Personalizar        │  │  │   (subtítulos dinámicos en tiempo real)  │││
+│  │  │    Subtítulos          │  │  │                                          │││
+│  │  │ (icono flotante)       │  │  │   "La Mente Humana"                      │││
+│  │  └────────────────────────┘  │  │   (con efectos aplicados)                │││
+│  │                              │  │                                          │││
+│  │  ─────────────────────────   │  │   Borde con glow rosa-magenta            │││
+│  │                              │  └──────────────────────────────────────────┘││
+│  │  Tipo de Fuente:             │                                              ││
+│  │  [Montserrat ✓] [Roboto]     │  Configuración actual:                       ││
+│  │  [Roboto Condensed] ...      │  [Montserrat] [color] [animate] [capitalize] ││
+│  │                              │                                              ││
+│  │  Efectos de Subtítulos:      │  ┌──────────────────────────────────────────┐││
+│  │  [Normal ✓] [Fade] [Bounce]  │  │      Usar este Diseño                    │││
+│  │  [Slide] [Highlight] ...     │  │   (botón gradient rosa-magenta)          │││
+│  │                              │  └──────────────────────────────────────────┘││
+│  │  Efectos de Colocación:      │                                              ││
+│  │  [Animate ✓] [Align] [Static]│                                              ││
+│  │                              │                                              ││
+│  │  Transformación de Texto:    │                                              ││
+│  │  [MAYÚSCULAS] [Capitalizado] │                                              ││
+│  │  [minúsculas]                │                                              ││
+│  │                              │                                              ││
+│  │  Colores: (scroll si es      │                                              ││
+│  │  necesario)                  │                                              ││
+│  │  [Color de Fondo]            │                                              ││
+│  │  [Color de Letra]            │                                              ││
+│  └──────────────────────────────┴──────────────────────────────────────────────┘│
+│                                                                                 │
+│                    ● SISTEMA NEURAL ACTIVO ●                                    │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Beneficios
+### Cambio 1: Botón "Cambiar voz" con Estilo Correcto
 
-1. **Validación más rápida**: El endpoint `/remaining_quota` es más ligero que cargar avatares
-2. **Sin errores de usuario**: La detección es automática, elimina la posibilidad de seleccionar el plan incorrecto
-3. **Mejor UX**: Un paso menos en el flujo, experiencia más fluida
-4. **Datos útiles**: Se puede mostrar la quota disponible al usuario si se desea
+El botón actual usa `variant="ghost"` y dice "Atrás". Se cambiará a:
+
+```typescript
+// ANTES (líneas 507-514):
+<Button
+  variant="ghost"
+  onClick={onBack}
+  className="text-muted-foreground hover:text-foreground"
+>
+  <ArrowLeft className="w-4 h-4 mr-2" />
+  Atrás
+</Button>
+
+// DESPUÉS:
+<Button
+  variant="outline"
+  onClick={onBack}
+  className="cyber-border hover:cyber-glow hover:bg-primary/10"
+>
+  <ArrowLeft className="w-4 h-4 mr-2" />
+  Cambiar voz
+</Button>
+```
+
+---
+
+### Cambio 2: Video de Fondo Animado
+
+Agregar el mismo video de fondo que usa StyleSelector y AvatarSelector:
+
+```typescript
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3MTYyNzQsImV4cCI6MTkyNzM5NjI3NH0.WY9BkeYyf8U0doTqKMBmXo0X_2pecKTwDy3tMN7VKHY';
+
+// Video de fondo
+<video
+  src={BACKGROUND_VIDEO_URL}
+  className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+  autoPlay
+  muted
+  loop
+  playsInline
+/>
+<div className="absolute inset-0 bg-background/50" />
+```
+
+---
+
+### Cambio 3: Video de Ejemplo para Vista Previa
+
+Usar el video proporcionado para mostrar los subtítulos en tiempo real:
+
+```typescript
+const PREVIEW_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/video%20de%20prueba%20subtitulos.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy92aWRlbyBkZSBwcnVlYmEgc3VidGl0dWxvcy5tcDQiLCJpYXQiOjE3Njk3MjA1NjEsImV4cCI6MTkyNzQwMDU2MX0.bsgwHIxC3SNEOg4ney65wtOMvTn7zbXL56ofK-VTsM0';
+
+// Contenedor del video con borde glow
+<div className="relative rounded-2xl overflow-hidden border border-primary/30 shadow-[0_0_40px_rgba(255,20,147,0.2)]">
+  <video
+    src={PREVIEW_VIDEO_URL}
+    className="w-full aspect-video object-cover"
+    autoPlay
+    muted
+    loop
+    playsInline
+  />
+  {/* Overlay para subtítulos */}
+  <div className="absolute inset-0 flex items-end justify-center pb-8">
+    <div className="text-center">
+      {renderWordByWord()}
+    </div>
+  </div>
+</div>
+```
+
+El video se reproduce en bucle sin controles de pausa/sonido.
+
+---
+
+### Cambio 4: Nuevo Layout de Dos Paneles
+
+**Estructura principal:**
+
+```typescript
+<div className="min-h-screen bg-background relative overflow-hidden">
+  {/* Video de fondo */}
+  <video ... />
+  <div className="absolute inset-0 bg-background/50" />
+  
+  {/* Gradient overlays decorativos */}
+  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl" />
+  <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-3xl" />
+  
+  {/* Contenido Principal */}
+  <div className="relative z-10 min-h-screen flex">
+    
+    {/* Panel Izquierdo (35%) - Opciones */}
+    <div className="w-[35%] min-w-[380px] max-w-[480px] border-r border-border/30 p-6 overflow-y-auto bg-card/20 backdrop-blur-sm">
+      {/* Botón Cambiar voz */}
+      <Button variant="outline" onClick={onBack} className="cyber-border hover:cyber-glow hover:bg-primary/10 mb-6">
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Cambiar voz
+      </Button>
+      
+      {/* Header con icono flotante */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center cyber-glow mb-4 animate-float">
+          <Sparkles className="w-8 h-8 text-white" />
+        </div>
+        <h1 className="text-xl font-bold text-center">
+          Personalizar <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Subtítulos</span>
+        </h1>
+      </div>
+      
+      {/* Separador */}
+      <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent mb-6" />
+      
+      {/* Secciones de opciones (scroll interno) */}
+      <div className="space-y-5">
+        {/* Tipo de Fuente */}
+        {/* Efectos de Subtítulos */}
+        {/* Efectos de Colocación */}
+        {/* Transformación de Texto */}
+        {/* Colores */}
+      </div>
+    </div>
+    
+    {/* Panel Derecho (65%) - Vista Previa */}
+    <div className="flex-1 flex flex-col justify-center items-center p-8">
+      {/* Video de ejemplo con subtítulos */}
+      <div className="w-full max-w-3xl">
+        <div className="relative rounded-2xl overflow-hidden border border-primary/30 shadow-[0_0_40px_rgba(255,20,147,0.2)]">
+          <video src={PREVIEW_VIDEO_URL} autoPlay muted loop playsInline className="w-full aspect-video" />
+          <div className="absolute inset-0 flex items-end justify-center pb-8">
+            {renderWordByWord()}
+          </div>
+        </div>
+        
+        {/* Chips de configuración */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-muted-foreground mb-3">Configuración actual:</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Badge variant="secondary">{customization.fontFamily}</Badge>
+            <Badge variant="secondary">{customization.subtitleEffect}</Badge>
+            <Badge variant="secondary">{customization.placementEffect}</Badge>
+            <Badge variant="secondary">{customization.textTransform}</Badge>
+          </div>
+        </div>
+        
+        {/* Botón Usar este Diseño */}
+        <Button
+          onClick={handleContinue}
+          className="w-full mt-8 h-14 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg font-semibold cyber-glow"
+        >
+          Usar este Diseño
+        </Button>
+      </div>
+    </div>
+  </div>
+  
+  {/* Indicador SISTEMA NEURAL ACTIVO */}
+  <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+    <div className="flex items-center gap-2 text-primary animate-pulse">
+      <div className="w-2 h-2 rounded-full bg-primary" />
+      <span className="text-sm font-medium tracking-wider">SISTEMA NEURAL ACTIVO</span>
+      <div className="w-2 h-2 rounded-full bg-primary" />
+    </div>
+  </div>
+</div>
+```
+
+---
+
+### Cambio 5: Opciones Compactas en Panel Izquierdo
+
+Las tarjetas de opciones se harán más compactas para caber en el panel izquierdo con scroll:
+
+```typescript
+{/* Ejemplo de sección de fuentes compacta */}
+<div className="space-y-3">
+  <div className="flex items-center gap-2">
+    <Type className="w-4 h-4 text-primary" />
+    <h3 className="text-sm font-semibold">Tipo de Fuente</h3>
+  </div>
+  <div className="grid grid-cols-2 gap-2">
+    {FONTS.map((font) => (
+      <button
+        key={font.name}
+        onClick={() => setCustomization(...)}
+        className={`p-2 rounded-lg border text-left text-xs transition-all ${
+          customization.fontFamily === font.name
+            ? 'border-primary bg-primary/10 text-primary'
+            : 'border-border/50 hover:border-primary/50 bg-card/30'
+        }`}
+      >
+        <div className={`${font.class} font-medium`}>
+          {font.preview}
+        </div>
+      </button>
+    ))}
+  </div>
+</div>
+```
+
+---
+
+### Cambio 6: Colores Más Compactos
+
+Las paletas de colores se organizarán de forma más compacta:
+
+```typescript
+{/* Colores en grid más pequeño */}
+<div className="grid grid-cols-10 gap-1.5">
+  {COLOR_PALETTE.map((color) => (
+    <button
+      key={color}
+      onClick={() => ...}
+      className={`w-6 h-6 rounded border transition-all ${
+        selectedColor === color
+          ? 'border-primary scale-110 ring-2 ring-primary/50'
+          : 'border-border/30 hover:border-primary/50'
+      }`}
+      style={{ backgroundColor: color }}
+    />
+  ))}
+</div>
+```
+
+---
+
+### Funcionalidad Preservada
+
+La lógica existente se mantiene intacta:
+
+1. **Animaciones de subtítulos** - `renderWordByWord()` sin cambios
+2. **Efectos CSS** - Todas las `@keyframes` se mantienen
+3. **Estados de personalización** - `customization` state sin cambios
+4. **Auto-selección de efectos** - Lógica de `useEffect` para highlight/karaoke
+5. **Cálculo de fontWeight y fixedSize** - `getFontWeight()` y `getFixedSize()` sin cambios
+6. **Sanitización de backgroundColor** - `sanitizeBackgroundColor()` sin cambios
+7. **handleContinue** - Función de envío sin cambios
 
 ---
 
 ### Resultado Esperado
 
-1. Al guardar una nueva clave API, se valida con `/remaining_quota` (más rápido)
-2. Al seleccionar un estilo, se detecta automáticamente si tiene `plan_credit`
-3. Se elimina el modal de "¿Tienes la versión paga?" 
-4. La resolución del video se configura automáticamente:
-   - **Con plan_credit** → 1920x1080
-   - **Sin plan_credit** → 1280x720
-5. El flujo es más simple y sin posibilidad de error del usuario
+1. **Botón "Cambiar voz"** con estilo outline rosa (sin naranja)
+2. **Layout de dos paneles** coherente con otras páginas del flujo
+3. **Video de fondo animado** con efectos de gradiente
+4. **Video de ejemplo** mostrando subtítulos en tiempo real sobre contenido real
+5. **Borde brillante rosa-magenta** alrededor del video de preview
+6. **Chips de configuración** mostrando selecciones actuales
+7. **Indicador "SISTEMA NEURAL ACTIVO"** en la parte inferior
+8. **Scroll suave** en panel izquierdo si hay muchas opciones
+9. **Toda la funcionalidad existente** preservada sin cambios
 
