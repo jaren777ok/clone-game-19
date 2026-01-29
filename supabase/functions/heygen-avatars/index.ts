@@ -71,7 +71,8 @@ serve(async (req) => {
       allAvatars = heygenData.data?.avatars?.map((avatar: any) => ({
         avatar_id: avatar.avatar_id,
         avatar_name: avatar.avatar_name,
-        preview_image_url: avatar.preview_image_url
+        preview_image_url: avatar.preview_image_url,
+        preview_video_url: avatar.preview_video_url
       })) || []
 
       // Guardar en cache
