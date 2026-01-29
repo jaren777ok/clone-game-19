@@ -1,23 +1,16 @@
 
 
-## Plan: Rediseño Avanzado del Selector de Avatares con Carrusel Horizontal
+## Plan: Mejoras en el Selector de Avatares
 
 ### Resumen de Cambios
 
-Este plan implementa un rediseño completo del selector de avatares con las siguientes mejoras:
+Este plan implementa mejoras de usabilidad y rendimiento en el selector de avatares:
 
-1. **Correcciones inmediatas:**
-   - Cambiar paginación de 12 a 24 avatares
-   - Cambiar texto del botón de "Cambiar clave API" a "Cambiar Estilo"
-   - El botón ahora regresa a la página de estilos (no a API key)
-
-2. **Rediseño visual con carrusel horizontal:**
-   - Video de fondo animado (mismo de StyleSelector)
-   - Carrusel horizontal estilo "galería envolvente"
-   - Avatar central grande con aura/glow degradado
-   - Avatares adyacentes más pequeños con opacidad reducida
-   - Navegación con flechas elegantes
-   - Barra de progreso/paginación dinámica
+1. **Videos en formato horizontal (16:9)** estilo YouTube
+2. **Botón de audio** para activar/desactivar sonido del video
+3. **Eliminar overlay "Click para elegir"** del carrusel
+4. **Panel izquierdo solo con imagen** (no video) para ahorrar recursos
+5. **Asegurar fondo animado visible** con opacidad 20%
 
 ---
 
@@ -25,176 +18,185 @@ Este plan implementa un rediseño completo del selector de avatares con las sigu
 
 | Archivo | Acción | Descripción |
 |---------|--------|-------------|
-| `src/types/videoFlow.ts` | Modificar | Agregar `preview_video_url` al tipo Avatar |
-| `supabase/functions/heygen-avatars/index.ts` | Modificar | Incluir `preview_video_url` en la respuesta |
-| `src/components/video/AvatarSelector.tsx` | Reescribir | Nuevo diseño con carrusel horizontal y video de fondo |
-| `src/components/video/AvatarCarousel.tsx` | Crear | Nuevo componente de carrusel basado en StyleCarousel |
-| `src/components/video/AvatarLeftPanel.tsx` | Crear | Panel izquierdo con info del avatar activo |
-| `src/components/video/LoadMoreButton.tsx` | Modificar | Actualizar texto para mostrar "24 avatares" |
+| `src/components/video/AvatarCarousel.tsx` | Modificar | Videos horizontales, botón audio, sin overlay "click para elegir" |
+| `src/components/video/AvatarLeftPanel.tsx` | Modificar | Solo imagen (no video) en preview |
+| `src/components/video/AvatarSelector.tsx` | Verificar | Confirmar que el video de fondo tiene opacidad correcta |
 
 ---
 
 ### Cambios Detallados
 
-#### 1. Actualizar Tipo Avatar (`src/types/videoFlow.ts`)
+#### 1. AvatarCarousel.tsx - Videos Horizontales con Audio
 
+**Cambio de aspecto de video:**
 ```typescript
-export interface Avatar {
-  avatar_id: string;
-  avatar_name: string;
-  preview_image_url: string;
-  preview_video_url?: string;  // NUEVO - URL del video de preview
-}
+// ANTES (vertical/cuadrado):
+<div className="relative bg-background rounded-xl overflow-hidden aspect-square w-[160px] md:w-[200px] lg:w-[240px]">
+
+// DESPUÉS (horizontal 16:9):
+<div className="relative bg-background rounded-xl overflow-hidden aspect-video w-[220px] md:w-[280px] lg:w-[340px]">
 ```
 
-#### 2. Actualizar Edge Function (`supabase/functions/heygen-avatars/index.ts`)
+**Agregar control de audio:**
+- Nuevo estado `isMuted` para controlar el audio del video activo
+- Botón pequeño de speaker en la esquina del video activo
+- El usuario puede hacer click para activar/desactivar audio
 
-Incluir `preview_video_url` en el mapeo de avatares:
+**Eliminar overlay "Click para elegir":**
+- Remover completamente el div con el texto "Click para elegir"
+- Mantener solo el video/imagen sin overlay
 
+**Código del botón de audio:**
 ```typescript
-allAvatars = heygenData.data?.avatars?.map((avatar: any) => ({
-  avatar_id: avatar.avatar_id,
-  avatar_name: avatar.avatar_name,
-  preview_image_url: avatar.preview_image_url,
-  preview_video_url: avatar.preview_video_url  // NUEVO
-})) || []
+// Botón de audio en esquina inferior derecha del video activo
+{isActive && avatar.preview_video_url && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleMute();
+    }}
+    className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-black/60 
+               hover:bg-black/80 flex items-center justify-center 
+               transition-all duration-300 backdrop-blur-sm z-20"
+  >
+    {isMuted ? (
+      <VolumeX className="w-5 h-5 text-white" />
+    ) : (
+      <Volume2 className="w-5 h-5 text-white" />
+    )}
+  </button>
+)}
 ```
 
-#### 3. Rediseño de AvatarSelector (`src/components/video/AvatarSelector.tsx`)
+#### 2. AvatarLeftPanel.tsx - Solo Imagen
 
-**Estructura visual:**
+**Simplificar preview a solo imagen:**
+```typescript
+// ANTES (video o imagen):
+{activeAvatar.preview_video_url ? (
+  <video ... />
+) : (
+  <img ... />
+)}
+
+// DESPUÉS (siempre imagen):
+<img
+  src={activeAvatar.preview_image_url}
+  alt={activeAvatar.avatar_name}
+  className="w-full h-full object-cover"
+  onError={(e) => {
+    const target = e.target as HTMLImageElement;
+    target.src = '/placeholder.svg';
+  }}
+/>
+```
+
+**Beneficios:**
+- Ahorra memoria al no duplicar reproducción de video
+- El video solo se reproduce en el carrusel central
+- Panel izquierdo es solo referencia visual estática
+
+#### 3. AvatarSelector.tsx - Verificar Fondo
+
+El fondo ya está configurado correctamente con:
+- Video de fondo: `fondonormal.mp4`
+- Opacidad: `opacity-20`
+- Overlay de gradiente para legibilidad
+
+Si no se ve el fondo, puede ser un problema de carga del video. Agregar fallback de color de fondo:
+```typescript
+<video
+  autoPlay
+  loop
+  muted
+  playsInline
+  className="absolute inset-0 w-full h-full object-cover opacity-20"
+  style={{ backgroundColor: 'hsl(var(--background))' }}
+>
+```
+
+---
+
+### Estructura Visual Final
 
 ```text
-┌───────────────────────────────────────────────────────────────────────┐
-│  [Video Background: fondonormal.mp4 at 20% opacity]                   │
-├───────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  ┌─────────────────────┐  ┌─────────────────────────────────────────┐ │
-│  │   PANEL IZQUIERDO   │  │           CARRUSEL HORIZONTAL           │ │
-│  │     (30% width)     │  │              (70% width)                │ │
-│  │                     │  │                                         │ │
-│  │  ← Cambiar Estilo   │  │    [◄]  [Prev]  [ACTIVO]  [Next]  [►]   │ │
-│  │                     │  │                                         │ │
-│  │  "Selecciona tu     │  │          Avatar grande central          │ │
-│  │   Avatar de IA"     │  │          con aura rosa-magenta          │ │
-│  │                     │  │                                         │ │
-│  │  ─────────────────  │  │    Avatares laterales más pequeños      │ │
-│  │                     │  │    con opacidad reducida (40%)          │ │
-│  │  [Imagen Avatar]    │  │                                         │ │
-│  │  Nombre: "Jurgen"   │  │                                         │ │
-│  │                     │  │                                         │ │
-│  │  [Elegir Avatar]    │  │    ● ● ● ● ● ● ● ●  (paginación)        │ │
-│  │                     │  │                                         │ │
-│  └─────────────────────┘  └─────────────────────────────────────────┘ │
-│                                                                       │
-│  [Cargar más avatares - 24 a la vez]                                 │
-│                                                                       │
-└───────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│  [Video Background: fondonormal.mp4 - opacity 20%]                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌────────────────────┐  ┌────────────────────────────────────────────┐ │
+│  │  PANEL IZQUIERDO   │  │         CARRUSEL HORIZONTAL                │ │
+│  │                    │  │                                            │ │
+│  │  ← Cambiar Estilo  │  │    ┌─────────────────────────────────┐     │ │
+│  │                    │  │    │    Video Horizontal 16:9        │     │ │
+│  │  [IMAGEN estática] │  │[◄] │         (con audio)         🔊  │ [►] │ │
+│  │                    │  │    │                                 │     │ │
+│  │  Nombre Avatar     │  │    └─────────────────────────────────┘     │ │
+│  │                    │  │                                            │ │
+│  │  [Elegir Avatar]   │  │        ● ● ● [●] ● ● ●  (paginación)       │ │
+│  │                    │  │                                            │ │
+│  └────────────────────┘  └────────────────────────────────────────────┘ │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
-
-**Cambios clave:**
-- Video de fondo: `fondonormal.mp4` al 20% de opacidad
-- Layout de dos paneles (30% / 70%)
-- Carrusel con Embla (mismo de StyleCarousel)
-- Avatar activo con escala 100%, aura gradient
-- Avatares adyacentes con escala 75%, opacidad 40%, blur sutil
-- Navegación con flechas estilo cyber
-- Indicadores de progreso en forma de puntos
-
-#### 4. Nuevo Componente: AvatarCarousel (`src/components/video/AvatarCarousel.tsx`)
-
-Basado en StyleCarousel pero adaptado para avatares:
-
-- Grid de 3 columnas: [Flecha] [Carrusel] [Flecha]
-- Cada item muestra imagen del avatar
-- Video de preview se reproduce al estar activo (si disponible)
-- Nombre del avatar encima del item
-- Transiciones suaves con scale/opacity/blur
-
-#### 5. Nuevo Componente: AvatarLeftPanel (`src/components/video/AvatarLeftPanel.tsx`)
-
-Panel informativo con:
-- Botón "Cambiar Estilo" (regresa a StyleSelector)
-- Título "Selecciona tu Avatar de IA"
-- Subtítulo con contador de avatares
-- Vista previa grande del avatar activo
-- Nombre del avatar prominente
-- Botón "Elegir Avatar" con gradient rosa-magenta
-
-#### 6. Actualizar LoadMoreButton
-
-Cambiar texto de "12 avatares" a "24 avatares"
-
----
-
-### Cambios en Paginación
-
-En `AvatarSelector.tsx`:
-```typescript
-const AVATARS_PER_PAGE = 24;  // Antes: 12
-```
-
-En `LoadMoreButton.tsx`:
-```typescript
-<p className="text-xs text-muted-foreground">
-  Haz clic para cargar los siguientes 24 avatares
-</p>
-```
-
----
-
-### Flujo de Navegación Corregido
-
-**Botón "Cambiar Estilo":**
-- El `onBack` en AvatarSelector ahora lleva a `goToStep('style')` en lugar de `goToStep('api-key')`
-- Esto ya está correctamente configurado en `VideoCreationFlow.tsx` (línea 67), solo falta cambiar el texto del botón
 
 ---
 
 ### Detalles Técnicos
 
-#### Constante del Video de Fondo
+#### Estado de Audio en AvatarCarousel
 ```typescript
-const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=...';
+const [isMuted, setIsMuted] = useState(true);
+
+const toggleMute = () => {
+  setIsMuted(prev => !prev);
+};
+
+// En el video activo:
+<video
+  ref={(el) => { videoRefs.current[avatar.avatar_id] = el; }}
+  src={avatar.preview_video_url}
+  className="w-full h-full object-cover pointer-events-none"
+  loop
+  muted={isMuted}  // Controlado por estado
+  playsInline
+/>
 ```
 
-#### Estilos CSS del Avatar Activo
+#### Actualizar useEffect para manejar audio
 ```typescript
-// Avatar activo
-className="scale-100 opacity-100 z-10"
-// Border con aura
-className="p-[3px] bg-gradient-to-br from-primary via-accent to-primary shadow-2xl shadow-primary/30"
+useEffect(() => {
+  const activeAvatar = avatars[activeIndex];
+  if (!activeAvatar) return;
 
-// Avatares adyacentes
-className="scale-75 opacity-40 z-0 blur-[1px]"
+  // Pause all videos and reset mute
+  Object.values(videoRefs.current).forEach(video => {
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+      video.muted = true;  // Reset mute al cambiar
+    }
+  });
+
+  // Reset mute state when changing avatar
+  setIsMuted(true);
+
+  // Play the active video
+  const activeVideo = videoRefs.current[activeAvatar.avatar_id];
+  if (activeVideo) {
+    activeVideo.play().catch(console.error);
+  }
+}, [activeIndex, avatars]);
 ```
-
-#### Responsive Design
-- Desktop: Layout de 2 columnas (30% / 70%)
-- Mobile: Layout de 1 columna, carrusel apilado debajo del panel
-- Tamaño de avatares adaptativos
-
----
-
-### Funcionalidad Mantenida
-
-Se mantiene toda la funcionalidad actual:
-- Carga lazy de avatares por páginas
-- Selección previa recordada (PreviousSelectionBanner)
-- Indicador "Usando: [nombre API key]"
-- Botón "Cargar más" con estados de loading
-- Estados de selección con checkmark
-- Fallback a placeholder en caso de error de imagen
 
 ---
 
 ### Resultado Esperado
 
-1. El botón superior izquierdo dice "Cambiar Estilo" y regresa a la página de estilos
-2. Se cargan 24 avatares inicialmente (antes 12)
-3. El diseño muestra un carrusel horizontal envolvente
-4. El avatar central es prominente con aura/glow
-5. Los avatares laterales están reducidos y con opacidad
-6. Video de fondo crea atmósfera futurista
-7. Navegación fluida con flechas y puntos indicadores
+1. Los avatares se muestran en formato horizontal (16:9) como YouTube
+2. Hay un botón de speaker para activar/desactivar audio
+3. No hay overlay "Click para elegir" - el botón está en el panel izquierdo
+4. El panel izquierdo muestra solo imagen estática (ahorra memoria)
+5. El fondo animado es visible con opacidad correcta
+6. La experiencia es más fluida y menos redundante
 
