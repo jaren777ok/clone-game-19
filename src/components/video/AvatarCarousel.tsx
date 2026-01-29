@@ -135,7 +135,7 @@ const AvatarCarousel: React.FC<Props> = ({
                 return (
                   <CarouselItem
                     key={avatar.avatar_id}
-                    className="pl-4 basis-[260px] md:basis-[320px] lg:basis-[380px]"
+                    className="pl-4 basis-[338px] md:basis-[416px] lg:basis-[494px]"
                   >
                     <div
                       className={`
@@ -168,7 +168,7 @@ const AvatarCarousel: React.FC<Props> = ({
                           }
                         `}
                       >
-                        <div className="relative bg-background rounded-xl overflow-hidden aspect-video w-[220px] md:w-[280px] lg:w-[340px]">
+                        <div className="relative bg-background rounded-xl overflow-hidden aspect-video w-[286px] md:w-[364px] lg:w-[442px]">
                           {/* Video or Image */}
                           {avatar.preview_video_url && isActive ? (
                             <video

@@ -257,6 +257,13 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
         timestamp: new Date()
       };
       
+      // Inicializar displayedContent como vacío ANTES de agregar el mensaje
+      // Esto previene que se muestre el texto completo por un instante
+      setDisplayedContent(prev => ({
+        ...prev,
+        [aiMessageId]: ''
+      }));
+      
       setMessages(prev => [...prev, aiMessage]);
       setLastGeneratedScript(script);
       
@@ -279,6 +286,12 @@ const NeuroCopyGenerator: React.FC<Props> = ({ onBack, onUseScript }) => {
         role: 'assistant',
         timestamp: new Date()
       };
+      
+      // Inicializar displayedContent como vacío ANTES de agregar el mensaje
+      setDisplayedContent(prev => ({
+        ...prev,
+        [errorMessageId]: ''
+      }));
       
       setMessages(prev => [...prev, errorMessage]);
       typeMessage(errorMessageId, errorMessage.content, 20);
