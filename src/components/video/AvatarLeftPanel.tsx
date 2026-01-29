@@ -66,29 +66,18 @@ const AvatarLeftPanel: React.FC<Props> = ({
       {/* Información Dinámica del Avatar Activo */}
       {activeAvatar && (
         <div className="flex-1 space-y-4 lg:space-y-6 animate-fade-in" key={activeAvatar.avatar_id}>
-          {/* Preview del avatar */}
+          {/* Preview del avatar - Solo imagen para ahorrar recursos */}
           <div className="relative mx-auto w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden p-[3px] bg-gradient-to-br from-primary via-accent to-primary shadow-2xl shadow-primary/30">
             <div className="w-full h-full bg-background rounded-xl overflow-hidden">
-              {activeAvatar.preview_video_url ? (
-                <video
-                  src={activeAvatar.preview_video_url}
-                  className="w-full h-full object-cover"
-                  loop
-                  muted
-                  autoPlay
-                  playsInline
-                />
-              ) : (
-                <img
-                  src={activeAvatar.preview_image_url}
-                  alt={activeAvatar.avatar_name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder.svg';
-                  }}
-                />
-              )}
+              <img
+                src={activeAvatar.preview_image_url}
+                alt={activeAvatar.avatar_name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder.svg';
+                }}
+              />
             </div>
           </div>
           
