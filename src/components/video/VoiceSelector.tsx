@@ -13,6 +13,8 @@ interface Props {
   onBack: () => void;
 }
 
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3MTYyNzQsImV4cCI6MTkyNzM5NjI3NH0.WY9BkeYyf8U0doTqKMBmXo0X_2pecKTwDy3tMN7VKHY';
+
 const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack }) => {
   const { toast } = useToast();
   const [voices, setVoices] = useState<Voice[]>([]);
@@ -135,7 +137,16 @@ const VoiceSelector: React.FC<Props> = ({ selectedApiKey, onSelectVoice, onBack 
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+      {/* Video Background */}
+      <video
+        src={BACKGROUND_VIDEO_URL}
+        className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+      <div className="absolute inset-0 bg-background/50" />
       
       <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="flex items-center justify-between mb-6 sm:mb-8">
