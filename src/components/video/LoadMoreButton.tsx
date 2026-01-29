@@ -19,7 +19,7 @@ const LoadMoreButton: React.FC<Props> = ({ hasMore, loadingMore, onLoadMore }) =
           Hay más avatares disponibles
         </p>
         <p className="text-xs text-muted-foreground">
-          Haz clic para cargar los siguientes 12 avatares
+          Haz clic para cargar los siguientes 24 avatares
         </p>
       </div>
       <Button

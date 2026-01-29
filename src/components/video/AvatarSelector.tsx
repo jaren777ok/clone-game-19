@@ -1,13 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, HeyGenApiKey } from '@/types/videoFlow';
-import AvatarGrid from './AvatarGrid';
+import AvatarCarousel from './AvatarCarousel';
+import AvatarLeftPanel from './AvatarLeftPanel';
 import LoadMoreButton from './LoadMoreButton';
 import PreviousSelectionBanner from './PreviousSelectionBanner';
+
+// Background video URL (same as StyleSelector)
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3NDg1MzI3MTAsImV4cCI6MTc4MDA2ODcxMH0.Rj3APPFjHJzePYFCRIu5b96E8wLf4pqYLHrk9E2ri6Q';
 
 interface Props {
   selectedApiKey: HeyGenApiKey;
@@ -22,22 +24,19 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [totalAvatars, setTotalAvatars] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const [previouslySelectedAvatar, setPreviouslySelectedAvatar] = useState<Avatar | null>(null);
 
-  const AVATARS_PER_PAGE = 12;
+  const AVATARS_PER_PAGE = 24;
 
   useEffect(() => {
-    // Cargar selección previa del localStorage
+    // Load previous selection from localStorage
     const savedState = localStorage.getItem('video_creation_flow');
     if (savedState) {
       try {
         const parsedState = JSON.parse(savedState);
         if (parsedState.selectedAvatar) {
           setPreviouslySelectedAvatar(parsedState.selectedAvatar);
-          setSelectedAvatarId(parsedState.selectedAvatar.avatar_id);
         }
       } catch (error) {
         console.error('Error parsing saved flow state:', error);
@@ -50,13 +49,12 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   const loadAvatars = async (offset: number = 0, isInitial: boolean = false) => {
     if (isInitial) {
       setLoading(true);
-      setAvatars([]); // Limpiar avatares existentes
+      setAvatars([]);
     } else {
       setLoadingMore(true);
     }
 
     try {
-      // Desencriptar la clave API
       const decryptedKey = atob(selectedApiKey.api_key_encrypted);
 
       console.log(`Loading avatars: offset=${offset}, limit=${AVATARS_PER_PAGE}`);
@@ -76,15 +74,12 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
       if (isInitial) {
         setAvatars(data.avatars || []);
         setTotalAvatars(data.total || 0);
-        setCurrentPage(data.currentPage || 1);
-        setTotalPages(data.totalPages || 0);
       } else {
         setAvatars(prev => {
           const newAvatars = [...prev, ...(data.avatars || [])];
           console.log(`Total avatars after adding more: ${newAvatars.length}`);
           return newAvatars;
         });
-        setCurrentPage(data.currentPage || currentPage + 1);
       }
 
       setHasMore(data.hasMore || false);
@@ -111,14 +106,36 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
   };
 
   const handleSelectAvatar = (avatar: Avatar) => {
-    setSelectedAvatarId(avatar.avatar_id);
     onSelectAvatar(avatar);
   };
 
+  const handleContinueWithPrevious = (avatar: Avatar) => {
+    // Find the index of the previously selected avatar if it exists in current list
+    const index = avatars.findIndex(a => a.avatar_id === avatar.avatar_id);
+    if (index !== -1) {
+      setActiveIndex(index);
+    }
+    handleSelectAvatar(avatar);
+  };
+
+  const activeAvatar = avatars[activeIndex] || null;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+        {/* Background Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover opacity-20"
+        >
+          <source src={BACKGROUND_VIDEO_URL} type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+        
+        <div className="text-center relative z-10">
           <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Cargando avatares...</p>
         </div>
@@ -128,67 +145,66 @@ const AvatarSelector: React.FC<Props> = ({ selectedApiKey, onSelectAvatar, onBac
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-20"
+      >
+        <source src={BACKGROUND_VIDEO_URL} type="video/mp4" />
+      </video>
       
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="cyber-border hover:cyber-glow text-sm"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Cambiar clave API
-          </Button>
-          <div className="text-xs sm:text-sm text-muted-foreground">
-            Usando: {selectedApiKey.api_key_name}
+      {/* Gradient overlays */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-3xl" />
+      
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+        {/* Left Panel */}
+        <AvatarLeftPanel
+          activeAvatar={activeAvatar}
+          selectedApiKey={selectedApiKey}
+          totalAvatars={totalAvatars}
+          avatarsLoaded={avatars.length}
+          onSelectAvatar={handleSelectAvatar}
+          onBack={onBack}
+        />
+        
+        {/* Right Panel - Carousel */}
+        <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-8">
+          {/* Previous Selection Banner */}
+          {previouslySelectedAvatar && (
+            <div className="w-full max-w-4xl mb-4">
+              <PreviousSelectionBanner
+                previouslySelectedAvatar={previouslySelectedAvatar}
+                onContinueWithPrevious={handleContinueWithPrevious}
+              />
+            </div>
+          )}
+          
+          {/* Carousel */}
+          <div className="w-full max-w-5xl">
+            <AvatarCarousel
+              avatars={avatars}
+              activeIndex={activeIndex}
+              onActiveIndexChange={setActiveIndex}
+              onSelectAvatar={handleSelectAvatar}
+            />
           </div>
-        </div>
-
-        {/* Mostrar selección previa si existe */}
-        {previouslySelectedAvatar && (
-          <PreviousSelectionBanner
-            previouslySelectedAvatar={previouslySelectedAvatar}
-            onContinueWithPrevious={handleSelectAvatar}
-          />
-        )}
-
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight px-4">
-              Selecciona tu Avatar
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4 leading-relaxed">
-              Elige el avatar que representará tu contenido en el video
-            </p>
-            {/* Contador de avatares con información de paginación */}
-            {totalAvatars > 0 && (
-              <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                <p>Mostrando {avatars.length} de {totalAvatars} avatares</p>
-                {totalPages > 1 && (
-                  <p>Página {Math.ceil(avatars.length / AVATARS_PER_PAGE)} de {totalPages}</p>
-                )}
-              </div>
-            )}
+          
+          {/* Load More Button */}
+          <div className="mt-6">
+            <LoadMoreButton
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onLoadMore={handleLoadMore}
+            />
           </div>
-
-          <AvatarGrid
-            avatars={avatars}
-            selectedAvatarId={selectedAvatarId}
-            onSelectAvatar={handleSelectAvatar}
-          />
-
-          <LoadMoreButton
-            hasMore={hasMore}
-            loadingMore={loadingMore}
-            onLoadMore={handleLoadMore}
-          />
         </div>
       </div>
-
-      {/* Background effects */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
     </div>
   );
 };
