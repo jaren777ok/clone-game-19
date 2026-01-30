@@ -12,7 +12,7 @@ const GeneratorConfigSummary = ({ flowState }: GeneratorConfigSummaryProps) => {
     <div className="space-y-4">
       {/* Header del Panel */}
       <div className="text-center mb-6">
-        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mb-4">
+        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mb-4 animate-float">
           <Video className="w-8 h-8 text-primary-foreground" />
         </div>
         <h2 className="text-xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">

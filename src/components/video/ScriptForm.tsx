@@ -276,40 +276,7 @@ const ScriptForm = ({
           </div>
         </div>
 
-        {/* Información del sistema - solo mostrar si no está generando */}
-        {!isGenerating && (
-          <>
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <Zap className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-green-300 text-sm font-medium mb-1">
-                    Respuesta inmediata mejorada
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    Tu solicitud se procesa al instante y el sistema verifica automáticamente 
-                    cuando tu video esté listo (máximo 39 minutos).
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <Clock className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-blue-300 text-sm font-medium mb-1">
-                    Monitoreo inteligente continuo
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    Verificación automática cada 3 minutos. Tu video puede estar listo 
-                    mucho antes del tiempo máximo estimado.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+        {/* Los avisos de información del sistema fueron removidos para más espacio */}
 
         {/* Advertencia si intenta generar mientras hay uno en proceso */}
         {isGenerating && (

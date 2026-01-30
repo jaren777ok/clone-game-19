@@ -140,7 +140,26 @@ const VideoGeneratorFinal = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [user, state.isGenerating]);
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    // Guardamos directamente el paso en la base de datos para asegurar persistencia
+    if (user && effectiveFlowState) {
+      try {
+        const { error } = await supabase
+          .from('user_video_configs')
+          .update({ 
+            current_step: 'subtitle-customization',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error('Error actualizando paso:', error);
+        }
+      } catch (err) {
+        console.error('Error en handleBack:', err);
+      }
+    }
+    
     goToStep('subtitle-customization');
     navigate('/crear-video');
   };
