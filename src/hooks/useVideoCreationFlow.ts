@@ -110,73 +110,129 @@ export const useVideoCreationFlow = () => {
     }
   }, [flowState, user]);
 
-  const selectAvatar = useCallback((avatar: Avatar) => {
+  const selectAvatar = useCallback(async (avatar: Avatar) => {
     console.log('👤 Seleccionando Avatar:', avatar.avatar_name);
-    setFlowState(prev => ({
-      ...prev,
+    const newFlowState = {
+      ...flowState,
       selectedAvatar: avatar,
-      step: 'voice'
-    }));
-  }, []);
+      step: 'voice' as const
+    };
+    
+    setFlowState(newFlowState);
+    
+    // Guardado inmediato en Supabase
+    if (user) {
+      try {
+        await saveVideoConfigImmediate(user, newFlowState);
+        console.log('💾 Avatar guardado en Supabase');
+      } catch (error) {
+        console.error('Error guardando avatar:', error);
+      }
+    }
+  }, [flowState, user]);
 
-  const selectSecondAvatar = useCallback((avatar: Avatar) => {
+  const selectSecondAvatar = useCallback(async (avatar: Avatar) => {
     console.log('👤 Seleccionando Segundo Avatar:', avatar.avatar_name);
     console.log('🔄 Multi-Avatar: Navegando directamente a subtitle-customization');
-    setFlowState(prev => ({
-      ...prev,
+    const newFlowState = {
+      ...flowState,
       selectedSecondAvatar: avatar,
-      step: 'subtitle-customization'
-    }));
-  }, []);
+      step: 'subtitle-customization' as const
+    };
+    
+    setFlowState(newFlowState);
+    
+    // Guardado inmediato en Supabase
+    if (user) {
+      try {
+        await saveVideoConfigImmediate(user, newFlowState);
+        console.log('💾 Segundo avatar guardado en Supabase');
+      } catch (error) {
+        console.error('Error guardando segundo avatar:', error);
+      }
+    }
+  }, [flowState, user]);
 
-  const selectVoice = useCallback((voice: Voice) => {
+  const selectVoice = useCallback(async (voice: Voice) => {
     console.log('🎤 Seleccionando Voz:', voice.voice_name);
     
-    setFlowState(prev => {
-      let nextStep: FlowState['step'];
-      
-      if (prev.selectedStyle?.id === 'style-7') {
-        // Estilo Multi-Avatar - ir a selección del segundo avatar
-        console.log('🔄 Multi-Avatar detectado: navegando a multi-avatar');
-        nextStep = 'multi-avatar';
-      } else {
-        // Todos los demás estilos van a personalización de subtítulos
-        console.log('📝 Navegando a personalización de subtítulos');
-        nextStep = 'subtitle-customization';
+    let nextStep: FlowState['step'];
+    
+    if (flowState.selectedStyle?.id === 'style-7') {
+      console.log('🔄 Multi-Avatar detectado: navegando a multi-avatar');
+      nextStep = 'multi-avatar';
+    } else {
+      console.log('📝 Navegando a personalización de subtítulos');
+      nextStep = 'subtitle-customization';
+    }
+    
+    const newFlowState = {
+      ...flowState,
+      selectedVoice: voice,
+      step: nextStep
+    };
+    
+    setFlowState(newFlowState);
+    
+    // Guardado inmediato en Supabase
+    if (user) {
+      try {
+        await saveVideoConfigImmediate(user, newFlowState);
+        console.log('💾 Voz guardada en Supabase');
+      } catch (error) {
+        console.error('Error guardando voz:', error);
       }
-      
-      return {
-        ...prev,
-        selectedVoice: voice,
-        step: nextStep
-      };
-    });
-  }, []);
+    }
+  }, [flowState, user]);
 
-  const selectStyle = useCallback((style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
+  const selectStyle = useCallback(async (style: VideoStyle, cardCustomization?: CardCustomization, presenterCustomization?: PresenterCustomization, apiVersionCustomization?: ApiVersionCustomization, manualCustomization?: ManualCustomization) => {
     console.log('🎨 Seleccionando Estilo:', style.name);
     console.log('📝 Navegando a selección de avatar para estilo:', style.name);
     
-    setFlowState(prev => ({
-      ...prev,
+    const newFlowState = {
+      ...flowState,
       selectedStyle: style,
       cardCustomization: cardCustomization || null,
       presenterCustomization: presenterCustomization || null,
       apiVersionCustomization: apiVersionCustomization || null,
       manualCustomization: manualCustomization || null,
-      step: 'avatar'
-    }));
-  }, []);
+      step: 'avatar' as const
+    };
+    
+    setFlowState(newFlowState);
+    
+    // Guardado inmediato en Supabase
+    if (user) {
+      try {
+        await saveVideoConfigImmediate(user, newFlowState);
+        console.log('💾 Estilo guardado en Supabase');
+      } catch (error) {
+        console.error('Error guardando estilo:', error);
+      }
+    }
+  }, [flowState, user]);
 
-  const selectSubtitleCustomization = useCallback((subtitleCustomization: SubtitleCustomization) => {
+  const selectSubtitleCustomization = useCallback(async (subtitleCustomization: SubtitleCustomization) => {
     console.log('📝 Seleccionando personalización de subtítulos:', subtitleCustomization);
     
-    setFlowState(prev => ({
-      ...prev,
+    const newFlowState = {
+      ...flowState,
       subtitleCustomization,
-      step: 'generator'
-    }));
-  }, []);
+      step: 'generator' as const
+    };
+    
+    setFlowState(newFlowState);
+    
+    // Guardado inmediato en Supabase
+    if (user) {
+      try {
+        await saveVideoConfigImmediate(user, newFlowState);
+        console.log('💾 Subtítulos guardados en Supabase');
+      } catch (error) {
+        console.error('Error guardando subtítulos:', error);
+      }
+    }
+  }, [flowState, user]);
 
   // Legacy function kept for compatibility (no longer used with new flow)
   const selectManualCustomization = useCallback(async (manualCustomization: ManualCustomization, apiVersionCustomization: ApiVersionCustomization) => {
