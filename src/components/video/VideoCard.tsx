@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Copy, ExternalLink, Trash2, Calendar, FileText, CheckCircle, Video, Share2 } from 'lucide-react';
+import { Copy, Trash2, Calendar, FileText, CheckCircle, Video, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import SocialPublishModal from '@/components/social/SocialPublishModal';
 
 interface VideoCardProps {
@@ -15,6 +16,7 @@ interface VideoCardProps {
 }
 
 const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCardProps) => {
+  const [isScriptExpanded, setIsScriptExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSocialModal, setShowSocialModal] = useState(false);
@@ -31,7 +33,7 @@ const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCa
     });
   };
 
-  const truncateScript = (text: string, maxLength: number = 120) => {
+  const truncateScript = (text: string, maxLength: number = 100) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
@@ -41,26 +43,22 @@ const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCa
     return `Video Generado - ${formatDate(createdAt)}`;
   };
 
-  const handleCopyLink = async () => {
+  const handleCopyScript = async () => {
     try {
-      await navigator.clipboard.writeText(videoUrl);
+      await navigator.clipboard.writeText(script);
       setCopied(true);
       toast({
-        title: "¡Enlace copiado!",
-        description: "El enlace del video ha sido copiado al portapapeles.",
+        title: "¡Guion copiado!",
+        description: "El guion ha sido copiado al portapapeles.",
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast({
         title: "Error al copiar",
-        description: "No se pudo copiar el enlace.",
+        description: "No se pudo copiar el guion.",
         variant: "destructive"
       });
     }
-  };
-
-  const handleOpenVideo = () => {
-    window.open(videoUrl, '_blank');
   };
 
   const handleDelete = async () => {
@@ -96,12 +94,12 @@ const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCa
 
   return (
     <>
-      <div className="bg-card cyber-border rounded-xl hover:cyber-glow transition-all duration-300 group overflow-hidden">
-        {/* Header con título, fecha y solo botón de basura */}
-        <div className="p-6 pb-4">
-          <div className="flex items-start justify-between mb-3">
+      <div className="bg-card/80 backdrop-blur-sm cyber-border rounded-xl hover:cyber-glow transition-all duration-300 group overflow-hidden">
+        {/* Header: título + fecha + delete */}
+        <div className="p-5">
+          <div className="flex items-start justify-between mb-2">
             <div className="flex-1 pr-4">
-              <div className="flex items-center mb-2">
+              <div className="flex items-center mb-1">
                 <Video className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
                 <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight break-words">
                   {getDisplayTitle()}
@@ -127,62 +125,95 @@ const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCa
         </div>
 
         {/* Divider */}
-        <div className="border-t border-border/30 mx-6"></div>
+        <div className="border-t border-border/30 mx-5" />
 
-        {/* Script preview */}
-        <div className="p-6 py-4">
-          <div className="flex items-center mb-3">
-            <FileText className="w-4 h-4 mr-2 text-primary" />
-            <span className="text-sm font-medium text-foreground">Guion</span>
+        {/* Video Player */}
+        <div className="p-5">
+          <div className="rounded-lg overflow-hidden cyber-border bg-black/50">
+            <video
+              src={videoUrl}
+              controls
+              className="w-full aspect-video"
+              preload="metadata"
+            />
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {truncateScript(script)}
-          </p>
         </div>
 
         {/* Divider */}
-        <div className="border-t border-border/30 mx-6"></div>
+        <div className="border-t border-border/30 mx-5" />
 
-        {/* Footer con URL y botones principales */}
-        <div className="p-6 pt-4">
-          <div className="bg-muted/20 cyber-border rounded-lg p-3 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0 mr-3">
-                <span className="text-xs text-muted-foreground block mb-1">URL del video:</span>
-                <span className="text-foreground font-mono text-xs break-all">
-                  {videoUrl}
-                </span>
+        {/* Script Section - Collapsible */}
+        <div className="p-5">
+          <Collapsible open={isScriptExpanded} onOpenChange={setIsScriptExpanded}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <FileText className="w-4 h-4 mr-2 text-primary" />
+                <span className="text-sm font-medium text-foreground">Guion</span>
               </div>
-              <div className="flex space-x-2 flex-shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyLink}
-                  className="cyber-border hover:cyber-glow"
-                  disabled={copied}
-                >
-                  {copied ? (
-                    <CheckCircle className="w-3 h-3 text-green-500" />
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                  {isScriptExpanded ? (
+                    <>
+                      <span className="text-xs mr-1">Colapsar</span>
+                      <ChevronUp className="w-4 h-4" />
+                    </>
                   ) : (
-                    <Copy className="w-3 h-3" />
+                    <>
+                      <span className="text-xs mr-1">Expandir</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </>
                   )}
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleOpenVideo}
-                  className="cyber-border hover:cyber-glow-intense"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                </Button>
-              </div>
+              </CollapsibleTrigger>
             </div>
-          </div>
 
-          {/* Nuevo botón Publicar en Redes */}
+            {/* Preview cuando está colapsado */}
+            {!isScriptExpanded && (
+              <p className="text-muted-foreground text-sm line-clamp-2">
+                {truncateScript(script, 100)}
+              </p>
+            )}
+
+            {/* Contenido completo cuando está expandido */}
+            <CollapsibleContent>
+              <div className="bg-muted/30 rounded-lg p-4 cyber-border">
+                <p className="text-foreground text-sm whitespace-pre-wrap mb-4 leading-relaxed">
+                  {script}
+                </p>
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyScript}
+                    className="cyber-border hover:cyber-glow"
+                    disabled={copied}
+                  >
+                    {copied ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                        Copiado
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copiar Guion
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-border/30 mx-5" />
+
+        {/* Publicar en Redes */}
+        <div className="p-5">
           <Button
             onClick={() => setShowSocialModal(true)}
-            variant="outline"
-            className="w-full cyber-border hover:cyber-glow-intense"
+            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground font-semibold"
           >
             <Share2 className="w-4 h-4 mr-2" />
             Publicar en Redes

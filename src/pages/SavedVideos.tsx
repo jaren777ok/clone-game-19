@@ -12,6 +12,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, subDays, subMonths, isAfter, isBefore, parseISO } from 'date-fns';
 
+// Background video URL
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk4MTQ4NzEsImV4cCI6MTkyNzQ5NDg3MX0.ppLMDJed_zLsf_-5y4JFj_U216mWpVZrDNQbrT4DPOU';
+
 interface SavedVideo {
   id: string;
   title?: string;
@@ -157,7 +160,17 @@ const SavedVideos = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
-        <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+        {/* Animated Video Background for loading */}
+        <video
+          src={BACKGROUND_VIDEO_URL}
+          className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+        <div className="absolute inset-0 bg-background/50" />
+        
         <div className="relative z-10 text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center cyber-glow mx-auto mb-4 animate-pulse">
             <Loader2 className="w-8 h-8 text-background animate-spin" />
@@ -170,16 +183,26 @@ const SavedVideos = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+      {/* Animated Video Background */}
+      <video
+        src={BACKGROUND_VIDEO_URL}
+        className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
       
-      {/* Header */}
+      {/* Dark Overlay for readability */}
+      <div className="absolute inset-0 bg-background/50" />
+      
+      {/* Content */}
       <div className="relative z-10 container mx-auto px-6 py-8">
         <div className="flex items-center mb-8">
           <Button
             variant="outline"
             onClick={() => navigate('/dashboard')}
-            className="cyber-border hover:cyber-glow"
+            className="cyber-border hover:cyber-glow backdrop-blur-sm bg-card/50"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al Dashboard
@@ -206,7 +229,7 @@ const SavedVideos = () => {
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Select value={dateFilter} onValueChange={(value: DateFilterType) => setDateFilter(value)}>
-                <SelectTrigger className="w-48 cyber-border focus:cyber-glow">
+                <SelectTrigger className="w-48 cyber-border focus:cyber-glow backdrop-blur-sm bg-card/50">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Filtrar por fecha" />
                 </SelectTrigger>
@@ -222,7 +245,7 @@ const SavedVideos = () => {
               {dateFilter === 'custom' && (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="cyber-border hover:cyber-glow">
+                    <Button variant="outline" className="cyber-border hover:cyber-glow backdrop-blur-sm bg-card/50">
                       <Calendar className="w-4 h-4 mr-2" />
                       {customDateRange.from ? (
                         customDateRange.to ? (
@@ -261,7 +284,7 @@ const SavedVideos = () => {
               )}
             </div>
             
-            <div className="flex items-center text-muted-foreground">
+            <div className="flex items-center text-muted-foreground backdrop-blur-sm bg-card/30 px-4 py-2 rounded-lg">
               <Video className="w-4 h-4 mr-2" />
               <span className="text-sm">
                 {getDateFilterText()}
@@ -271,7 +294,7 @@ const SavedVideos = () => {
 
           {/* Filter info */}
           {dateFilter !== 'all' && (
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-6">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-6 backdrop-blur-sm">
               <div className="flex items-center text-sm">
                 <Filter className="w-4 h-4 mr-2 text-primary" />
                 <span className="text-foreground">
@@ -286,7 +309,7 @@ const SavedVideos = () => {
         <div className="max-w-6xl mx-auto">
           {filteredVideos.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-24 h-24 bg-gradient-to-br from-muted to-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-24 h-24 bg-gradient-to-br from-muted to-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
                 <Video className="w-12 h-12 text-muted-foreground" />
               </div>
               {videos.length === 0 ? (
@@ -299,7 +322,7 @@ const SavedVideos = () => {
                   </p>
                   <Button
                     onClick={() => navigate('/crear-video')}
-                    className="cyber-border hover:cyber-glow-intense"
+                    className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground font-semibold cyber-glow"
                   >
                     Generar Video
                   </Button>
@@ -315,7 +338,7 @@ const SavedVideos = () => {
                   <Button
                     variant="outline"
                     onClick={resetDateFilter}
-                    className="cyber-border hover:cyber-glow"
+                    className="cyber-border hover:cyber-glow backdrop-blur-sm bg-card/50"
                   >
                     Ver todos los videos
                   </Button>
@@ -342,7 +365,7 @@ const SavedVideos = () => {
         {/* Tips */}
         {videos.length > 0 && (
           <div className="max-w-4xl mx-auto mt-12">
-            <div className="bg-card/50 cyber-border rounded-xl p-6">
+            <div className="bg-card/50 backdrop-blur-sm cyber-border rounded-xl p-6">
               <div className="flex items-center mb-4">
                 <Sparkles className="w-5 h-5 mr-2 text-primary" />
                 <h3 className="text-lg font-semibold text-foreground">
@@ -360,11 +383,11 @@ const SavedVideos = () => {
                 </div>
                 <div className="flex items-start">
                   <span className="text-primary mr-2">•</span>
-                  Copia enlaces para compartir tus videos fácilmente
+                  Expande el guion para ver el contenido completo y copiarlo
                 </div>
                 <div className="flex items-start">
                   <span className="text-primary mr-2">•</span>
-                  Los videos se ordenan por fecha de creación más reciente
+                  Publica directamente en tus redes sociales favoritas
                 </div>
               </div>
             </div>
@@ -373,8 +396,8 @@ const SavedVideos = () => {
       </div>
 
       {/* Background geometric shapes */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl pointer-events-none"></div>
     </div>
   );
 };
