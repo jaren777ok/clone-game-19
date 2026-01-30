@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
@@ -10,6 +11,7 @@ import TipsSection from '@/components/video/TipsSection';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 
 const VideoGenerator = () => {
+  const navigate = useNavigate();
   const { flowState } = useVideoCreationFlow();
   const { state, handlers } = useVideoGenerator({ flowState });
 
@@ -49,7 +51,7 @@ const VideoGenerator = () => {
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <VideoGeneratorHeader />
+        <VideoGeneratorHeader onBack={() => navigate('/crear-video')} />
 
         {state.showRecoveryOption && (
           <RecoveryNotification 
