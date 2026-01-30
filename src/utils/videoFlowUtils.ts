@@ -32,6 +32,7 @@ export const determineInitialStep = (
     
     if (savedKeyExists) {
       console.log('🔍 Analizando estado guardado:', {
+        savedStep: savedState.step,
         selectedStyle: savedState.selectedStyle?.id,
         hasFirstAvatar: !!savedState.selectedAvatar,
         hasSecondAvatar: !!savedState.selectedSecondAvatar,
@@ -41,6 +42,13 @@ export const determineInitialStep = (
       });
 
       // NEW FLOW ORDER: api-key → neurocopy → style → avatar → voice → multi-avatar → subtitle-customization → generator
+
+      // IMPORTANTE: Si el paso guardado es 'subtitle-customization', respetarlo siempre
+      // (esto permite navegación hacia atrás desde el generador)
+      if (savedState.step === 'subtitle-customization' && savedState.selectedVoice) {
+        console.log('✅ Respetando paso guardado: subtitle-customization (navegación explícita)');
+        return { ...savedState, step: 'subtitle-customization' };
+      }
 
       // Check if flow is complete (has script + all required selections)
       if (savedState.generatedScript && savedState.selectedStyle && savedState.selectedAvatar && savedState.selectedVoice && savedState.subtitleCustomization) {
