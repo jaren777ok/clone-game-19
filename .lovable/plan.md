@@ -1,77 +1,166 @@
 
-Objetivo
-- Corregir definitivamente el botón “Atrás” del Generador Final para que vuelva al paso anterior real (“subtitle-customization”) sin reiniciar el flujo ni mandar al inicio (Gestión de Claves API).
-- Mantener la configuración (API key, estilo, avatar, voz, etc.) intacta al regresar.
 
-Diagnóstico (qué está pasando y por qué)
-- El Generador Final (`/crear-video-generator`) usa `useVideoCreationFlow()` pero esa instancia del hook NO es compartida con la que usa `VideoCreationFlow` en `/crear-video`. Cada página crea su propia instancia del estado.
-- Cuando presionas “Atrás”, hacemos:
-  - `goToStep('subtitle-customization')` (solo afecta la instancia local del hook en el Generador Final)
-  - `navigate('/crear-video')` (monta de nuevo `VideoCreationFlow`, que crea OTRA instancia del hook y recalcula el paso inicial leyendo BD)
-- Si en la BD (tabla `user_video_configs`) falta el registro, o el `api_key_id`/datos necesarios no están completos en ese momento, `determineInitialStep()` cae al default y te manda a `api-key`.
-- El “update current_step” que se hizo ayuda solo si la fila ya existe y ya tiene el resto de columnas (api_key_id, avatar_data, voice_data, style_data, etc.). Si la fila no existe o quedó incompleta, el update no arregla nada.
+## Plan: Solución Definitiva del Botón "Atrás" - Navegación Directa sin Depender de BD
 
-Solución propuesta (robusta)
-A) En el botón “Atrás” del Generador Final, en vez de hacer solo `update(current_step)`, vamos a hacer un “guardado completo” (upsert) del FlowState actual con el paso forzado a `subtitle-customization`.
-- Esto garantiza que:
-  - La fila exista (si estaba borrada, se recrea)
-  - `api_key_id` y el resto de datos queden persistidos
-  - `current_step` quede exactamente en `subtitle-customization`
-- Para esto reutilizamos la función ya existente y probada: `saveVideoConfigImmediate(user, flowState)` (que internamente hace `upsert` en `user_video_configs`).
+### Diagnóstico del Problema
 
-B) Después de guardar, navegar a `/crear-video`.
-- Al montar `VideoCreationFlow`, `useVideoCreationFlow` cargará desde BD y `determineInitialStep()` respetará el `subtitle-customization` (ya hay una regla explícita para respetarlo si existe `selectedVoice`).
-- Resultado: vuelves al paso de subtítulos sin reinicio.
+He identificado la causa raíz del problema después de revisar el código y la base de datos:
 
-C) Hardening adicional (para evitar casos raros)
-1) En `determineInitialStep()` ampliar la condición de “respetar subtitle-customization” para no depender estrictamente de `selectedVoice` si ya tenemos suficiente configuración.
-   - Por ejemplo: si `savedState.step === 'subtitle-customization'` y existe `selectedStyle + selectedAvatar + selectedApiKey`, mantenerlo; y si falta algo crítico, degradar al paso correcto.
-   - Esto evita que por un dato nulo accidental te mande a “api-key” cuando realmente puede devolverte al paso más cercano coherente (p.ej. voice o avatar).
+1. **La tabla `user_video_configs` está vacía** - Esto significa que los datos de configuración no se están guardando correctamente o se borran antes de poder usarlos.
 
-2) Logging puntual y limpio:
-   - Agregar logs “one-liner” en `handleBack` para confirmar:
-     - que el upsert se ejecutó
-     - que el paso guardado fue subtitle-customization
-   - Agregar log en `loadVideoConfig` (ya hay muchos) pero enfocarnos en confirmar `api_key_id` y `current_step`.
+2. **El flujo de navegación tiene una dependencia circular problemática**:
+   - El botón "Atrás" en `VideoGeneratorFinal.tsx` intenta guardar el estado en la BD y luego navega a `/crear-video`
+   - La página `/crear-video` (VideoCreationFlow) crea una **nueva instancia** del hook `useVideoCreationFlow`
+   - Esta nueva instancia lee la BD para determinar el paso inicial
+   - Si la BD está vacía o el guardado no se completó, `determineInitialStep()` cae al default: `api-key`
 
-Cambios concretos (archivos y qué se tocará)
-1) `src/pages/VideoGeneratorFinal.tsx`
-- Reemplazar el bloque actual de `handleBack`:
-  - En vez de `supabase.from('user_video_configs').update({ current_step: ... })`
-  - Hacer:
-    - Construir `backState = { ...effectiveFlowState, step: 'subtitle-customization' }`
-    - `await saveVideoConfigImmediate(user, backState)`
-    - Luego `navigate('/crear-video')`
-- Mantener `goToStep('subtitle-customization')` opcional (no hace daño) pero ya no será el mecanismo principal.
+3. **El problema específico**: La función `saveVideoConfigImmediate` requiere que `selectedApiKey` tenga un `id` válido para guardar el `api_key_id`. Si por alguna razón el estado efectivo no tiene estos datos completos, el upsert falla silenciosamente o guarda datos incompletos.
 
-2) `src/utils/videoFlowUtils.ts`
-- Ajustar la regla “respetar subtitle-customization” para que sea más tolerante (si aplica).
-  - Hoy: `if (savedState.step === 'subtitle-customization' && savedState.selectedVoice) return ...`
-  - Propuesta: respetar si el paso guardado es subtitle-customization y hay suficiente configuración para entrar a ese paso o para volver a un paso inmediatamente anterior (voice/avatar) sin caer a api-key por defecto.
+### Solución: Navegación Directa con Estado
 
-Plan de pruebas (end-to-end)
-1) Caso principal:
-- Completar flujo hasta Generador Final
-- Presionar “Atrás”
-- Verificar que abre directamente `SubtitleCustomizer` (no Gestión de Claves API)
-- Verificar que la configuración está intacta (estilo, voz, avatar, etc.)
+En lugar de depender de la base de datos para pasar el estado entre páginas (que es frágil), usaremos **navegación con estado de React Router** (el mismo patrón que ya funciona para ir al generador).
 
-2) Edge cases:
-- Presionar “Atrás” rápido varias veces
-- Ir al generador, refrescar (si el sistema limpia en refresh) y luego intentar volver a /crear-video; verificar el comportamiento esperado (si se limpia por diseño, debe reiniciar, pero con “Atrás” no debe limpiar).
+**Cambios a implementar:**
 
-3) Multi-avatar (style-7):
-- Completar hasta generator con segundo avatar
-- “Atrás” debe llevar a subtítulos (y si vuelves otra vez atrás desde subtítulos, debe seguir la lógica actual hacia multi-avatar).
+#### 1. Cambiar el texto del botón de "Atrás" a "Cambiar Subtítulos"
+Esto es más claro para el usuario sobre qué hace el botón.
 
-Riesgos y mitigación
-- Riesgo: `saveVideoConfigImmediate` guarda “mucho” (manual_customization con base64) y puede ser pesado.
-  - Mitigación: En el back, si `effectiveFlowState.manualCustomization` existe y es enorme, podemos:
-    - o mantenerlo (más robusto para no perder nada),
-    - o guardar solo “config esencial” si tú prefieres performance. (Por defecto: mantener, para evitar pérdida de datos.)
-- Riesgo: que haya lógica de limpieza al cambiar de pantalla.
-  - Mitigación: Confirmar que solo se limpia en `beforeunload`/video generado. Navegación SPA no dispara beforeunload.
+#### 2. Modificar `handleBack` para navegar con estado
+En lugar de guardar en BD y esperar que la otra página lo lea, pasamos el estado directamente:
 
-Resultado esperado
-- El botón “Atrás” en el Generador Final siempre vuelve a “Personalización de Subtítulos” (penúltimo paso) sin reiniciar flujo y sin mandarte a “Gestión de Claves API”.
-- La configuración permanece completa y consistente porque se persiste con upsert antes de navegar.
+```typescript
+const handleBack = () => {
+  // Navegar directamente pasando el estado via location (mismo patrón que handleProceedToGenerator)
+  const backState: FlowState = {
+    ...effectiveFlowState,
+    step: 'subtitle-customization'
+  };
+  
+  navigate('/crear-video', { 
+    state: backState,
+    replace: false 
+  });
+};
+```
+
+#### 3. Modificar `VideoCreationFlow.tsx` para aceptar estado de navegación
+La página necesita detectar si viene con estado de navegación y usarlo en lugar de recalcular:
+
+```typescript
+const VideoCreationFlow = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // Detectar estado de navegación
+  const navigationState = location.state as FlowState | undefined;
+  
+  // Si viene con estado de navegación válido, usarlo directamente
+  useEffect(() => {
+    if (navigationState && navigationState.step === 'subtitle-customization') {
+      console.log('✅ Usando estado de navegación directa:', navigationState.step);
+      // Forzar el paso a subtitle-customization
+      goToStep('subtitle-customization');
+    }
+  }, [navigationState]);
+  
+  // ... resto del código
+};
+```
+
+#### 4. Actualizar `VideoGeneratorHeader.tsx` para mostrar "Cambiar Subtítulos"
+
+```typescript
+const VideoGeneratorHeader = ({ onBack }: VideoGeneratorHeaderProps) => {
+  return (
+    <Button variant="outline" onClick={onBack} className="cyber-border hover:cyber-glow">
+      <ArrowLeft className="w-4 h-4 sm:mr-2" />
+      <span>Cambiar Subtítulos</span>
+    </Button>
+  );
+};
+```
+
+---
+
+### Archivos a Modificar
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/video/VideoGeneratorHeader.tsx` | Cambiar texto "Atrás" → "Cambiar Subtítulos" |
+| `src/pages/VideoGeneratorFinal.tsx` | Simplificar `handleBack` para usar navegación con estado |
+| `src/pages/VideoCreationFlow.tsx` | Aceptar estado de navegación y aplicarlo |
+
+---
+
+### Detalle Técnico de los Cambios
+
+**VideoGeneratorFinal.tsx - handleBack simplificado:**
+
+```typescript
+const handleBack = () => {
+  // Navegar directamente con el estado del flujo actual
+  // Esto evita depender de la base de datos para la navegación
+  const backState: FlowState = {
+    ...effectiveFlowState,
+    step: 'subtitle-customization'
+  };
+  
+  console.log('⬅️ Navegando a subtítulos con estado directo:', {
+    step: backState.step,
+    hasApiKey: !!backState.selectedApiKey,
+    hasStyle: !!backState.selectedStyle,
+    hasAvatar: !!backState.selectedAvatar,
+    hasVoice: !!backState.selectedVoice
+  });
+  
+  navigate('/crear-video', { 
+    state: backState,
+    replace: false 
+  });
+};
+```
+
+**VideoCreationFlow.tsx - Aceptar estado de navegación:**
+
+```typescript
+const VideoCreationFlow = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // Detectar si viene con estado de navegación (desde el generador)
+  const navigationState = location.state as FlowState | undefined;
+  const [overrideState, setOverrideState] = useState<FlowState | null>(null);
+  
+  // Si viene con estado de navegación, aplicarlo
+  useEffect(() => {
+    if (navigationState && navigationState.selectedApiKey && navigationState.selectedStyle) {
+      console.log('✅ Usando estado de navegación directa:', navigationState.step);
+      setOverrideState(navigationState);
+    }
+  }, []);
+  
+  // Usar overrideState si existe, sino usar el flowState normal
+  const activeFlowState = overrideState || flowState;
+  
+  // Renderizar según el paso activo...
+};
+```
+
+---
+
+### Resultado Esperado
+
+1. El botón mostrará "Cambiar Subtítulos" en lugar de "Atrás"
+2. Al presionarlo, navegará directamente a la página de subtítulos con toda la configuración intacta
+3. No depende de la base de datos para la navegación (más robusto)
+4. El patrón es consistente con cómo ya funciona la navegación hacia el generador
+
+### Ventajas de esta Solución
+
+- **Inmediato**: No hay latencia de esperar a la BD
+- **Confiable**: El estado se pasa directamente en memoria
+- **Consistente**: Usa el mismo patrón que ya funciona para ir al generador
+- **Simple**: Menos código y menos puntos de fallo
+
