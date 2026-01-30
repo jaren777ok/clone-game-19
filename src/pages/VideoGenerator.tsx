@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
-import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
 import RecoveryNotification from '@/components/video/RecoveryNotification';
 import ScriptForm from '@/components/video/ScriptForm';
 import TipsSection from '@/components/video/TipsSection';
@@ -51,7 +51,16 @@ const VideoGenerator = () => {
       <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
       
       <div className="relative z-10 container mx-auto px-6 py-8">
-        <VideoGeneratorHeader onBack={() => navigate('/crear-video')} />
+        <div className="flex items-center justify-start mb-4 sm:mb-6">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/crear-video')}
+            className="cyber-border hover:cyber-glow text-xs sm:text-sm px-2 sm:px-4"
+          >
+            <ArrowLeft className="w-4 h-4 sm:mr-2" />
+            <span>Volver</span>
+          </Button>
+        </div>
 
         {state.showRecoveryOption && (
           <RecoveryNotification 
