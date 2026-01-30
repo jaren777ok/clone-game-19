@@ -45,9 +45,15 @@ export const determineInitialStep = (
 
       // IMPORTANTE: Si el paso guardado es 'subtitle-customization', respetarlo siempre
       // (esto permite navegación hacia atrás desde el generador)
-      if (savedState.step === 'subtitle-customization' && savedState.selectedVoice) {
-        console.log('✅ Respetando paso guardado: subtitle-customization (navegación explícita)');
-        return { ...savedState, step: 'subtitle-customization' };
+      // Condición ampliada: respetar si tiene suficiente configuración (style + avatar + apiKey)
+      if (savedState.step === 'subtitle-customization') {
+        const hasMinimalConfig = savedState.selectedStyle && savedState.selectedAvatar && savedState.selectedApiKey;
+        if (hasMinimalConfig) {
+          console.log('✅ Respetando paso guardado: subtitle-customization (navegación explícita con config válida)');
+          return { ...savedState, step: 'subtitle-customization' };
+        }
+        // Si falta configuración crítica, degradar al paso apropiado
+        console.log('⚠️ subtitle-customization guardado pero falta configuración, recalculando paso...');
       }
 
       // Check if flow is complete (has script + all required selections)
