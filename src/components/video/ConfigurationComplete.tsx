@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Key, User, Mic, Film, Type, Sparkles } from 'lucide-react';
+import { CheckCircle, Key, User, Mic, Film, Type, Sparkles, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FlowState } from '@/types/videoFlow';
@@ -7,9 +7,10 @@ import { FlowState } from '@/types/videoFlow';
 interface ConfigurationCompleteProps {
   flowState: FlowState;
   onContinue: () => void;
+  onReview: () => void;
 }
 
-const ConfigurationComplete = ({ flowState, onContinue }: ConfigurationCompleteProps) => {
+const ConfigurationComplete = ({ flowState, onContinue, onReview }: ConfigurationCompleteProps) => {
   const configItems = [
     {
       icon: Key,
@@ -67,7 +68,7 @@ const ConfigurationComplete = ({ flowState, onContinue }: ConfigurationCompleteP
         </div>
 
         {/* Title and message */}
-        <h1 className="text-3xl sm:text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-4 pb-1 leading-normal bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
           Configuración Completada
         </h1>
         <p className="text-muted-foreground mb-8 text-sm sm:text-base">
@@ -108,6 +109,17 @@ const ConfigurationComplete = ({ flowState, onContinue }: ConfigurationCompleteP
         >
           <Sparkles className="w-5 h-5 mr-2" />
           Ir al Generador de Videos
+        </Button>
+
+        {/* Review button */}
+        <Button
+          onClick={onReview}
+          variant="outline"
+          size="lg"
+          className="w-full mt-3 border-border/50 hover:bg-primary/10 hover:border-primary/50 font-semibold py-6 text-lg"
+        >
+          <Settings className="w-5 h-5 mr-2" />
+          Revisar Configuración
         </Button>
 
         {/* Status indicator */}
