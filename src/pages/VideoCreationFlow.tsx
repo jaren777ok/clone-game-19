@@ -13,6 +13,7 @@ import VoiceSelector from '@/components/video/VoiceSelector';
 import StyleSelector from '@/components/video/StyleSelector';
 import NeuroCopyGenerator from '@/components/video/NeuroCopyGenerator';
 import SubtitleCustomizer from '@/components/video/SubtitleCustomizer';
+import ConfigurationComplete from '@/components/video/ConfigurationComplete';
 
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
@@ -168,16 +169,16 @@ const VideoCreationFlow = () => {
     }
   };
 
-  // Wrapper para selectSubtitleCustomization que mantiene el estado completo
+  // Wrapper para selectSubtitleCustomization - ahora va a confirmación en lugar de directo al generador
   const handleSelectSubtitleCustomization = async (subtitleCustomization: SubtitleCustomization) => {
     const baseState = overrideState || flowState;
     const newState: FlowState = {
       ...baseState,
       subtitleCustomization,
-      step: 'generator'
+      step: 'confirmation'
     };
     
-    console.log('📝 Guardando subtítulos y navegando al generador:', {
+    console.log('📝 Guardando subtítulos y mostrando confirmación:', {
       hasApiKey: !!newState.selectedApiKey,
       hasStyle: !!newState.selectedStyle,
       hasAvatar: !!newState.selectedAvatar,
@@ -194,9 +195,21 @@ const VideoCreationFlow = () => {
       }
     }
     
-    // Navegar al generador con el estado completo
+    // Mostrar pantalla de confirmación
+    setOverrideState(newState);
+  };
+
+  // Handler para continuar desde confirmación al generador
+  const handleContinueToGenerator = () => {
+    const baseState = overrideState || flowState;
+    const finalState: FlowState = {
+      ...baseState,
+      step: 'generator'
+    };
+    
+    console.log('🚀 Navegando al generador desde confirmación');
     navigate('/crear-video-generator', { 
-      state: newState,
+      state: finalState,
       replace: false 
     });
   };
@@ -350,6 +363,14 @@ const VideoCreationFlow = () => {
         <SubtitleCustomizer
           onSelectCustomization={handleSelectSubtitleCustomization}
           onBack={handleBack}
+        />
+      );
+
+    case 'confirmation':
+      return (
+        <ConfigurationComplete
+          flowState={activeFlowState}
+          onContinue={handleContinueToGenerator}
         />
       );
 
