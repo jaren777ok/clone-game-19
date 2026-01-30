@@ -1,67 +1,142 @@
 
-## Plan: Simplificar el Flujo con Pantalla de Confirmación Final
+## Plan: Mejoras de UI en Generador y Pantalla de Confirmación
 
-### Resumen del Cambio
-
-En lugar de permitir navegación hacia atrás desde el generador final (que causa problemas de sincronización de estado), vamos a:
-
-1. **Mostrar una pantalla de "Configuración Completada"** después de seleccionar los subtítulos y antes de ir al generador
-2. **Indicar claramente que la configuración ya no se puede cambiar** una vez confirmada
-3. **Eliminar el botón "Cambiar Subtítulos"** del generador final
-
-Esto simplifica enormemente el flujo y evita todos los problemas de persistencia de estado.
+### Cambios a Implementar
 
 ---
 
-### Flujo Actual vs Flujo Nuevo
+### 1. Centrar verticalmente el panel izquierdo del Generador
 
-```text
-FLUJO ACTUAL:
-Subtítulos -> [Usar este diseño] -> Generador Final -> [Cambiar Subtítulos] -> Subtítulos (PROBLEMAS)
+**Archivo**: `src/pages/VideoGeneratorFinal.tsx`
 
-FLUJO NUEVO:
-Subtítulos -> [Usar este diseño] -> Pantalla Confirmación -> [Continuar] -> Generador Final (SIN RETORNO)
+El panel izquierdo actualmente tiene solo `p-6 overflow-y-auto` pero necesita centrar verticalmente su contenido. 
+
+**Cambio**:
+```typescript
+// ANTES (línea 227):
+<div className="w-full lg:w-[35%] lg:min-w-[380px] lg:max-w-[480px] border-b lg:border-b-0 lg:border-r border-border/30 p-6 overflow-y-auto bg-card/20 backdrop-blur-sm">
+
+// DESPUÉS:
+<div className="w-full lg:w-[35%] lg:min-w-[380px] lg:max-w-[480px] border-b lg:border-b-0 lg:border-r border-border/30 p-6 overflow-y-auto bg-card/20 backdrop-blur-sm flex flex-col justify-center">
+```
+
+Esto añade `flex flex-col justify-center` para centrar verticalmente el contenido del panel.
+
+---
+
+### 2. Corregir texto recortado "Configuración Completada"
+
+**Archivo**: `src/components/video/ConfigurationComplete.tsx`
+
+El problema del texto recortado ocurre porque `bg-clip-text text-transparent` puede tener problemas de renderizado. Añadiremos padding bottom mínimo y ajustaremos el line-height.
+
+**Cambio en el título (línea 70)**:
+```typescript
+// ANTES:
+<h1 className="text-3xl sm:text-4xl font-bold mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+
+// DESPUÉS:
+<h1 className="text-3xl sm:text-4xl font-bold mb-4 pb-1 leading-normal bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+```
+
+Añadimos `pb-1` (padding-bottom) y `leading-normal` para asegurar que la letra "g" no se recorte.
+
+---
+
+### 3. Añadir botón "Revisar configuración"
+
+**Archivo**: `src/components/video/ConfigurationComplete.tsx`
+
+Añadir un segundo botón con estilo outline debajo del botón principal.
+
+**Cambios necesarios**:
+
+1. **Actualizar la interfaz de props** para recibir `onReview`:
+```typescript
+interface ConfigurationCompleteProps {
+  flowState: FlowState;
+  onContinue: () => void;
+  onReview: () => void;  // NUEVO
+}
+```
+
+2. **Añadir el botón** después del botón "Ir al Generador" (después de línea 111):
+```typescript
+{/* Continue button */}
+<Button
+  onClick={onContinue}
+  size="lg"
+  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground font-semibold py-6 text-lg cyber-glow"
+>
+  <Sparkles className="w-5 h-5 mr-2" />
+  Ir al Generador de Videos
+</Button>
+
+{/* NUEVO: Review button */}
+<Button
+  onClick={onReview}
+  variant="outline"
+  size="lg"
+  className="w-full mt-3 border-border/50 hover:bg-primary/10 hover:border-primary/50 font-semibold py-6 text-lg"
+>
+  <Settings className="w-5 h-5 mr-2" />
+  Revisar Configuración
+</Button>
+```
+
+3. **Importar icono Settings** (añadir al import de lucide-react)
+
+---
+
+### 4. Actualizar VideoCreationFlow para manejar "Revisar configuración"
+
+**Archivo**: `src/pages/VideoCreationFlow.tsx`
+
+Añadir handler para regresar a la configuración de subtítulos cuando el usuario quiere revisar.
+
+**Nuevo handler**:
+```typescript
+// Handler para revisar configuración desde confirmación
+const handleReviewConfiguration = () => {
+  const baseState = overrideState || flowState;
+  const reviewState: FlowState = {
+    ...baseState,
+    step: 'subtitle-customization'
+  };
+  
+  console.log('🔄 Regresando a revisar configuración');
+  setOverrideState(reviewState);
+};
+```
+
+**Actualizar renderizado del paso `confirmation`**:
+```typescript
+case 'confirmation':
+  return (
+    <ConfigurationComplete
+      flowState={activeFlowState}
+      onContinue={handleContinueToGenerator}
+      onReview={handleReviewConfiguration}  // NUEVO
+    />
+  );
 ```
 
 ---
 
-### Cambios a Implementar
+### Resumen de Archivos a Modificar
 
-#### 1. Crear componente `ConfigurationComplete.tsx`
-
-Nueva pantalla de confirmación que muestra:
-- Icono de check/completado
-- Título: "Configuración Completada"
-- Mensaje: "Tu configuración de video está lista. Una vez que continúes al generador, no podrás modificar estas opciones."
-- Resumen visual de la configuración (similar al panel izquierdo del generador)
-- Botón principal: "Ir al Generador de Videos"
-- Sin botón de retroceso (configuración bloqueada)
-
-#### 2. Modificar `VideoCreationFlow.tsx`
-
-- Cambiar `handleSelectSubtitleCustomization` para ir a un nuevo paso `'confirmation'` en lugar de ir directamente al generador
-- Añadir el caso `'confirmation'` en el switch que renderiza `ConfigurationComplete`
-- Desde la confirmación, navegar al generador sin posibilidad de retorno
-
-#### 3. Modificar `VideoGeneratorFinal.tsx`
-
-- Eliminar el componente `VideoGeneratorHeader` (el botón "Cambiar Subtítulos")
-- Eliminar la función `handleBack` que ya no es necesaria
-- El panel izquierdo solo mostrará el resumen de configuración sin botón de retroceso
-
-#### 4. Eliminar `VideoGeneratorHeader.tsx`
-
-Ya no es necesario este componente.
-
-#### 5. Actualizar tipos en `videoFlow.ts`
-
-Añadir el nuevo paso `'confirmation'` al tipo `FlowStep`.
+| Archivo | Cambios |
+|---------|---------|
+| `src/pages/VideoGeneratorFinal.tsx` | Añadir `flex flex-col justify-center` al panel izquierdo |
+| `src/components/video/ConfigurationComplete.tsx` | Corregir texto recortado + añadir botón "Revisar Configuración" |
+| `src/pages/VideoCreationFlow.tsx` | Añadir handler `handleReviewConfiguration` |
 
 ---
 
-### Diseño Visual de la Pantalla de Confirmación
+### Resultado Visual Esperado
 
-```text
+**Pantalla de Confirmación:**
+```
 +------------------------------------------+
 |                                          |
 |         [Icono Check Animado]            |
@@ -69,81 +144,21 @@ Añadir el nuevo paso `'confirmation'` al tipo `FlowStep`.
 |      Configuración Completada            |
 |                                          |
 |   Tu configuración de video está lista.  |
-|   Una vez que continúes al generador,    |
-|   no podrás modificar estas opciones.    |
+|   ...                                    |
 |                                          |
 |  +------------------------------------+  |
 |  |  Resumen de Configuración          |  |
 |  +------------------------------------+  |
-|  |  API Key: HG N8N PROYECTO          |  |
-|  |  Avatar: Jurgen Klaric             |  |
-|  |  Voz: Jurgen Pro 2.1               |  |
-|  |  Estilo: Estilo Educativo 1        |  |
-|  |  Subtítulos: Montserrat, animate   |  |
-|  +------------------------------------+  |
 |                                          |
-|  [========= Ir al Generador =========]   |
+|  [========= Ir al Generador =========]   |  <- Botón principal
+|                                          |
+|  [------- Revisar Configuración ------]  |  <- NUEVO botón outline
 |                                          |
 |       Configuración Completa             |
 |                                          |
 +------------------------------------------+
 ```
 
----
-
-### Archivos a Modificar/Crear
-
-| Archivo | Acción |
-|---------|--------|
-| `src/types/videoFlow.ts` | Añadir `'confirmation'` al tipo FlowStep |
-| `src/components/video/ConfigurationComplete.tsx` | **NUEVO** - Pantalla de confirmación |
-| `src/pages/VideoCreationFlow.tsx` | Añadir paso de confirmación, modificar navegación |
-| `src/pages/VideoGeneratorFinal.tsx` | Eliminar header con botón de retroceso |
-| `src/components/video/VideoGeneratorHeader.tsx` | **ELIMINAR** - Ya no es necesario |
-
----
-
-### Detalles Técnicos
-
-**1. Nuevo tipo FlowStep:**
-```typescript
-export type FlowStep = 
-  | 'loading'
-  | 'api-key'
-  | 'neurocopy'
-  | 'style'
-  | 'avatar'
-  | 'voice'
-  | 'multi-avatar'
-  | 'subtitle-customization'
-  | 'confirmation'  // NUEVO
-  | 'generator';
-```
-
-**2. Nuevo componente ConfigurationComplete:**
-```typescript
-interface ConfigurationCompleteProps {
-  flowState: FlowState;
-  onContinue: () => void;
-}
-```
-
-**3. Modificación en VideoCreationFlow:**
-- Cambiar `handleSelectSubtitleCustomization` para ir a `'confirmation'` en lugar de navegar directamente
-- Añadir caso en el switch para renderizar `ConfigurationComplete`
-- Desde `ConfigurationComplete`, el `onContinue` navega al generador con el estado completo
-
-**4. Modificación en VideoGeneratorFinal:**
-- Eliminar import de `VideoGeneratorHeader`
-- Eliminar `handleBack` y todo el código relacionado
-- El panel izquierdo solo muestra `GeneratorConfigSummary` sin botón
-
----
-
-### Beneficios de esta Solución
-
-1. **Simple**: No hay navegación hacia atrás que sincronizar
-2. **Claro para el usuario**: Sabe exactamente que la configuración es final
-3. **Sin bugs**: No hay estado que pueda perderse o desincronizarse
-4. **Menos código**: Eliminamos componentes y lógica innecesaria
-5. **UX clara**: El usuario confirma antes de proceder, evitando arrepentimientos
+**Panel Izquierdo del Generador:**
+- El logo y resumen de configuración ahora estarán centrados verticalmente en el panel
+- Ya no estarán pegados en la parte superior
