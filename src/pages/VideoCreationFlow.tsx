@@ -4,7 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { FlowState } from '@/types/videoFlow';
+import { FlowState, SubtitleCustomization } from '@/types/videoFlow';
+import { saveVideoConfigImmediate } from '@/lib/videoConfigDatabase';
 import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
 import AvatarSelector from '@/components/video/AvatarSelector';
 import SecondAvatarSelector from '@/components/video/SecondAvatarSelector';
@@ -40,19 +41,33 @@ const VideoCreationFlow = () => {
     resetFlow
   } = useVideoCreationFlow();
 
-  // Si viene con estado de navegación válido, aplicarlo como override
+  // Si viene con estado de navegación válido, aplicarlo Y guardarlo en Supabase
   useEffect(() => {
-    if (navigationState && navigationState.selectedApiKey && navigationState.selectedStyle && 
-        navigationState.selectedAvatar && navigationState.step) {
-      console.log('✅ Usando estado de navegación directa:', {
-        step: navigationState.step,
-        hasApiKey: !!navigationState.selectedApiKey,
-        hasStyle: !!navigationState.selectedStyle,
-        hasAvatar: !!navigationState.selectedAvatar,
-        hasVoice: !!navigationState.selectedVoice
-      });
-      setOverrideState(navigationState);
-    }
+    const syncNavigationState = async () => {
+      if (navigationState && navigationState.selectedApiKey && navigationState.selectedStyle && 
+          navigationState.selectedAvatar && navigationState.step) {
+        console.log('✅ Usando estado de navegación directa:', {
+          step: navigationState.step,
+          hasApiKey: !!navigationState.selectedApiKey,
+          hasStyle: !!navigationState.selectedStyle,
+          hasAvatar: !!navigationState.selectedAvatar,
+          hasVoice: !!navigationState.selectedVoice
+        });
+        setOverrideState(navigationState);
+        
+        // Guardar el estado en Supabase para persistencia
+        if (user) {
+          try {
+            await saveVideoConfigImmediate(user, navigationState);
+            console.log('💾 Estado de navegación sincronizado con Supabase');
+          } catch (error) {
+            console.error('Error sincronizando estado:', error);
+          }
+        }
+      }
+    };
+    
+    syncNavigationState();
   }, []);
 
   // Estado activo: priorizar overrideState si existe
@@ -80,42 +95,110 @@ const VideoCreationFlow = () => {
     loadAiApiKeys();
   }, [user?.id]);
 
+  // Wrapper para handleBack que respeta el overrideState
   const handleBack = () => {
-    switch (flowState.step) {
+    const baseState = overrideState || flowState;
+    const currentStep = baseState.step;
+    
+    switch (currentStep) {
       case 'neurocopy':
-        goToStep('api-key');
+        if (overrideState) {
+          setOverrideState({ ...baseState, step: 'api-key' });
+        } else {
+          goToStep('api-key');
+        }
         break;
       case 'style':
-        goToStep('neurocopy');
+        if (overrideState) {
+          setOverrideState({ ...baseState, step: 'neurocopy' });
+        } else {
+          goToStep('neurocopy');
+        }
         break;
       case 'avatar':
-        goToStep('style');
+        if (overrideState) {
+          setOverrideState({ ...baseState, step: 'style' });
+        } else {
+          goToStep('style');
+        }
         break;
       case 'voice':
-        goToStep('avatar');
+        if (overrideState) {
+          setOverrideState({ ...baseState, step: 'avatar' });
+        } else {
+          goToStep('avatar');
+        }
         break;
       case 'multi-avatar':
-        // Para Multi-Avatar, regresar a voice selection
         console.log('🔄 Multi-Avatar: Regresando a voice desde multi-avatar');
-        goToStep('voice');
-        break;
-      case 'subtitle-customization':
-        // Si es Multi-Avatar y tiene segundo avatar, regresar a multi-avatar
-        if (flowState.selectedStyle?.id === 'style-7' && flowState.selectedSecondAvatar) {
-          console.log('🔄 Multi-Avatar: Regresando a multi-avatar desde subtitle-customization');
-          goToStep('multi-avatar');
+        if (overrideState) {
+          setOverrideState({ ...baseState, step: 'voice' });
         } else {
-          // Para otros estilos, regresar a voice
           goToStep('voice');
         }
         break;
+      case 'subtitle-customization':
+        // Si es Multi-Avatar y tiene segundo avatar, regresar a multi-avatar
+        if (baseState.selectedStyle?.id === 'style-7' && baseState.selectedSecondAvatar) {
+          console.log('🔄 Multi-Avatar: Regresando a multi-avatar desde subtitle-customization');
+          if (overrideState) {
+            setOverrideState({ ...baseState, step: 'multi-avatar' });
+          } else {
+            goToStep('multi-avatar');
+          }
+        } else {
+          // Para otros estilos, regresar a voice
+          if (overrideState) {
+            setOverrideState({ ...baseState, step: 'voice' });
+          } else {
+            goToStep('voice');
+          }
+        }
+        break;
       case 'generator':
-        goToStep('subtitle-customization');
+        if (overrideState) {
+          setOverrideState({ ...baseState, step: 'subtitle-customization' });
+        } else {
+          goToStep('subtitle-customization');
+        }
         break;
       default:
         navigate('/');
         break;
     }
+  };
+
+  // Wrapper para selectSubtitleCustomization que mantiene el estado completo
+  const handleSelectSubtitleCustomization = async (subtitleCustomization: SubtitleCustomization) => {
+    const baseState = overrideState || flowState;
+    const newState: FlowState = {
+      ...baseState,
+      subtitleCustomization,
+      step: 'generator'
+    };
+    
+    console.log('📝 Guardando subtítulos y navegando al generador:', {
+      hasApiKey: !!newState.selectedApiKey,
+      hasStyle: !!newState.selectedStyle,
+      hasAvatar: !!newState.selectedAvatar,
+      hasVoice: !!newState.selectedVoice
+    });
+    
+    // Guardar inmediatamente en Supabase
+    if (user) {
+      try {
+        await saveVideoConfigImmediate(user, newState);
+        console.log('💾 Estado completo guardado en Supabase');
+      } catch (error) {
+        console.error('Error guardando estado:', error);
+      }
+    }
+    
+    // Navegar al generador con el estado completo
+    navigate('/crear-video-generator', { 
+      state: newState,
+      replace: false 
+    });
   };
 
   const handleProceedToGenerator = () => {
@@ -265,7 +348,7 @@ const VideoCreationFlow = () => {
       }
       return (
         <SubtitleCustomizer
-          onSelectCustomization={selectSubtitleCustomization}
+          onSelectCustomization={handleSelectSubtitleCustomization}
           onBack={handleBack}
         />
       );
