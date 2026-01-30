@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import VideoGeneratorHeader from '@/components/video/VideoGeneratorHeader';
 import VideoProcessingState from '@/components/video/VideoProcessingState';
 import VideoResult from '@/components/video/VideoResult';
+import GeneratorConfigSummary from '@/components/video/GeneratorConfigSummary';
 import { useVideoGenerator } from '@/hooks/useVideoGenerator';
 import RecoveryNotification from '@/components/video/RecoveryNotification';
 import ScriptForm from '@/components/video/ScriptForm';
@@ -12,6 +13,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { FlowState } from '@/types/videoFlow';
 import { clearFlowState } from '@/utils/videoFlowUtils';
 import { supabase } from '@/integrations/supabase/client';
+
+const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3NDM5NjMsImV4cCI6MTkyNzQyMzk2M30.-sG2JGy680IiMtGAn_Ae96N2sM_Rkw0rDHxZYWrnRc4';
 
 const VideoGeneratorFinal = () => {
   const navigate = useNavigate();
@@ -24,10 +27,8 @@ const VideoGeneratorFinal = () => {
 
   // Determinar el estado efectivo del flujo
   useEffect(() => {
-    // Prioridad 1: Estado pasado via navegación
     const navigationState = location.state as FlowState | undefined;
     
-    // DEBUG: Log navigation state
     console.log('🐛 DEBUG VideoGeneratorFinal - Navigation state:', {
       navigationState: navigationState,
       selectedStyle: navigationState?.selectedStyle,
@@ -45,8 +46,6 @@ const VideoGeneratorFinal = () => {
       return;
     }
 
-    // Prioridad 2: Estado actual del hook
-    // DEBUG: Log current flow state
     console.log('🐛 DEBUG VideoGeneratorFinal - Current flow state:', {
       currentFlowState: currentFlowState,
       selectedStyle: currentFlowState?.selectedStyle,
@@ -64,21 +63,18 @@ const VideoGeneratorFinal = () => {
       return;
     }
 
-    // Si no hay configuración válida, redirigir al flujo
     console.log('❌ No hay configuración válida, redirigiendo al flujo');
     navigate('/crear-video');
   }, [location.state, currentFlowState, navigate]);
 
   // Script handling: cargar UNA SOLA VEZ al inicializar
   useEffect(() => {
-    // Solo cargar script UNA VEZ - evitar loops infinitos
     if (isScriptInitialized) return;
     
     const initializeScript = async () => {
       try {
         let scriptToUse = '';
         
-        // 1. Prioridad: script desde el estado de navegación (más reciente)
         if (effectiveFlowState?.generatedScript) {
           scriptToUse = effectiveFlowState.generatedScript;
           console.log('📝 Script cargado desde estado de navegación:', {
@@ -87,7 +83,6 @@ const VideoGeneratorFinal = () => {
           });
         }
         
-        // 2. Fallback: intentar recuperar desde la base de datos si no hay script
         if (!scriptToUse && user) {
           console.log('🔍 Script no encontrado en estado, intentando recuperar desde BD...');
           try {
@@ -109,23 +104,21 @@ const VideoGeneratorFinal = () => {
           }
         }
         
-        // 3. Aplicar el script encontrado SOLO UNA VEZ
         if (scriptToUse) {
           handlers.setScript(scriptToUse);
-          setIsScriptInitialized(true); // Marcar como inicializado para evitar re-cargas
+          setIsScriptInitialized(true);
           console.log('✅ Script aplicado exitosamente y marcado como inicializado');
         } else {
           console.warn('⚠️ No se encontró script ni en estado ni en BD');
-          setIsScriptInitialized(true); // Marcar como inicializado incluso si no hay script
+          setIsScriptInitialized(true);
         }
         
       } catch (error) {
         console.error('❌ Error inicializando script:', error);
-        setIsScriptInitialized(true); // Marcar como inicializado para evitar loops en caso de error
+        setIsScriptInitialized(true);
       }
     };
 
-    // Solo ejecutar si tenemos configuración válida
     if (effectiveFlowState && effectiveFlowState.step !== 'loading') {
       initializeScript();
     }
@@ -134,9 +127,7 @@ const VideoGeneratorFinal = () => {
   // Detectar refresh y limpiar configuración automáticamente
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // Solo limpiar si no hay generación activa
       if (user && !state.isGenerating) {
-        // No hacer await en beforeunload - usar fire and forget
         void supabase
           .from('user_video_configs')
           .delete()
@@ -150,11 +141,10 @@ const VideoGeneratorFinal = () => {
   }, [user, state.isGenerating]);
 
   const handleBack = () => {
-    goToStep('neurocopy');
+    goToStep('subtitle-customization');
     navigate('/crear-video');
   };
 
-  // Limpiar configuración cuando se genera exitosamente un video
   const handleVideoGenerated = async () => {
     if (user) {
       console.log('🎉 Video generado exitosamente, limpiando configuración');
@@ -162,14 +152,12 @@ const VideoGeneratorFinal = () => {
     }
   };
 
-  // Agregar el efecto para limpiar configuración cuando el video esté listo
   useEffect(() => {
     if (state.videoResult) {
       handleVideoGenerated();
     }
   }, [state.videoResult]);
 
-  // DEBUG: Log effective flow state
   console.log('🐛 DEBUG VideoGeneratorFinal - Effective flow state:', {
     effectiveFlowState: effectiveFlowState,
     selectedStyle: effectiveFlowState?.selectedStyle,
@@ -177,7 +165,7 @@ const VideoGeneratorFinal = () => {
     hasHandleGenerateVideoWithFiles: !!handlers.handleGenerateVideoWithFiles
   });
 
-  // Si no tenemos configuración efectiva aún, mostrar loading
+  // Loading state
   if (!effectiveFlowState) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -191,6 +179,7 @@ const VideoGeneratorFinal = () => {
     );
   }
 
+  // Processing state
   if (state.isGenerating) {
     return (
       <VideoProcessingState 
@@ -206,6 +195,7 @@ const VideoGeneratorFinal = () => {
     );
   }
 
+  // Video result state
   if (state.videoResult) {
     return (
       <VideoResult 
@@ -215,80 +205,87 @@ const VideoGeneratorFinal = () => {
     );
   }
 
+  // Main generator view with two-panel layout
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid-pattern opacity-20"></div>
+      {/* Video de fondo animado */}
+      <video
+        src={BACKGROUND_VIDEO_URL}
+        className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none"
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
       
-      <div className="relative z-10 container mx-auto px-6 py-8">
-        <VideoGeneratorHeader />
+      {/* Overlay para legibilidad */}
+      <div className="absolute inset-0 bg-background/50" />
+      
+      {/* Gradient overlays decorativos */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/5 to-transparent rounded-full blur-3xl" />
 
-        {state.showRecoveryOption && (
-          <RecoveryNotification 
-            onRecover={handlers.handleRecoverGeneration}
-            onCancel={handlers.handleCancelRecovery}
-            timeRemaining={state.timeRemaining}
-          />
-        )}
+      {/* Contenido Principal - Layout de dos paneles */}
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+        
+        {/* Panel Izquierdo (35%) - Resumen de Configuración */}
+        <div className="w-full lg:w-[35%] lg:min-w-[380px] lg:max-w-[480px] border-b lg:border-b-0 lg:border-r border-border/30 p-6 overflow-y-auto bg-card/20 backdrop-blur-sm">
+          {/* Botón Atrás */}
+          <VideoGeneratorHeader onBack={handleBack} />
+          
+          {/* Resumen de Configuración */}
+          <GeneratorConfigSummary flowState={effectiveFlowState} />
+        </div>
+        
+        {/* Panel Derecho (65%) - Editor de Script */}
+        <div className="flex-1 flex flex-col p-4 sm:p-8 overflow-y-auto">
+          <div className="max-w-3xl mx-auto w-full">
+            {/* Recovery Notification */}
+            {state.showRecoveryOption && (
+              <RecoveryNotification 
+                onRecover={handlers.handleRecoverGeneration}
+                onCancel={handlers.handleCancelRecovery}
+                timeRemaining={state.timeRemaining}
+              />
+            )}
 
-        <div className="max-w-4xl mx-auto">
-          {/* Mostrar información del flujo seleccionado */}
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-3 sm:p-6 mb-6 sm:mb-8 cyber-border mx-4 sm:mx-0">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="text-sm sm:text-lg font-semibold">Configuración seleccionada:</h2>
-              <div className="flex items-center text-xs sm:text-sm text-green-400">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-                <span className="hidden sm:inline">Configuración completa</span>
-                <span className="sm:hidden">Completa</span>
-              </div>
+            {/* Header del Editor */}
+            <div className="text-center mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
+                Generador de Videos IA
+              </h1>
+              <p className="text-muted-foreground text-sm sm:text-base">
+                Tu guión ha sido generado con NeuroCopy GPT. Puedes editarlo si deseas antes de crear tu video.
+              </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
-              <div>
-                <p className="text-muted-foreground">Clave API:</p>
-                <p className="font-medium truncate">{effectiveFlowState.selectedApiKey?.api_key_name}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Avatar:</p>
-                <p className="font-medium truncate">{effectiveFlowState.selectedAvatar?.avatar_name}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Voz:</p>
-                <p className="font-medium truncate">{effectiveFlowState.selectedVoice?.voice_name}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Estilo:</p>
-                <p className="font-medium truncate">{effectiveFlowState.selectedStyle?.name}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="text-center mb-8 sm:mb-12 px-4 sm:px-0">
-            <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent animate-glow-text">
-              <span className="sm:hidden">CloneGame - Videos IA</span>
-              <span className="hidden sm:inline">CloneGame - Generador de Videos IA</span>
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-lg">
-              Tu guión ha sido generado con NeuroCopy GPT. Puedes editarlo si deseas antes de crear tu video.
-            </p>
+            {/* Script Form */}
+            <ScriptForm 
+              script={state.script}
+              setScript={handlers.setScript}
+              onSubmit={handlers.handleGenerateVideo}
+              onCancel={handlers.handleCancelGeneration}
+              isGenerating={state.isGenerating}
+              error={state.error}
+              timeRemaining={state.timeRemaining}
+              currentRequestId={state.currentRequestId}
+              flowState={effectiveFlowState}
+              onGenerateWithFiles={handlers.handleGenerateVideoWithFiles}
+              onGenerateWithUrls={handlers.handleGenerateVideoWithUrls}
+            />
           </div>
-
-          <ScriptForm 
-            script={state.script}
-            setScript={handlers.setScript}
-            onSubmit={handlers.handleGenerateVideo}
-            onCancel={handlers.handleCancelGeneration}
-            isGenerating={state.isGenerating}
-            error={state.error}
-            timeRemaining={state.timeRemaining}
-            currentRequestId={state.currentRequestId}
-            flowState={effectiveFlowState}
-            onGenerateWithFiles={handlers.handleGenerateVideoWithFiles}
-            onGenerateWithUrls={handlers.handleGenerateVideoWithUrls}
-          />
         </div>
       </div>
 
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-accent/5 to-transparent rounded-full blur-3xl"></div>
+      {/* Indicador SISTEMA NEURAL ACTIVO */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex items-center gap-2 text-primary animate-pulse bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border border-primary/20">
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <span className="text-sm font-medium tracking-wider">SISTEMA NEURAL ACTIVO</span>
+          <div className="w-2 h-2 rounded-full bg-primary" />
+        </div>
+      </div>
     </div>
   );
 };
