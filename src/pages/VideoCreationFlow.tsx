@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useVideoCreationFlow } from '@/hooks/useVideoCreationFlow';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { FlowState } from '@/types/videoFlow';
 import HeyGenApiKeyManager from '@/components/video/HeyGenApiKeyManager';
 import AvatarSelector from '@/components/video/AvatarSelector';
 import SecondAvatarSelector from '@/components/video/SecondAvatarSelector';
@@ -14,8 +15,14 @@ import SubtitleCustomizer from '@/components/video/SubtitleCustomizer';
 
 const VideoCreationFlow = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [aiApiKeys, setAiApiKeys] = useState({ openai_api_key: '', gemini_api_key: '' });
+  
+  // Detectar estado de navegación directa (desde el generador final)
+  const navigationState = location.state as FlowState | undefined;
+  const [overrideState, setOverrideState] = useState<FlowState | null>(null);
+  
   const {
     flowState,
     apiKeys,
@@ -32,6 +39,24 @@ const VideoCreationFlow = () => {
     goToStep,
     resetFlow
   } = useVideoCreationFlow();
+
+  // Si viene con estado de navegación válido, aplicarlo como override
+  useEffect(() => {
+    if (navigationState && navigationState.selectedApiKey && navigationState.selectedStyle && 
+        navigationState.selectedAvatar && navigationState.step) {
+      console.log('✅ Usando estado de navegación directa:', {
+        step: navigationState.step,
+        hasApiKey: !!navigationState.selectedApiKey,
+        hasStyle: !!navigationState.selectedStyle,
+        hasAvatar: !!navigationState.selectedAvatar,
+        hasVoice: !!navigationState.selectedVoice
+      });
+      setOverrideState(navigationState);
+    }
+  }, []);
+
+  // Estado activo: priorizar overrideState si existe
+  const activeFlowState = overrideState || flowState;
 
   // Load AI API keys for passing to StyleSelector -> CustomizeCardsModal
   useEffect(() => {
@@ -112,7 +137,8 @@ const VideoCreationFlow = () => {
   };
 
   // Mostrar pantalla de carga mientras se determina el estado inicial
-  if (loading || flowState.step === 'loading') {
+  // Si hay overrideState, no mostrar loading
+  if (!overrideState && (loading || flowState.step === 'loading')) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -126,7 +152,7 @@ const VideoCreationFlow = () => {
   }
 
   // Si el flujo está completo pero aún estamos aquí, mostrar botón para ir al generador
-  if (flowState.step === 'generator') {
+  if (activeFlowState.step === 'generator') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -156,8 +182,8 @@ const VideoCreationFlow = () => {
     );
   }
 
-  // Renderizar el componente apropiado según el paso actual
-  switch (flowState.step) {
+  // Renderizar el componente apropiado según el paso activo (overrideState tiene prioridad)
+  switch (activeFlowState.step) {
     case 'api-key':
       return (
         <HeyGenApiKeyManager
@@ -169,7 +195,7 @@ const VideoCreationFlow = () => {
       );
 
     case 'neurocopy':
-      if (!flowState.selectedApiKey) {
+      if (!activeFlowState.selectedApiKey) {
         goToStep('api-key');
         return null;
       }
@@ -181,7 +207,7 @@ const VideoCreationFlow = () => {
       );
 
     case 'style':
-      if (!flowState.generatedScript) {
+      if (!activeFlowState.generatedScript) {
         goToStep('neurocopy');
         return null;
       }
@@ -189,33 +215,33 @@ const VideoCreationFlow = () => {
         <StyleSelector
           onSelectStyle={selectStyle}
           onBack={handleBack}
-          generatedScript={flowState.generatedScript || ''}
+          generatedScript={activeFlowState.generatedScript || ''}
           aiApiKeys={aiApiKeys}
-          selectedApiKey={flowState.selectedApiKey}
+          selectedApiKey={activeFlowState.selectedApiKey}
         />
       );
 
     case 'avatar':
-      if (!flowState.selectedStyle) {
+      if (!activeFlowState.selectedStyle) {
         goToStep('style');
         return null;
       }
       return (
         <AvatarSelector
-          selectedApiKey={flowState.selectedApiKey}
+          selectedApiKey={activeFlowState.selectedApiKey}
           onSelectAvatar={selectAvatar}
           onBack={handleBack}
         />
       );
 
     case 'voice':
-      if (!flowState.selectedAvatar || !flowState.selectedApiKey) {
+      if (!activeFlowState.selectedAvatar || !activeFlowState.selectedApiKey) {
         goToStep('avatar');
         return null;
       }
       return (
         <VoiceSelector
-          selectedApiKey={flowState.selectedApiKey}
+          selectedApiKey={activeFlowState.selectedApiKey}
           onSelectVoice={selectVoice}
           onBack={handleBack}
         />
@@ -224,15 +250,16 @@ const VideoCreationFlow = () => {
     case 'multi-avatar':
       return (
         <SecondAvatarSelector
-          selectedApiKey={flowState.selectedApiKey}
-          selectedFirstAvatar={flowState.selectedAvatar!}
+          selectedApiKey={activeFlowState.selectedApiKey}
+          selectedFirstAvatar={activeFlowState.selectedAvatar!}
           onSelectSecondAvatar={selectSecondAvatar}
           onBack={handleBack}
         />
       );
 
     case 'subtitle-customization':
-      if (!flowState.selectedVoice) {
+      // Si viene de navegación directa (overrideState), no validar
+      if (!overrideState && !activeFlowState.selectedVoice) {
         goToStep('voice');
         return null;
       }

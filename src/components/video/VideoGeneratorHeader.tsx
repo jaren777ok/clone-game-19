@@ -20,7 +20,7 @@ const VideoGeneratorHeader = ({ onBack }: VideoGeneratorHeaderProps) => {
         size={isMobile ? "sm" : "default"}
       >
         <ArrowLeft className="w-4 h-4 sm:mr-2" />
-        <span>Atrás</span>
+        <span>Cambiar Subtítulos</span>
       </Button>
     </div>
   );

@@ -141,35 +141,26 @@ const VideoGeneratorFinal = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [user, state.isGenerating]);
 
-  const handleBack = async () => {
-    // Guardado completo con upsert para garantizar persistencia de toda la configuración
-    if (user && effectiveFlowState) {
-      try {
-        // Construir estado con paso forzado a subtitle-customization
-        const backState: FlowState = {
-          ...effectiveFlowState,
-          step: 'subtitle-customization'
-        };
-        
-        console.log('⬅️ HANDLEBACK - Guardando estado completo con upsert:', {
-          step: backState.step,
-          hasApiKey: !!backState.selectedApiKey,
-          hasStyle: !!backState.selectedStyle,
-          hasAvatar: !!backState.selectedAvatar,
-          hasVoice: !!backState.selectedVoice
-        });
-        
-        // Usar saveVideoConfigImmediate para hacer upsert completo
-        await saveVideoConfigImmediate(user, backState);
-        
-        console.log('✅ HANDLEBACK - Estado guardado exitosamente, navegando a /crear-video');
-      } catch (err) {
-        console.error('❌ HANDLEBACK - Error guardando estado:', err);
-      }
-    }
+  const handleBack = () => {
+    // Navegación directa con estado - sin depender de la BD
+    // Mismo patrón que usa handleProceedToGenerator en VideoCreationFlow
+    const backState: FlowState = {
+      ...effectiveFlowState!,
+      step: 'subtitle-customization'
+    };
     
-    goToStep('subtitle-customization');
-    navigate('/crear-video');
+    console.log('⬅️ Navegando a subtítulos con estado directo:', {
+      step: backState.step,
+      hasApiKey: !!backState.selectedApiKey,
+      hasStyle: !!backState.selectedStyle,
+      hasAvatar: !!backState.selectedAvatar,
+      hasVoice: !!backState.selectedVoice
+    });
+    
+    navigate('/crear-video', { 
+      state: backState,
+      replace: false 
+    });
   };
 
   const handleVideoGenerated = async () => {
