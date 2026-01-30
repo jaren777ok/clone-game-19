@@ -33,14 +33,14 @@ const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCa
     });
   };
 
-  const truncateScript = (text: string, maxLength: number = 100) => {
+  const truncateScript = (text: string, maxLength: number = 80) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
   const getDisplayTitle = () => {
     if (title) return title;
-    return `Video Generado - ${formatDate(createdAt)}`;
+    return `Video Generado`;
   };
 
   const handleCopyScript = async () => {
@@ -95,129 +95,130 @@ const VideoCard = ({ id, title, script, videoUrl, createdAt, onDelete }: VideoCa
   return (
     <>
       <div className="bg-card/80 backdrop-blur-sm cyber-border rounded-xl hover:cyber-glow transition-all duration-300 group overflow-hidden">
-        {/* Header: título + fecha + delete */}
-        <div className="p-5">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex-1 pr-4">
-              <div className="flex items-center mb-1">
-                <Video className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
-                <h3 className="text-lg font-semibold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight break-words">
-                  {getDisplayTitle()}
-                </h3>
-              </div>
-              <div className="flex items-center text-muted-foreground text-sm">
-                <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-                {formatDate(createdAt)}
-              </div>
+        {/* Book Layout: Video Left + Info Right */}
+        <div className="flex flex-col md:flex-row">
+          {/* Left Side - Video Player (9:16 vertical) */}
+          <div className="md:w-[200px] lg:w-[220px] flex-shrink-0 p-4">
+            <div className="rounded-lg overflow-hidden cyber-border bg-black/50 h-full">
+              <video
+                src={videoUrl}
+                controls
+                className="w-full h-full object-cover"
+                style={{ aspectRatio: '9/16' }}
+                preload="metadata"
+              />
             </div>
-            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+          </div>
+
+          {/* Vertical Divider (visible on md+) */}
+          <div className="hidden md:block w-px bg-border/30 my-4" />
+
+          {/* Right Side - Info */}
+          <div className="flex-1 flex flex-col p-4 md:pl-4">
+            {/* Header: título + fecha + delete */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1 pr-2">
+                <div className="flex items-start mb-1">
+                  <Video className="w-4 h-4 mr-2 text-primary flex-shrink-0 mt-1" />
+                  <h3 className="text-base font-semibold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent leading-tight break-words">
+                    {getDisplayTitle()}
+                  </h3>
+                </div>
+                <div className="flex items-center text-muted-foreground text-xs mt-1">
+                  <Calendar className="w-3 h-3 mr-1 flex-shrink-0" />
+                  {formatDate(createdAt)}
+                </div>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="text-muted-foreground hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
-          </div>
-        </div>
 
-        {/* Divider */}
-        <div className="border-t border-border/30 mx-5" />
+            {/* Divider */}
+            <div className="border-t border-border/30 my-3" />
 
-        {/* Video Player */}
-        <div className="p-5">
-          <div className="rounded-lg overflow-hidden cyber-border bg-black/50">
-            <video
-              src={videoUrl}
-              controls
-              className="w-full aspect-video"
-              preload="metadata"
-            />
-          </div>
-        </div>
+            {/* Script Section - Collapsible */}
+            <div className="flex-1">
+              <Collapsible open={isScriptExpanded} onOpenChange={setIsScriptExpanded}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <FileText className="w-3 h-3 mr-1.5 text-primary" />
+                    <span className="text-xs font-medium text-foreground">Guion</span>
+                  </div>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="hover:bg-primary/10 h-6 px-2">
+                      {isScriptExpanded ? (
+                        <>
+                          <span className="text-xs mr-1">Colapsar</span>
+                          <ChevronUp className="w-3 h-3" />
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs mr-1">Expandir</span>
+                          <ChevronDown className="w-3 h-3" />
+                        </>
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
 
-        {/* Divider */}
-        <div className="border-t border-border/30 mx-5" />
+                {/* Preview cuando está colapsado */}
+                {!isScriptExpanded && (
+                  <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed">
+                    {truncateScript(script, 80)}
+                  </p>
+                )}
 
-        {/* Script Section - Collapsible */}
-        <div className="p-5">
-          <Collapsible open={isScriptExpanded} onOpenChange={setIsScriptExpanded}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center">
-                <FileText className="w-4 h-4 mr-2 text-primary" />
-                <span className="text-sm font-medium text-foreground">Guion</span>
-              </div>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                  {isScriptExpanded ? (
-                    <>
-                      <span className="text-xs mr-1">Colapsar</span>
-                      <ChevronUp className="w-4 h-4" />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-xs mr-1">Expandir</span>
-                      <ChevronDown className="w-4 h-4" />
-                    </>
-                  )}
-                </Button>
-              </CollapsibleTrigger>
+                {/* Contenido completo cuando está expandido */}
+                <CollapsibleContent>
+                  <div className="bg-muted/30 rounded-lg p-3 cyber-border max-h-48 overflow-y-auto">
+                    <p className="text-foreground text-xs whitespace-pre-wrap mb-3 leading-relaxed">
+                      {script}
+                    </p>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyScript}
+                        className="cyber-border hover:cyber-glow h-7 text-xs"
+                        disabled={copied}
+                      >
+                        {copied ? (
+                          <>
+                            <CheckCircle className="w-3 h-3 mr-1 text-green-500" />
+                            Copiado
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 mr-1" />
+                            Copiar
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
 
-            {/* Preview cuando está colapsado */}
-            {!isScriptExpanded && (
-              <p className="text-muted-foreground text-sm line-clamp-2">
-                {truncateScript(script, 100)}
-              </p>
-            )}
+            {/* Divider */}
+            <div className="border-t border-border/30 my-3" />
 
-            {/* Contenido completo cuando está expandido */}
-            <CollapsibleContent>
-              <div className="bg-muted/30 rounded-lg p-4 cyber-border">
-                <p className="text-foreground text-sm whitespace-pre-wrap mb-4 leading-relaxed">
-                  {script}
-                </p>
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyScript}
-                    className="cyber-border hover:cyber-glow"
-                    disabled={copied}
-                  >
-                    {copied ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                        Copiado
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copiar Guion
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-
-        {/* Divider */}
-        <div className="border-t border-border/30 mx-5" />
-
-        {/* Publicar en Redes */}
-        <div className="p-5">
-          <Button
-            onClick={() => setShowSocialModal(true)}
-            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground font-semibold"
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            Publicar en Redes
-          </Button>
+            {/* Publicar en Redes */}
+            <Button
+              onClick={() => setShowSocialModal(true)}
+              className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground font-semibold h-9 text-sm"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Publicar en Redes
+            </Button>
+          </div>
         </div>
       </div>
 
