@@ -214,6 +214,18 @@ const VideoCreationFlow = () => {
     });
   };
 
+  // Handler para revisar configuración desde confirmación
+  const handleReviewConfiguration = () => {
+    const baseState = overrideState || flowState;
+    const reviewState: FlowState = {
+      ...baseState,
+      step: 'subtitle-customization'
+    };
+    
+    console.log('🔄 Regresando a revisar configuración');
+    setOverrideState(reviewState);
+  };
+
   const handleProceedToGenerator = () => {
     // Validar que tenemos todas las selecciones necesarias incluyendo el script
     const isValidForMultiAvatar = flowState.selectedStyle?.id === 'style-7' 
@@ -371,6 +383,7 @@ const VideoCreationFlow = () => {
         <ConfigurationComplete
           flowState={activeFlowState}
           onContinue={handleContinueToGenerator}
+          onReview={handleReviewConfiguration}
         />
       );
 

@@ -224,7 +224,7 @@ const VideoGeneratorFinal = () => {
       <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
         
         {/* Panel Izquierdo (35%) - Resumen de Configuración */}
-        <div className="w-full lg:w-[35%] lg:min-w-[380px] lg:max-w-[480px] border-b lg:border-b-0 lg:border-r border-border/30 p-6 overflow-y-auto bg-card/20 backdrop-blur-sm">
+        <div className="w-full lg:w-[35%] lg:min-w-[380px] lg:max-w-[480px] border-b lg:border-b-0 lg:border-r border-border/30 p-6 overflow-y-auto bg-card/20 backdrop-blur-sm flex flex-col justify-center">
           {/* Resumen de Configuración (sin botón de retroceso) */}
           <GeneratorConfigSummary flowState={effectiveFlowState} />
         </div>
