@@ -1,166 +1,235 @@
 
 
-## Plan: Solución Definitiva del Botón "Atrás" - Navegación Directa sin Depender de BD
+## Plan: Persistencia Robusta de Configuración de Video en Supabase
 
 ### Diagnóstico del Problema
 
-He identificado la causa raíz del problema después de revisar el código y la base de datos:
+Después de revisar el código, he identificado **tres problemas principales**:
 
-1. **La tabla `user_video_configs` está vacía** - Esto significa que los datos de configuración no se están guardando correctamente o se borran antes de poder usarlos.
+1. **La tabla `user_video_configs` está vacía** - La configuración no se está guardando correctamente durante el flujo. El usuario completa todos los pasos, pero nada se persiste en Supabase.
 
-2. **El flujo de navegación tiene una dependencia circular problemática**:
-   - El botón "Atrás" en `VideoGeneratorFinal.tsx` intenta guardar el estado en la BD y luego navega a `/crear-video`
-   - La página `/crear-video` (VideoCreationFlow) crea una **nueva instancia** del hook `useVideoCreationFlow`
-   - Esta nueva instancia lee la BD para determinar el paso inicial
-   - Si la BD está vacía o el guardado no se completó, `determineInitialStep()` cae al default: `api-key`
+2. **El hook `useVideoCreationFlow` tiene un guardado con debounce (100ms) pero solo se activa cuando `isInitialized` es `true`**:
+   - El efecto que guarda depende de `[flowState, isInitialized, user]`
+   - Pero cuando el usuario navega usando `overrideState` (desde el generador con `location.state`), este estado nunca se sincroniza con la BD porque:
+     - `VideoCreationFlow.tsx` usa `overrideState` como prioridad, pero no sincroniza ese estado de vuelta al hook
+     - Las funciones `selectSubtitleCustomization`, `selectVoice`, etc. que usan `goToStep` actualizan `flowState` pero no guardan explícitamente en BD
 
-3. **El problema específico**: La función `saveVideoConfigImmediate` requiere que `selectedApiKey` tenga un `id` válido para guardar el `api_key_id`. Si por alguna razón el estado efectivo no tiene estos datos completos, el upsert falla silenciosamente o guarda datos incompletos.
+3. **El problema del botón "Usar este diseño" / "Cambiar voz"**:
+   - Cuando vienes del generador con `location.state`, el `overrideState` tiene toda la configuración
+   - Pero los callbacks como `selectSubtitleCustomization` y `handleBack` usan el `flowState` del hook (que está vacío o desactualizado), NO el `overrideState`
+   - Resultado: al intentar avanzar o retroceder, el sistema usa un estado incompleto y falla
 
-### Solución: Navegación Directa con Estado
+---
 
-En lugar de depender de la base de datos para pasar el estado entre páginas (que es frágil), usaremos **navegación con estado de React Router** (el mismo patrón que ya funciona para ir al generador).
+### Solución Propuesta
 
-**Cambios a implementar:**
+#### Parte 1: Sincronizar `overrideState` con el Hook
 
-#### 1. Cambiar el texto del botón de "Atrás" a "Cambiar Subtítulos"
-Esto es más claro para el usuario sobre qué hace el botón.
+Cuando `VideoCreationFlow` detecta un `navigationState` válido, debe:
+1. Aplicarlo como `overrideState` (ya lo hace)
+2. **Guardarlo inmediatamente en Supabase** para que persista
+3. **Sincronizar las funciones del hook** para usar el estado correcto
 
-#### 2. Modificar `handleBack` para navegar con estado
-En lugar de guardar en BD y esperar que la otra página lo lea, pasamos el estado directamente:
+#### Parte 2: Hacer que los callbacks usen el estado correcto
+
+Actualmente los callbacks (`selectSubtitleCustomization`, `handleBack`) usan el `flowState` del hook. Necesitamos:
+1. Pasar el estado activo correcto a cada componente hijo
+2. Crear wrappers para los callbacks que usen el estado correcto
+
+#### Parte 3: Guardado explícito en cada paso crítico
+
+En el hook `useVideoCreationFlow`, añadir guardado inmediato en:
+- `selectAvatar()`
+- `selectVoice()`
+- `selectStyle()`
+- `selectSubtitleCustomization()`
+
+Actualmente solo `selectApiKey()` y `selectGeneratedScript()` hacen guardado inmediato.
+
+---
+
+### Cambios Específicos
+
+#### Archivo 1: `src/pages/VideoCreationFlow.tsx`
+
+**Cambio A**: Sincronizar `overrideState` con Supabase al detectarlo
 
 ```typescript
-const handleBack = () => {
-  // Navegar directamente pasando el estado via location (mismo patrón que handleProceedToGenerator)
-  const backState: FlowState = {
-    ...effectiveFlowState,
-    step: 'subtitle-customization'
+// Si viene con estado de navegación válido, aplicarlo Y guardarlo
+useEffect(() => {
+  const syncNavigationState = async () => {
+    if (navigationState && navigationState.selectedApiKey && navigationState.selectedStyle && 
+        navigationState.selectedAvatar && navigationState.step) {
+      console.log('✅ Usando estado de navegación directa:', {
+        step: navigationState.step,
+        // ...
+      });
+      setOverrideState(navigationState);
+      
+      // NUEVO: Guardar el estado en Supabase para persistencia
+      if (user) {
+        try {
+          await saveVideoConfigImmediate(user, navigationState);
+          console.log('💾 Estado de navegación sincronizado con Supabase');
+        } catch (error) {
+          console.error('Error sincronizando estado:', error);
+        }
+      }
+    }
   };
   
-  navigate('/crear-video', { 
-    state: backState,
+  syncNavigationState();
+}, []); // Solo al montar
+```
+
+**Cambio B**: Crear wrappers para callbacks que usen el estado correcto
+
+```typescript
+// Wrapper para selectSubtitleCustomization que mantiene el estado completo
+const handleSelectSubtitleCustomization = async (subtitleCustomization: SubtitleCustomization) => {
+  const baseState = overrideState || flowState;
+  const newState: FlowState = {
+    ...baseState,
+    subtitleCustomization,
+    step: 'generator'
+  };
+  
+  // Guardar inmediatamente en Supabase
+  if (user) {
+    await saveVideoConfigImmediate(user, newState);
+  }
+  
+  // Navegar al generador con el estado completo
+  navigate('/crear-video-generator', { 
+    state: newState,
     replace: false 
   });
 };
-```
 
-#### 3. Modificar `VideoCreationFlow.tsx` para aceptar estado de navegación
-La página necesita detectar si viene con estado de navegación y usarlo en lugar de recalcular:
-
-```typescript
-const VideoCreationFlow = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+// Wrapper para handleBack que respeta el overrideState
+const handleBackFromSubtitles = () => {
+  const baseState = overrideState || flowState;
   
-  // Detectar estado de navegación
-  const navigationState = location.state as FlowState | undefined;
-  
-  // Si viene con estado de navegación válido, usarlo directamente
-  useEffect(() => {
-    if (navigationState && navigationState.step === 'subtitle-customization') {
-      console.log('✅ Usando estado de navegación directa:', navigationState.step);
-      // Forzar el paso a subtitle-customization
-      goToStep('subtitle-customization');
-    }
-  }, [navigationState]);
-  
-  // ... resto del código
+  if (baseState.selectedStyle?.id === 'style-7' && baseState.selectedSecondAvatar) {
+    // Multi-Avatar: regresar a multi-avatar
+    setOverrideState({ ...baseState, step: 'multi-avatar' });
+  } else {
+    // Otros estilos: regresar a voice
+    setOverrideState({ ...baseState, step: 'voice' });
+  }
 };
 ```
 
-#### 4. Actualizar `VideoGeneratorHeader.tsx` para mostrar "Cambiar Subtítulos"
+**Cambio C**: Pasar los handlers correctos a SubtitleCustomizer
 
 ```typescript
-const VideoGeneratorHeader = ({ onBack }: VideoGeneratorHeaderProps) => {
+case 'subtitle-customization':
   return (
-    <Button variant="outline" onClick={onBack} className="cyber-border hover:cyber-glow">
-      <ArrowLeft className="w-4 h-4 sm:mr-2" />
-      <span>Cambiar Subtítulos</span>
-    </Button>
+    <SubtitleCustomizer
+      onSelectCustomization={handleSelectSubtitleCustomization}
+      onBack={handleBackFromSubtitles}
+    />
   );
-};
+```
+
+---
+
+#### Archivo 2: `src/hooks/useVideoCreationFlow.ts`
+
+**Cambio A**: Añadir guardado inmediato en `selectAvatar`, `selectVoice`, `selectStyle`, `selectSubtitleCustomization`
+
+```typescript
+const selectAvatar = useCallback(async (avatar: Avatar) => {
+  console.log('👤 Seleccionando Avatar:', avatar.avatar_name);
+  const newFlowState = {
+    ...flowState,
+    selectedAvatar: avatar,
+    step: 'voice' as const
+  };
+  
+  setFlowState(newFlowState);
+  
+  // Guardado inmediato
+  if (user) {
+    try {
+      await saveVideoConfigImmediate(user, newFlowState);
+    } catch (error) {
+      console.error('Error guardando avatar:', error);
+    }
+  }
+}, [flowState, user]);
+
+// Igual para selectVoice, selectStyle, selectSubtitleCustomization
+```
+
+---
+
+### Flujo de Datos Corregido
+
+```text
+Usuario en Generador Final
+         |
+         | Click "Cambiar Subtítulos"
+         v
+navigate('/crear-video', { state: flowState con step='subtitle-customization' })
+         |
+         v
+VideoCreationFlow detecta navigationState
+         |
+         +---> setOverrideState(navigationState)
+         |
+         +---> saveVideoConfigImmediate(user, navigationState)  <-- NUEVO
+         |
+         v
+SubtitleCustomizer renderiza con overrideState
+         |
+         | Usuario hace cambios y click "Usar este diseño"
+         v
+handleSelectSubtitleCustomization(newSubtitles)  <-- NUEVO wrapper
+         |
+         +---> Combina overrideState con nuevos subtítulos
+         |
+         +---> saveVideoConfigImmediate(user, newState)
+         |
+         +---> navigate('/crear-video-generator', { state: newState })
+         |
+         v
+VideoGeneratorFinal tiene configuración completa
 ```
 
 ---
 
 ### Archivos a Modificar
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/video/VideoGeneratorHeader.tsx` | Cambiar texto "Atrás" → "Cambiar Subtítulos" |
-| `src/pages/VideoGeneratorFinal.tsx` | Simplificar `handleBack` para usar navegación con estado |
-| `src/pages/VideoCreationFlow.tsx` | Aceptar estado de navegación y aplicarlo |
-
----
-
-### Detalle Técnico de los Cambios
-
-**VideoGeneratorFinal.tsx - handleBack simplificado:**
-
-```typescript
-const handleBack = () => {
-  // Navegar directamente con el estado del flujo actual
-  // Esto evita depender de la base de datos para la navegación
-  const backState: FlowState = {
-    ...effectiveFlowState,
-    step: 'subtitle-customization'
-  };
-  
-  console.log('⬅️ Navegando a subtítulos con estado directo:', {
-    step: backState.step,
-    hasApiKey: !!backState.selectedApiKey,
-    hasStyle: !!backState.selectedStyle,
-    hasAvatar: !!backState.selectedAvatar,
-    hasVoice: !!backState.selectedVoice
-  });
-  
-  navigate('/crear-video', { 
-    state: backState,
-    replace: false 
-  });
-};
-```
-
-**VideoCreationFlow.tsx - Aceptar estado de navegación:**
-
-```typescript
-const VideoCreationFlow = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
-  
-  // Detectar si viene con estado de navegación (desde el generador)
-  const navigationState = location.state as FlowState | undefined;
-  const [overrideState, setOverrideState] = useState<FlowState | null>(null);
-  
-  // Si viene con estado de navegación, aplicarlo
-  useEffect(() => {
-    if (navigationState && navigationState.selectedApiKey && navigationState.selectedStyle) {
-      console.log('✅ Usando estado de navegación directa:', navigationState.step);
-      setOverrideState(navigationState);
-    }
-  }, []);
-  
-  // Usar overrideState si existe, sino usar el flowState normal
-  const activeFlowState = overrideState || flowState;
-  
-  // Renderizar según el paso activo...
-};
-```
+| Archivo | Tipo de Cambio |
+|---------|----------------|
+| `src/pages/VideoCreationFlow.tsx` | Sincronizar overrideState con BD + crear wrappers para callbacks |
+| `src/hooks/useVideoCreationFlow.ts` | Añadir guardado inmediato en selectAvatar, selectVoice, selectStyle, selectSubtitleCustomization |
 
 ---
 
 ### Resultado Esperado
 
-1. El botón mostrará "Cambiar Subtítulos" en lugar de "Atrás"
-2. Al presionarlo, navegará directamente a la página de subtítulos con toda la configuración intacta
-3. No depende de la base de datos para la navegación (más robusto)
-4. El patrón es consistente con cómo ya funciona la navegación hacia el generador
+1. **Persistencia completa**: Cada paso del flujo (guión, estilo, avatar, voz, subtítulos) se guarda en Supabase inmediatamente al seleccionarse
 
-### Ventajas de esta Solución
+2. **Navegación hacia atrás funcional**: El botón "Cambiar Subtítulos" funcionará correctamente, y desde subtítulos podrás:
+   - Avanzar con "Usar este diseño" hacia el generador
+   - Retroceder con "Cambiar voz" hacia la selección de voz
 
-- **Inmediato**: No hay latencia de esperar a la BD
-- **Confiable**: El estado se pasa directamente en memoria
-- **Consistente**: Usa el mismo patrón que ya funciona para ir al generador
-- **Simple**: Menos código y menos puntos de fallo
+3. **Recuperación de sesión**: Si el usuario cierra la pestaña y vuelve, el flujo puede recuperarse desde el último paso guardado
+
+4. **Limpieza automática**: Cuando el video se genera exitosamente, la configuración se borra de Supabase para un nuevo ciclo
+
+---
+
+### Nota Técnica
+
+El problema fundamental era que existían **dos fuentes de verdad desincronizadas**:
+- `flowState` (del hook `useVideoCreationFlow`)
+- `overrideState` (estado local de `VideoCreationFlow`)
+
+La solución unifica estas fuentes asegurando que:
+1. `overrideState` siempre se sincroniza con Supabase al detectarse
+2. Los callbacks usan explícitamente el estado correcto (overrideState cuando existe)
+3. Cada selección crítica hace guardado inmediato en BD
 
