@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { FlowState } from '@/types/videoFlow';
 import { clearFlowState } from '@/utils/videoFlowUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { saveVideoConfigImmediate } from '@/lib/videoConfigDatabase';
 
 const BACKGROUND_VIDEO_URL = 'https://jbunbmphadxmzjokwgkw.supabase.co/storage/v1/object/sign/fotos/fondonormal.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNGY4MzVlOS03N2Y3LTRiMWQtOWE0MS03NTVhYzYxNTM3NDUiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmb3Rvcy9mb25kb25vcm1hbC5tcDQiLCJpYXQiOjE3Njk3NDM5NjMsImV4cCI6MTkyNzQyMzk2M30.-sG2JGy680IiMtGAn_Ae96N2sM_Rkw0rDHxZYWrnRc4';
 
@@ -141,22 +142,29 @@ const VideoGeneratorFinal = () => {
   }, [user, state.isGenerating]);
 
   const handleBack = async () => {
-    // Guardamos directamente el paso en la base de datos para asegurar persistencia
+    // Guardado completo con upsert para garantizar persistencia de toda la configuración
     if (user && effectiveFlowState) {
       try {
-        const { error } = await supabase
-          .from('user_video_configs')
-          .update({ 
-            current_step: 'subtitle-customization',
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
+        // Construir estado con paso forzado a subtitle-customization
+        const backState: FlowState = {
+          ...effectiveFlowState,
+          step: 'subtitle-customization'
+        };
         
-        if (error) {
-          console.error('Error actualizando paso:', error);
-        }
+        console.log('⬅️ HANDLEBACK - Guardando estado completo con upsert:', {
+          step: backState.step,
+          hasApiKey: !!backState.selectedApiKey,
+          hasStyle: !!backState.selectedStyle,
+          hasAvatar: !!backState.selectedAvatar,
+          hasVoice: !!backState.selectedVoice
+        });
+        
+        // Usar saveVideoConfigImmediate para hacer upsert completo
+        await saveVideoConfigImmediate(user, backState);
+        
+        console.log('✅ HANDLEBACK - Estado guardado exitosamente, navegando a /crear-video');
       } catch (err) {
-        console.error('Error en handleBack:', err);
+        console.error('❌ HANDLEBACK - Error guardando estado:', err);
       }
     }
     
